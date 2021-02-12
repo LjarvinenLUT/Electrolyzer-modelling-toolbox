@@ -10,8 +10,15 @@ F = Q_e*N_A; % C/mol, Faraday constant
 R = k_B*N_A; % J/K/mol, Universal gas constant
 n_e = 2; % Number of electrons transferred in one reaction
 
-T = linspace(273,373,100)';
+% Measured, from CRC Handbook of Chemistry and Physics
+Tmeas = [298.15;300;373.21];
+deltaG = [237.141;236.839;225.160]*1e3;
+Umeas = deltaG/(n_e*F);
+
+% Modelled
+T = sortrows([linspace(273,373,101) 298.15 373.21]');
 U = [];
+difU = [];
 figure
 hold on;
 for i = 1:6
@@ -19,10 +26,28 @@ for i = 1:6
     U = [U U_0];
     plot(T,U_0)
 end
-legend('1','2','3','4','5','6')
+scatter(Tmeas,Umeas,'x')
 hold off;
+legend('1','2','3','4','5','6','tabled')
+title('Reversible voltage')
+xlabel('Temperature [K]')
+ylabel('Voltage [V]')
 
-difU = abs(U-mean(U,2));
+
+% Difference of measured to modelled
+ComInd = [find(T==Tmeas(1));find(T==Tmeas(2));find(T==Tmeas(3))];
+UforComp = U(ComInd,:);
+difU = (UforComp-Umeas);
+
 
 figure
-plot(difU)
+hold on
+for i = 1:length(difU(1,:))
+    scatter(Tmeas,difU(:,i))
+end
+yline(0,'--')
+hold off
+legend('1','2','3','4','5','6')
+title('Difference to measured value')
+xlabel('Temperature [K]')
+ylabel('Difference in voltage [V]')

@@ -5,12 +5,16 @@
 
 function Uocv = opencircuit(V,type,model)
     
+    global F n_e R;
+
     T = V(1);
     pH2 = V(2);
     pO2 = V(3);
     
-    U_0 = reversible(T,model); %1.5184 -1.5421e-3.*T + 9.523e-5.*T.*log(T) + 9.84e-8.*T.^2;
-
-    Uocv = U_0 + f*(pH2.*pO2.^(1/2));
+    % Reversible voltage
+    U_0 = reversible(T,model);
+    
+    % Nernst equation
+    Uocv = U_0 + (R.*T)/(n_e*F)*log(pH2.*pO2.^(1/2));
 
 end
