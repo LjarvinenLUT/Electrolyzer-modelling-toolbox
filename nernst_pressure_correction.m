@@ -37,13 +37,17 @@ function Ucor = nernst_pressure_correction(T,p1,p2,varargin)
     global F n_e R;
 
     %%
-    
-    psv = antoine(T); % TODO!
-    
+
     switch type
         case "pem"
+            psv = antoine(T); % Vapor pressure from Antoine equation
+            
             pH2 = p1 - psv; % bar, Hydrogen partial pressure
             pO2 = p2 - psv; % bar, Oxygen partial pressure
+            
+            if pH2 < 0 || pO2 < 0
+                error('Pressure too low! Anode or cathode pressure lower than saturated vapor pressure.')
+            end
             
             % Nernst equation pressure correction
             Ucor = (R.*T)/(n_e*F)*log(pH2.*pO2.^(1/2));
@@ -54,7 +58,13 @@ function Ucor = nernst_pressure_correction(T,p1,p2,varargin)
             
             [psvEl,aH2OEl] = electrolyte_parameters(T,m,electrolyte); % TODO!
             
+            ps = p - psvEl; % bar, Partial pressure of hydrogen and oxygen
+            
+            if ps < 0
+                error('Pressure too low! System pressure lower than saturated vapor pressure of the electrolyte solution.')
+            end
+            
             % Nernst equation pressure correction
-            Ucor = (R.*T)/(n_e*F)*log((p - psvEl).^(3/2)./aH2OEl);
+            Ucor = (R.*T)/(n_e*F)*log(ps.^(3/2)./aH2OEl);
     end
 end
