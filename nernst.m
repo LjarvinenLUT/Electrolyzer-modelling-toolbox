@@ -25,16 +25,16 @@ function Uocv = nernst(T,p1,p2,varargin)
     
     parse(parser,T,p1,p2,varargin{:});
     
-    type = lower(parser.Results.type);
+    type = string(lower(parser.Results.type));
     model = parser.Results.model;
-    electrolyte = parser.Results.electrolyte;
+    electrolyte = string(parser.Results.electrolyte);
     
     %% Errors
-    if type == "alkaline"
-        if electrolyte ~= "KOH"||electrolyte ~= "NaOH"
+    if strcmp(type,"alkaline")
+        if ~strcmp(electrolyte,"KOH")&&~strcmp(electrolyte,"NaOH")
             error('Only KOH and NaOH defined as alkaline electrolytes')
         end
-    elseif type ~= "pem"
+    elseif ~strcmp(type,"pem")
         error('Only PEM and alkaline electrolysis defined for Nernst equation.')
     end
     

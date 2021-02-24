@@ -60,6 +60,8 @@ ylabel('Difference in voltage [V]')
 
 perT = linspace(1.5,3.5,50);
 T = 1./perT.*1e3;
+T = T(T<474);
+perT = 1./T*1e-3;
 mKOH = 2:2:18;
 mNaOH = 2:2:24;
 
@@ -67,7 +69,7 @@ mNaOH = 2:2:24;
 
 [psvNaOH,aH2ONaOH] = electrolyte_parameters(T,mNaOH','NaOH','model',1);
 
-psv = water_vapor_pressure(T,'model',3);
+psv = water_vapor_pressure(T,'model',2);
 
 
 figure
@@ -105,7 +107,7 @@ T = linspace(273.15,373.15,50)';
 psv = NaN(length(T),3);
 figure
 hold on;
-for i = 1:3
+for i = 1:2
     psv(:,i) = water_vapor_pressure(T,'mode',i);
     plot(T,psv(:,i))
 end

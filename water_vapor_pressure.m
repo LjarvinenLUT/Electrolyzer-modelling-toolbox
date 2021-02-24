@@ -4,7 +4,7 @@
 
 function psv = water_vapor_pressure(T,varargin)
 
-defaultModel = 1; % Default experimental parameters
+defaultModel = 2; % Default experimental parameters
 
 parser = inputParser;
 addRequired(parser,'T',@(x) isnumeric(x));
@@ -50,28 +50,27 @@ switch model
             % Equation
             psv(j) = 10^(A(i)-B(i)/(T(j)+C(i)));
         end
+       
+%     case 2 % Bridgeman-Aldrich equation, from  Balej, J., "Water Vapour Partial Pressures and Water Activities in Potassium and Sodium Hydroxide Solutions Over Wide Concentration and Temperature Ranges", J. Hydrogen Energy, Vol. 10, No. 4. pp. 233--243, 1985
+%         % Does not work!!! Way too complicated... Adds just unnecessary complication
+%         % Parameters
+%         t = T - 273.15; % Temperature in degC
+%         A = 1.06994980;
+%         Y1 = 4.16385282*(t-187)./(t+237.098157);
+%         B = 1.0137921;
+%         C = 5.83531e-4;
+%         Z = -1.87 + 3.74*(1.152894 - 0.745794*acosh(654.2906./(t+266.778)));
+%         alpha = Z.^2.*(187^2 - Z.^2)./(0.30231574.*(1 + 3.377565e-3.*t));
+%         Y2 = 3^1.5/(2*1.87^3).*(0.01*(t-187-alpha)).*(187^2 - (0.01*(t-187-alpha)).^2);
+%         
+%         % Equation
+%         
+%         psv = 10.^(A + Y1 - B.*(1 + C.*t).*Y2);
         
-    case 2 % Bridgeman-Aldrich equation, from  Balej, J., "Water Vapour Partial Pressures and Water Activities in Potassium and Sodium Hydroxide Solutions Over Wide Concentration and Temperature Ranges", J. Hydrogen Energy, Vol. 10, No. 4. pp. 233--243, 1985
-        % Does not work!!!
-        % Way too complicated... Adds just unnecessary complication
-        % Parameters
-        t = T - 273.15; % Temperature in degC
-        A = 1.06994980;
-        Y1 = 4.16385282*(t-187)./(t+237.098157);
-        B = 1.0137921;
-        C = 5.83531e-4;
-        Z = -1.87 + 3.74*(1.152894 - 0.745794*acosh(654.2906./(t+266.778)));
-        alpha = Z.^2.*(187^2 - Z.^2)./(0.30231574.*(1 + 3.377565e-3.*t));
-        Y2 = 3^1.5/(2*1.87^3).*(0.01*(t-187-alpha)).*(187^2 - (0.01*(t-187-alpha)).^2);
+    case 2 % Experimental fit: Balej, J., "Water Vapour Partial Pressures and Water Activities in Potassium and Sodium Hydroxide Solutions Over Wide Concentration and Temperature Ranges", J. Hydrogen Energy, Vol. 10, No. 4. pp. 233--243, 1985
         
-        % Equation
-        
-        psv = 10.^(A + Y1 - B.*(1 + C.*t).*Y2);
-        
-    case 3 % Experimental fit: Balej, J., "Water Vapour Partial Pressures and Water Activities in Potassium and Sodium Hydroxide Solutions Over Wide Concentration and Temperature Ranges", J. Hydrogen Energy, Vol. 10, No. 4. pp. 233--243, 1985
-        
-        psv = 10.^(35.4462 - 3343.93./T - 10.9.*log10(T) + 0.0041645.*T);
-        
+        psv = 10.^(35.4462 - 3343.93./T - 10.9.*log10(T) + 4.1645e-3.*T);
+
 end
 
 end

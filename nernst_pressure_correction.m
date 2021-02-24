@@ -22,15 +22,15 @@ function Ucor = nernst_pressure_correction(T,p1,p2,varargin)
     
     parse(parser,T,p1,p2,varargin{:});
     
-    type = lower(parser.Results.type);
-    electrolyte = parser.Results.electrolyte;
+    type = string(lower(parser.Results.type));
+    electrolyte = string(parser.Results.electrolyte);
     
     %% Errors
-    if type == "alkaline"
-        if electrolyte ~= "KOH"||electrolyte ~= "NaOH"
+    if strcmp(type,"alkaline")
+        if ~strcmp(electrolyte,"KOH")&&~strcmp(electrolyte,"NaOH")
             error('Only KOH and NaOH defined as alkaline electrolytes')
         end
-    elseif type ~= "pem"
+    elseif ~strcmp(type,"pem")
         error('Only PEM and alkaline electrolysis defined for Nernst equation.')
     end
     %%
@@ -40,17 +40,17 @@ function Ucor = nernst_pressure_correction(T,p1,p2,varargin)
 
     switch type
         case "pem"
-            psv = antoine(T); % Vapor pressure from Antoine equation
+            psv = water_vapor_pressure(T); % Vapor pressure from Antoine equation
             
             pH2 = p1 - psv; % bar, Hydrogen partial pressure
             pO2 = p2 - psv; % bar, Oxygen partial pressure
             
-            if pH2 < 0 || pO2 < 0
+            if any(pH2 < 0 | pO2 < 0)
                 error('Pressure too low! Anode or cathode pressure lower than saturated vapor pressure.')
             end
             
             % Nernst equation pressure correction
-            Ucor = (R.*T)/(n_e*F)*log(pH2.*pO2.^(1/2));
+            Ucor = (R.*T)/(n_e*F).*log(pH2.*pO2.^(1/2));
             
         case "alkaline"
             p = p1; % bar, System pressure
@@ -60,11 +60,11 @@ function Ucor = nernst_pressure_correction(T,p1,p2,varargin)
             
             ps = p - psvEl; % bar, Partial pressure of hydrogen and oxygen
             
-            if ps < 0
+            if any(ps < 0)
                 error('Pressure too low! System pressure lower than saturated vapor pressure of the electrolyte solution.')
             end
             
             % Nernst equation pressure correction
-            Ucor = (R.*T)/(n_e*F)*log(ps.^(3/2)./aH2OEl);
+            Ucor = (R.*T)/(n_e*F).*log(ps.^(3/2)./aH2OEl);
     end
 end
