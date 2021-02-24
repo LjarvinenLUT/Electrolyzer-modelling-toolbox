@@ -1,13 +1,13 @@
 %% Function for setting figure parameters
 
-function [fileOutputPath,FigSizeWidth,FigSizeHeight] = setFigureParameters()
+function [fileOutputPath,FigSizeWidth,FigSizeHeight] = setFigureParameters
 
 if exist('FigureParameters.mat','file') == 2
     load('FigureParameters.mat');
 else
     currentFolder = pwd;
     fileFormat = '.pdf';
-    fileOutputPath = [pwd '\Figures\'];
+    fileOutputPath = [currentFolder '\Figures\'];
     
     % Figure parameters
     FontSize = 8;
@@ -20,8 +20,11 @@ else
     FigSizeWidth = 9;%8.5 %IEEE 3.5in ~ 8.89cm Elsevier 9cm
     %https://journals.ieeeauthorcenter.ieee.org/create-your-ieee-journal-article/create-graphics-for-your-article/accepted-graphics-file-formats/
     FigSizeHeight = 7;     % One plot
+    % Calculate figure position on screen based on screen size
+    set(0, 'units', 'centimeter');
+    screenSize = get(0, 'screensize');
     FigPosLeft = 0;
-    FigPosBottom = 19;
+    FigPosBottom = screenSize(4) - (FigSizeHeight + 3); % needs some extra space because of window title bar
     GridLineStyle = ':';
     
     % LUT Colors
