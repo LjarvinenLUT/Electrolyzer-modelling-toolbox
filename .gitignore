@@ -1,3 +1,5 @@
 *.asv
 *.csv
 *.xls
+*.pdf
+FigureParameters.mat

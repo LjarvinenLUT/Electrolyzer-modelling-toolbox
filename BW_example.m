@@ -1,9 +1,9 @@
 clear;
 close all;
+addpath("Utils");
 
 % Script for plotting different models for activity overpotential
-[fileOutputPath,FigSizeWidth,FigSizeHeight] = setFigureParameters;
-
+[fileOutputPath,FigSizeWidth,FigSizeHeight] = setFigureParameters();
 %% Global parameters
 N_A = 6.02214076e23; % 1/mol, Avogadro constant
 k_B = 1.380649e-23; % J/K, Boltzmann constant
@@ -96,12 +96,15 @@ fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough 
 fig.PaperPositionMode = 'auto';
 print(fullFileOutput,'-dpdf','-r0');
 
+<<<<<<< .merge_file_a12580
 
 fig = figure('Name','Logarithmic Buttler-Volmer vs. Tafel for alpha=0.7');
+=======
+f = figure('Name','Logarithmic Buttler-Volmer vs. Tafel for alpha=0.7');
+>>>>>>> .merge_file_a09848
 hold on;
 p1 = plot(log(abs(jperj0(5,:))),UactperfT);
 p2 = plot(log(abs(jperj0Tafel1(5,:))),UactperfT);
-
 p3 = plot(log(abs(jperj0Tafel2(5,:))),UactperfT);
 hold off;
 yline(0)
