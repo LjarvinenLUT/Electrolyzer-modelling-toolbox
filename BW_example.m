@@ -77,14 +77,14 @@ fig = figure('Name','Logarithmic Buttler-Volmer vs. Tafel for alpha=1/2');
 hold on;
 p1 = plot(log(abs(jperj0(3,:))),UactperfT);
 p2 = plot(log(abs(jperj0Tafel1(3,:))),UactperfT);
-
 p3 = plot(log(abs(jperj0Tafel2(3,:))),UactperfT);
 hold off;
 yline(0)
 ylabel('$U_{\mathrm{act}}/fT$')
 xline(0)
 xlabel('$\ln(|j/j_0|)$')
-% xlim([-60 60])
+xlim([-5 5])
+ylim([-10 10])
 legendflex([p1 p2 p3],{'Buttler-Volmer','Tafel equation for positive current','Tafel equation for negative current'},'xscale', 0.4,'anchor',{'se','se'},'buffer',[-10 10])
 
 fullFileOutput = fileOutputPath+"BV_vs_Tafel_log.pdf";
@@ -107,10 +107,11 @@ yline(0)
 ylabel('$U_{\mathrm{act}}/fT$')
 xline(0)
 xlabel('$\ln(|j/j_0|)$')
-% xlim([-60 60])
+xlim([-5 5])
+ylim([-10 10])
 legendflex([p1 p2 p3],{'Buttler-Volmer','Tafel equation for positive current','Tafel equation for negative current'},'xscale', 0.4,'anchor',{'se','se'},'buffer',[-10 10])
 
-fullFileOutput = fileOutputPath+"BV_vs_Tafel_log_alpha_0.7.pdf";
+fullFileOutput = fileOutputPath+"BV_vs_Tafel_log_alpha_0_7.pdf";
 % saveas(gcf,fullFileOutput);
 % export_fig(gcf, fullFileOutput);
 fig.PaperUnits = 'centimeters';
@@ -154,35 +155,74 @@ print(fullFileOutput,'-dpdf','-r0');
 %% asinh approximation for combined electrode
 
 i = 3;
-alphac = 1
-alphaa = 1
-j0c = 1e-3
-j0a = j0c*2
-j = jperj0(i,:)*j0c;
-jperj0c = j/j0c;
-jperj0a = j/j0a;
+alphac = 0.1:0.1:0.9;
+alphaa = alphac;
+j0c = linspace(0.1,10,50)*1e-3;
+j0a = j0c;
+j = (jperj0(i,:))'*1e-3;
+jperj0c = j./j0c;
+jperj0a = j./j0a;
 
-UactperfTc = 1/alphac*asinh(jperj0c/2);
-UactperfTa = 1/alphaa*asinh(jperj0a/2);
+filename = 'alpha_j0_simulation_results.mat';
+if exist(filename,'file') == 2
+    load(filename)
+else
 
-UactperfTtot = UactperfTc + UactperfTa;
+    fitfun = fittype(@(fitalpha,fitj0,x) 1/fitalpha*asinh(x/fitj0));
+    
+    for i = 1:length(alphac)
+        for k = 1:length(alphaa)
+            for t = 1:length(j0c)
+                for s = 1:length(j0a)
+                    
+                    UactperfTc = 1/alphac(i)*asinh(jperj0c(:,t)/2);
+                    UactperfTa = 1/alphaa(k)*asinh(jperj0a(:,s)/2);
+                    
+                    UactperfTtot = UactperfTc + UactperfTa;
+                    
+                    % Fit combined sinh function
+                    [fitted_curve,gof] = fit(j,UactperfTtot,fitfun,'StartPoint',[min(alphac(i),alphaa(k)) min(j0c(t),j0a(s))]);
+                    
+                    coeffvals = coeffvalues(fitted_curve);
+                    
+                    alphatot(i,k,t,s) = coeffvals(1);
+                    j0tot(i,k,t,s) = coeffvals(2);
+                    
+                end
+            end
+        end
+    end
+    
+    save(filename,'alphatot','j0tot')
+end
 
-% Fit combined sinh function
-fitfun = fittype(@(fitalpha,fitj0,x) 1/fitalpha*asinh(x/fitj0));
-[fitted_curve,gof] = fit(j',UactperfTtot',fitfun,'StartPoint',[min(alphac,alphaa) min(j0c,j0a)]);
+%% alphatot as a function of alpha1 and alpha2
+figure('Name','alpha as a function of alpha_a and alpha_c, j_0a and j_0c = 4.9e-3')
+surf(alphac,alphaa,alphatot(:,:,25,25))
 
-coeffvals = coeffvalues(fitted_curve);
+figure('Name','alpha as a function of alpha_a and alpha_c, j_0a and j_0c = 0.1e-3')
+surf(alphac,alphaa,alphatot(:,:,1,1))
 
-alphatot = coeffvals(1)
-j0tot = coeffvals(2)
+alpha_funkalpha = (alphac.*alphaa')./(alphac + alphaa');
 
-figure('Name','combined sinh approximation')
-plot(j,UactperfTc,j,UactperfTa,j,UactperfTtot,j,fitted_curve(j),'--')
-yline(0)
-ylabel('$U_{\mathrm{act}}/fT$')
-xline(0)
-xlabel('$j$')
-xlim([0 max(j)])
+figure('Name','alpha1*alpha2/(alpha1 + alpha2)')
+surf(alphac,alphaa,alpha_funkalpha)
+
+%% alphatot as a function of j01 and j02
+figure('Name','alpha as a function of j_0a and j_0c, alpha_a and alpha_c = 1/2')
+surf(j0c,j0a,(permute(alphatot(5,5,:,:),[3 4 1 2])/alpha_funkalpha(5,5)))
+
+figure('Name','alpha as a function of j_0a and j_0c, alpha_a and alpha_c = 0.9')
+surf(j0c,j0a,(permute(alphatot(9,1,:,:),[3 4 1 2])/alpha_funkalpha(9,1)))
+
+%% j0tot as a function of alpha1 and alpha2
+figure('Name','j_0 as a function of alpha_a and alpha_c, j_0a and j_0c = 4.9e-3')
+surf(alphac,alphaa,j0tot(:,:,25,25))
+
+%% j0tot as a function of j01 and j02
+figure('Name','j_0 as a function of j_0a and j_0c, alpha_a and alpha_c = 1/2')
+surf(j0c,j0a,permute(j0tot(5,5,:,:),[3 4 1 2]))
+
 
 %% Three approximations compared
 
