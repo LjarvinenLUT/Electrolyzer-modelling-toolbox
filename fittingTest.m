@@ -15,7 +15,7 @@ f = R/(n_e*F);
 
 %%
 
-i = 1;
+i = 3;
 
 switch i
     case 1 % fit both activity and ohmic
@@ -65,6 +65,9 @@ switch i
         hold on;
         plot(x,z)
         plot(x,Uforfit(j0fit,afit,rfit,T,x))
+        xlabel("j (A)")
+        ylabel("U (V)")
+        legend("Data", "Fit", "Location", "Best")
         hold off;
         
     case 2 % fit activity only
@@ -102,6 +105,9 @@ switch i
         hold on;
         plot(x,y)
         plot(x,Uforfit(j0fit,y,x))
+        xlabel("j (A)")
+        ylabel("U (V)")
+        legend("Data", "Fit", "Location", "Best")
         hold off;
         
         
@@ -111,13 +117,12 @@ switch i
         
         Uohm = @(r,j) r.*j;
         
-        
-        Uforfit = @(r,x) Uohm(r,x);
+        Uforfit = @(r,current) Uohm(r,current);
         
         Ufitfun = fittype(Uforfit,...
-            'dependent','y',...
+            'dependent','U',...
             'coefficients','r',...
-            'independent','x');
+            'independent','current'); % i and j are not accepted for some reason
         
         %% Creating test data
         
@@ -125,14 +130,14 @@ switch i
         U1 = ((0:0.01:10)*(f*y))'; % Uact/(f*T) = 0...10
         alpha = 0.5;
         j0 = 0.0001;
-        x = j0*(exp(alpha/(f*y).*U1)-exp((alpha-1)/(f*y).*U1));
+        current = j0*(exp(alpha/(f*y).*U1)-exp((alpha-1)/(f*y).*U1));
         r = 5;
-        U2 = x*r;
-        y = U2;
+        U2 = current*r;
+        U = U2;
         
         %% Fitting
         
-        [fitted_curve,gof] = fit(x,y,Ufitfun);
+        [fitted_curve,gof] = fit(current,U,Ufitfun);
         
         coeffvals = coeffvalues(fitted_curve);
         
@@ -141,8 +146,11 @@ switch i
         %% Plotting
         figure
         hold on;
-        plot(x,y)
-        plot(x,Uforfit(rfit,x))
+        plot(current,U)
+        plot(current,Uforfit(rfit,current))
+        xlabel("j (A)")
+        ylabel("U (V)")
+        legend("Data", "Fit", "Location", "Best")
         hold off;
         
 end
