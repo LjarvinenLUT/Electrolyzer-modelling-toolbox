@@ -3,11 +3,9 @@
 
 function Uact = activation(varargin)
     
-    defaultModel = 1;
+    defaultModel = 2;
 
     parser = inputParser;
-%     addRequired(parser,'T',@(x) isnumeric(x));
-%     addRequired(parser,'j',@(x) isnumeric(x));
     addParameter(parser,'model',defaultModel,@(x) isnumeric(x)&&isscalar(x))
     
     parse(parser,varargin{:});
