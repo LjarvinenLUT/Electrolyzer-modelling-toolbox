@@ -67,9 +67,21 @@ switch model
         % Electrolyte vapor pressure
         psvEl = psv.^b.*10.^(a);
 
-    case 2 % Fitted model, Ursúa, A. and Sanchis, P., "Static–dynamic modelling of the electrical behaviour ofa commercial advanced alkaline water electrolyser", Int. J. Hydrogen Energy, 37(24):18598–18614, 2012
         
-        % Exactly the same as Balej, just with logarithm base changed to
-        % natural instead of 10-base
+    case 2 % Ideal solution approximation
+        
+        MH2O = (2*1.008 + 16)*1e-3; % kg/mol, molar mass of water
+        
+        molfracSolute = m*MH2O; % Molar fraction of solute
+        molfracH2O = 1-molfracSolute; % Molar fraction of H2O
+
+        % Pure water vapor pressure
+        psv = water_vapor_pressure(T,'model',2);
+        
+        % Electrolyte vapor pressure
+        psvEl = psv*molfracH2O;
+        
+        % Water activity
+        aH2OEl = psvEl./psv;
         
 end
