@@ -1,27 +1,73 @@
 % Ohmic overpotetial
-% Inputs:   delta - Alkaline: Electrolyte layer thickness, PEM: Membrane thickness
-%           type - Electrolysis type, "PEM" or "alkaline"
+% Inputs:   type - Electrolysis type, "PEM" or "alkaline"
 %           conductivityModel - Used conductivity model 1-3
 %           resistanceModel - Used resistance model
+%           delta - Alkaline: Electrolyte layer thickness, PEM: Membrane thickness
 
-function Uohm = ohmic(delta, type, conductivityModel, resistanceModel) 
+function Uohm = ohmic(varargin)
+
+    defaultConductivityModel = 1;
+    defaultResistanceModel = 1;
+    defaultType = 'Pem';
 
     parser = inputParser;
-    addRequired(parser,'r',@(x) isnumeric(x));
-    addRequired(parser,'j',@(x) isnumeric(x));
-    addRequired(parser,'d',@(x) isnumeric(x));
-    addRequired(parser,'type',@(x) ischar(x)||isstring(x));
-    addRequired(parser,'conductivityModel',@(x) isnumeric(x)&&isscalar(x));
-    addRequired(parser,'resistanceModel',@(x) ischar(x)||isstring(x));
+    addParameter(parser,'type',defaultType,@(x) ischar(x)||isstring(x));
+    addParameter(parser,'conductivityModel',defaultConductivityModel,@(x) isnumeric(x)&&isscalar(x));
+    addParameter(parser,'resistanceModel',defaultResistanceModel,@(x) isnumeric(x)&&isscalar(x));
+    addParameter(parser,'delta',@(x) isnumeric(x));
+    addParameter(parser,'lambda',@(x) isnumeric(x));
+    addParameter(parser,'m',@(x) isnumeric(x));
+    addParameter(parser,'w',@(x) isnumeric(x));
+    addParameter(parser,'Temperature',@(x) isnumeric(x));
     
-    parse(parser,r, j, d, type, conductivityModel, resistanceModel);
+    parse(parser, varargin{:});
+    
+    type = string(lower(parser.Results.type));
+    conductivityModel = parser.Results.conductivityModel;
+    resistanceModel = parser.Results.resistanceModel;
+    delta = parser.Results.delta;
+    lambda = parser.Results.lambda;
+    m = parser.Results.m;
+    w = parser.Results.w;
+    T = parser.Results.Temperature;
+    
+    fprintf('Ohmic overpotential calculation properties:\n')
+    fprintf('Electrolyzer: %s\n', type)
+    fprintf('Conductivity model: %d\n', conductivityModel)
+    fprintf('Resistance model: %d\n', resistanceModel)
     
     %% Error checking
-    if strcmpi(type,"Alkaline") && conductivityModel == 1
-        error('Conductivity model 1 is only for PEM electrolysers')
-    elseif strcmpi(type,"PEM") && conductivityModel ~= 1
-        error('Use conduction model 1 for PEM electrolyser')    
+    
+    switch resistanceModel
+        case 1
+            
+        case 2
+            if strcmpi(type,"PEM") && conductivityModel == 1
+                    if ~isnumeric(lambda)
+                        error('lambda has to be set for PEM conductivity model 1')
+                    elseif  lambda <= 1
+                        error('Lambda has to be greater than 1 when using conductivity model 1')
+                    end
+            end
+            if strcmpi(type,"Alkaline")
+                if conductivityModel == 1
+                    if ~isnumeric(m)
+                        error('m has to be set for alkaline conductivity model 1')
+                    end
+                elseif conductivityModel == 2
+                    if ~isnumeric(w)
+                        error('w has to be set for alkaline conductivity model 2')
+                    end
+                end
+            end
+            if  ~isnumeric(delta)
+                error('Delta has to be set when using resistance model 2')
+            end
+            if ~isnumeric(T)
+                error('Temperature has to be set when using resistance model 2')
+            end
     end
+
     
     %%
     
@@ -31,24 +77,24 @@ function Uohm = ohmic(delta, type, conductivityModel, resistanceModel)
     %   w - mass concentration wt%
     % Output
     %   sigma - specific conductivity (S/cm)
-    switch conductivityModel
-        case 1 % (PEM) https://doi.org/10.1149/1.2085971 Springer et al. "Polymer Electrolyte Fuel Cell Model"
-            sigma = (0.005139 * lambda - 0.0326 * exp(1268 * (1/303 - 1/T)));
-        case 2 % (Alkaline) Gilliam et al. "A review of specific conductivities of potassium hydroxide solutions for various concentrations and temperatures", 2007
-            A = -2.041;  B = -0.0028;  C = 0.005332;
-            D = 207.2;  E = 0.001043; F = -0.0000003;
-            sigma = A*m + B*m^2 + C*m*T + D*(m/T) + E*m^3 + F*m^2*T^2;
-        case 3 % (Alkaline, KOH) See et al. "Temperature and Concentration Dependence of the Specific Conductivity of Concentrated Solutions of Potassium Hydroxide"
-            K1 = 0.279844803; K2 = -0.009241294; K3 = -0.000149660371;
-            K4 = -0.000905209551; K5 = 0.000114933252; K6 = 0.1765;
-            K7 = 0.0696648518; K8 = -28.9815658;
-            sigma = K1*(100*w) + K2*T + K3 * T^2 + K4 * (T*100*w) ...
-                + K5*(T^2*(100*w)^K6) + K7*(T/(100*w)) + K8*((100*w)/T);
-%         case 3 % (Alkaline) See et al. "Temperature and Concentration Dependence of the Specific Conductivity of Concentrated Solutions of Potassium Hydroxide"
-%             % Todo: Figure out how this was formed
-%             sigma = -2.96396 - 0.02371*T + 0.12269*w + (5.7*e - 5)*T^2 ...
-%             + 0.00173*w^2 + (4.7*e - 4)*w - (3.6*e - 8)*T^3 + (2.7*e - 6)*w^3 ...
-%             - (8.9*e - 6)*T*w^2 + (2.4*e - 7)*T^2*w;
+    if strcmpi(type,"Alkaline") && resistanceModel ~= 1
+        switch conductivityModel
+            case 1 % (Alkaline) Gilliam et al. "A review of specific conductivities of potassium hydroxide solutions for various concentrations and temperatures", 2007
+                A = -2.041;  B = -0.0028;  C = 0.005332;
+                D = 207.2;  E = 0.001043; F = -0.0000003;
+                sigma = A*m + B*m^2 + C*m*T + D*(m/T) + E*m^3 + F*m^2*T^2;
+            case 2 % (Alkaline, KOH) See et al. "Temperature and Concentration Dependence of the Specific Conductivity of Concentrated Solutions of Potassium Hydroxide"
+                K1 = 0.279844803; K2 = -0.009241294; K3 = -0.000149660371;
+                K4 = -0.000905209551; K5 = 0.000114933252; K6 = 0.1765;
+                K7 = 0.0696648518; K8 = -28.9815658;
+                sigma = K1*(100*w) + K2*T + K3 * T^2 + K4 * (T*100*w) ...
+                    + K5*(T^2*(100*w)^K6) + K7*(T/(100*w)) + K8*((100*w)/T);
+        end
+    elseif strcmpi(type,"PEM") && resistanceModel ~= 1
+        switch conductivityModel
+            case 1 % (PEM) https://doi.org/10.1149/1.2085971 Springer et al. "Polymer Electrolyte Fuel Cell Model"
+                sigma = 0.005139 * lambda - 0.00326 * exp(1268 * (1/303 - 1/T));
+        end
     end
     
     switch resistanceModel
@@ -56,8 +102,6 @@ function Uohm = ohmic(delta, type, conductivityModel, resistanceModel)
             Uohm = @(r, j) r.*j;
         case 2
             Ri = delta/sigma;
-            Uohm = @(r, j) (r + Ri).*j;
-        case 3     
-            %Uohm = @(r, j) (Rp_a + Re_a + Rin_a).*j*A + (Rp_c + Re_c + Rin_c).*j*A + d_m.*(j)./(sigma);
+            Uohm = @(r, j) (r + Ri).*j;  
     end
 end
