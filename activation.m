@@ -22,7 +22,7 @@ function Uact = activation(varargin)
         case 2 % Hyperbolic sine approximation with variable alpha
             Uact = @(j0,a,T,j) 1/a*((R*T)./(n_e*F)).*asinh(j./(2*j0));
         case 3 % Tafel equation (valid when j/j0 > 4 https://doi.org/10.1016/j.jpowsour.2005.03.174)
-            Uact = @(j0,a,T,j) ((R*T)./(n_e*a*F)).*log(j./j0);
+            Uact = @(j0,a,T,j) 1/a*((R*T)./(n_e*F)).*log(j./j0);
     end
 
 end

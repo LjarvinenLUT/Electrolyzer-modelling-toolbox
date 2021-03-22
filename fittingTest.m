@@ -15,18 +15,18 @@ f = R/(n_e*F);
 
 %%
 
-for i = 1:3
+for i = 1
     switch i
         case 1 % fit both activity and ohmic
             
             Uact = activation('model',1);
             
-            Uohm = @(r,j) r.*j;
+            Uohm = ohmic();
             
             Uforfit = @(j0,a,r,T,x) Uact(j0,a,T,x) + Uohm(r,x);
             
             fo = fitoptions('Method','NonlinearLeastSquares',...
-                'Lower',[0,0,0],...
+                'Lower',[1e-10,0,0],...
                 'Upper',[1,1,Inf],...
                 'StartPoint',[0.001 0.5 1]);
             
@@ -40,7 +40,7 @@ for i = 1:3
             %% Creating test data
             
             Tset = 289;
-            U1 = ((0:0.01:10)*(f*Tset))'; % Uact/(f*T) = 0...10
+            U1 = ((3:0.01:10)*(f*Tset))'; % Uact/(f*T) = 0...10
             T = ones(size(U1))*Tset + rand(size(U1)); % T
             alpha = 0.4;
             j0 = 0.0001;
