@@ -34,7 +34,7 @@ function Ucor = nernst_pressure_correction(T,p1,p2,varargin)
         error('Only PEM and alkaline electrolysis defined for Nernst equation.')
     end
     %%
-    global F n_e R;
+    [F,R,n_e] = get_constants;
 
     %%
 

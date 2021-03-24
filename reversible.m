@@ -4,7 +4,7 @@
 
 function U_0 = reversible(T,model)
 
-global F n_e;
+[F,~,n_e] = get_constants;
     
     switch model
         case 1 % Le Roy et al. "The thermodynamics of aqueous water electrolysis." Journal of the Electrochemical Society, 127:1954–1962, 1980. http://dx.doi.org/10.1149/1.2130044
