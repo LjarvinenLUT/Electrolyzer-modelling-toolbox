@@ -3,19 +3,13 @@ close all;
 clc;
 
 %% Global parameters
-N_A = 6.02214076e23; % 1/mol, Avogadro constant
-k_B = 1.380649e-23; % J/K, Boltzmann constant
-Q_e = 1.602176634e-19; % C, Elemental charge
-global F n_e R
-F = Q_e*N_A; % C/mol, Faraday constant
-R = k_B*N_A; % J/K/mol, Universal gas constant
-n_e = 2; % Number of electrons transferred in one reaction
+[F,R,n_e] = get_constants();
 
 f = R/(n_e*F);
 
 %%
 
-for i = 1
+for i = 4
     switch i
         case 1 % fit both activity and ohmic
             
@@ -158,7 +152,55 @@ for i = 1
             ylabel("U (V)")
             legend("Data", "Fit", "Location", "Best")
             hold off;
+           
             
+        case 4
+            %% Creating function handle for fit
+            
+            T = 273.15+25; % Temperature
+            type = "PEM"; % Cell type
+            p1 = 50; % Hydrogen pressure
+            p2 = 2; % Oxygen pressure
+            Uocv = nernst(T,p1,p2,'type',type);
+            Uact = activation(T);
+            Uohm = ohmic();
+            
+            Uforfit = @(j0,a,r,Uerr,Current) Uocv + Uact(j0,a,Current) + Uohm(r,Current) + Uerr;
+            
+            %% Creating test data
+            
+            U1 = ((3:0.01:10)*(f*T))'; % Uact/(f*T) = 0...10, Activation overpotential
+            Tset = ones(size(U1))*T + rand(size(U1)); % T vector
+            alpha = 0.4;
+            j0 = 0.0001;
+            x = j0*(exp(alpha./(f*Tset).*U1)-exp((alpha-1)./(f*Tset).*U1)); % "Measured" current based on Buttler-Volmer equation
+            r = 5;
+            U2 = r*x; % Ohmic overpotential
+            U3 = ones(size(U1))*0.2; % Constant potential error
+            U0 = ones(size(U1))*Uocv; % Open circuit voltage
+            z = U0+U1+U2+U3; % "Measured" voltage
+            
+            %% Fit
+            
+            fit_param = fit_UI(Uforfit,z,x);
+            
+            j0fit = fit_param(1);
+            afit = fit_param(2);
+            rfit = fit_param(3);
+            Uerrfit = fit_param(4);
+            
+            Ufit = Uforfit(j0fit,afit,rfit,Uerrfit,x);
+            
+            %% Plotting
+            
+            figure
+            hold on;
+            plot(x,z)
+            plot(x,Ufit)
+            xlabel("j (A)")
+            ylabel("U (V)")
+            legend("Data", "Fit", "Location", "Best")
+            hold off;
     end
 end
 

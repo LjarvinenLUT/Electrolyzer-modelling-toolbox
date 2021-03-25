@@ -47,12 +47,12 @@ classdef electrolyzer_model < handle
         
         % Function for setting overpotential function handles
         function set_overpotentials(obj,Uocv,Uact,Uohm)
-            obj.overpotential_function = @(j0,a,r,j) Uocv + Uact(j0,a,obj.T,j) + Uohm(r,j);
+            obj.overpotential_function = @(j0,a,r,Uerr,j) Uocv + Uact(j0,a,obj.T,j) + Uohm(r,j) + Uerr;
         end
         
         % Function for fitting UI curve
         function fit_UI(obj,U,I)
-            
+            obj.fit_parameters = fit_UI(obj.overpotential_function,U,I);
         end
         
         % Function for plotting UI curve

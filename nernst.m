@@ -40,6 +40,6 @@ function Uocv = nernst(T,p1,p2,varargin)
     
     %% Nernst equation
     
-    Uocv = reversible(T,model) + nerns_pressure_correction(T,p1,p2,type,electrolyte);
+    Uocv = reversible(T,model) + nernst_pressure_correction(T,p1,p2,'type',type,'electrolyte',electrolyte);
     
 end
