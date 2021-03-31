@@ -4,7 +4,7 @@
 %               p_sat - Vapor saturation pressure
 %               T - Temperature
 
-function Ucon = concentration(varargin)
+function Ucon = concentration(T,varargin)
     
     defaultModel = 2;
 
@@ -13,10 +13,9 @@ function Ucon = concentration(varargin)
     addOptional(parser,'p_O2',@(x) isnumeric(x))
     addParameter(parser,'model',defaultModel,@(x) isnumeric(x)&&isscalar(x))
     
-    parse(parser,varargin{:});
+    parse(parser,T,varargin{:});
     
     p_O2 = parser.Results.p_O2;
-    T = parser.Results.T;
     model = parser.Results.model;
     
     %% Global parameters
