@@ -164,21 +164,25 @@ for i = 4
             Uocv = nernst(T,p1,p2,'type',type);
             Uact = activation(T);
             Uohm = ohmic();
+            Ucon = concentration(T);
             
-            Uforfit = @(j0,a,r,Uerr,Current) Uocv + Uact(j0,a,Current) + Uohm(r,Current) + Uerr;
+            Uforfit = @(j0,a,r,jL,Uerr,Current) Uocv + Uact(j0,a,Current) + Uohm(r,Current) + Ucon(jL,Current) + Uerr;
             
             %% Creating test data
             
-            U1 = ((3:0.01:10)*(f*T))'; % Uact/(f*T) = 0...10, Activation overpotential
-            Tset = ones(size(U1))*T + rand(size(U1)); % T vector
+            U1 = ((0.01:0.01:32)*(f*T))'; % Uact/(f*T) = 0...10, Activation overpotential
+            Tset = ones(size(U1))*T; % T vector
             alpha = 0.4;
-            j0 = 0.0001;
+            j0 = 1.3e-6;
             x = j0*(exp(alpha./(f*Tset).*U1)-exp((alpha-1)./(f*Tset).*U1)); % "Measured" current based on Buttler-Volmer equation
-            r = 5;
+            r = 0.3;
             U2 = r*x; % Ohmic overpotential
-            U3 = ones(size(U1))*0.2; % Constant potential error
+            jL = 1.5;
+            U3 = real(Ucon(jL,x));
+            Uerr = 0.1;
+            U4 = ones(size(U1))*Uerr; % Constant potential error
             U0 = ones(size(U1))*Uocv; % Open circuit voltage
-            z = U0+U1+U2+U3; % "Measured" voltage
+            z = U0+U1+U2+U3+U4; % "Measured" voltage
             
             %% Fit
             
@@ -187,9 +191,10 @@ for i = 4
             j0fit = fit_param(1);
             afit = fit_param(2);
             rfit = fit_param(3);
-            Uerrfit = fit_param(4);
+            jLfit = fit_param(4);
+            Uerrfit = fit_param(5);
             
-            Ufit = Uforfit(j0fit,afit,rfit,Uerrfit,x);
+            Ufit = Uforfit(j0fit,afit,rfit,jLfit,Uerrfit,x);
             
             %% Plotting
             
