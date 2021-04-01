@@ -15,11 +15,11 @@ type = "PEM"; % Cell type
 pH2 = 30; % bar
 pO2 = 2; % bar
 Uocv = nernst(T,pH2,pO2,'type',type);
-Uact = activation(T);
+Uact = activation(T,'model',3);
 Uohm = ohmic();
 Ucon = concentration(T);
 
-Uforfit = @(j0,alpha,r,jL,Uerr,Current) Uocv + Uact(j0,alpha,Current) + Uohm(r,Current) + Ucon(jL,Current) + Uerr;
+Uforfit = @(j0,alpha,r,jL,Current) Uocv + Uact(j0,alpha,Current) + Uohm(r,Current) + Ucon(jL,Current);
 
 %% Creating test data
 
@@ -37,11 +37,11 @@ Uforfit = @(j0,alpha,r,jL,Uerr,Current) Uocv + Uact(j0,alpha,Current) + Uohm(r,C
 %             U0 = ones(size(U1))*Uocv; % Open circuit voltage
 %             z = U0+U1+U2+U3+U4; % "Measured" voltage
 
-alpha = 0.2719; %
-j0 = 1.3533e-6; % A/cm^2, exchange current density
-r = 0.3631; % Ohm, total resistance
-jL = 1.4092; % A/cm^2, limiting current density
-Uerr = 0; % V, constant voltage error
+alpha = 0.3; %
+j0 = 1e-6; % A/cm^2, exchange current density
+r = 0.9; % Ohm, total resistance
+jL = 2; % A/cm^2, limiting current density
+Uerr = 0.1; % V, constant voltage error
 
 Umeas = []; % "Measured" voltage
 jmeas = []; % "Measured" current based on Buttler-Volmer equation
@@ -62,8 +62,9 @@ for ii = 1:length(U1)
 end
 
 % Take samples from the dense data vectors
-N = 600; % Number of evenly taken current samples
-jsamples = linspace(min(jmeas),max(jmeas),N)';
+N = 100; % Number of evenly taken current samples
+% jsamples = linspace(min(jmeas),max(jmeas),N)';
+jsamples = linspace(min(jmeas),0.6,N)'; % Excluding mass transport limitations
 jmeassamp = nan(N,1);
 Umeassamp = nan(N,1);
 for ii = 1:N
@@ -75,7 +76,7 @@ end
 
 
 % Adding p*100% error to measurements
-p = 0;
+p = 0.01;
 jmeassamp = jmeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
 Umeassamp = Umeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
 
@@ -90,20 +91,20 @@ ylabel('U')
 
 %% Fit
 
-fit_param = fit_UI(Uforfit,Umeassamp,jmeassamp);
+tic;
+fit_param = fit_UI(Uforfit,Umeassamp,jmeassamp,'method','ps');
+toc
 
 j0fit = fit_param(1);
 alphafit = fit_param(2);
 rfit = fit_param(3);
 jLfit = fit_param(4);
-Uerrfit = fit_param(5);
 % j0fit = j0;
 % alphafit = alpha;
 % rfit = r;
 % jLfit = jL;
-% Uerrfit = Uerr;
 
-Ufit = Uforfit(j0fit,alphafit,rfit,jLfit,Uerrfit,jmeas);
+Ufit = Uforfit(j0fit,alphafit,rfit,jLfit,jmeas);
 
 MSE = mean((Ufit-Umeas).^2); % Mean squares error
 

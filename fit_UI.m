@@ -1,21 +1,58 @@
 
 
-function fit_param = fit_UI(func_handle,Voltage,Current)
+function fit_param = fit_UI(func_handle,Voltage,Current,varargin)
 
-fo = fitoptions('Method','NonlinearLeastSquares',...
-    'Lower',[1e-10,0,0,max(Current),-Inf],...
-    'Upper',[1,1,Inf,Inf,Inf],...
-    'StartPoint',[0.001 0.5 1 max(Current)+1 0]);
+defaultMethod = 'PS';
 
-fitfun = fittype(func_handle,...
-    'dependent','Voltage',...
-    'coefficients',{'j0','alpha','r','jL','Uerr'},...
-    'independent','Current',...
-    'options',fo);
+parser = inputParser;
+addRequired(parser,'func_handle',@(x) isa(x,'function_handle'))
+addRequired(parser,'Voltage',@(x) isnumeric(x))
+addRequired(parser,'Current',@(x) isnumeric(x))
+addParameter(parser,'method',defaultMethod,@(x) ischar(x)||isstring(x))
 
-[fitted_curve,gof] = fit(Current,Voltage,fitfun);
+parse(parser,func_handle,Voltage,Current,varargin{:});
 
-fit_param = coeffvalues(fitted_curve);
+method = upper(string(parser.Results.method));
+
+switch method
+    
+    case "NLLSE" % Non-Linear Least Squares Error regression approach
+        % weight beginning and end
+        x = (0:length(Current)-1)';
+        weights = exp(x).^(-5/length(x)) + exp(x-x(end)).^(5/length(x));
+        
+        fo = fitoptions('Method','NonlinearLeastSquares',...
+            'Lower',[1e-10,0,0,max(Current)],...
+            'Upper',[1,1,Inf,Inf],...
+            'StartPoint',[1e-6 0.5 1 max(Current)+1],...
+            'Weights',weights,...
+            'MaxIter',1500,...
+            'Display','notify');
+        
+        fitfun = fittype(func_handle,...
+            'dependent','Voltage',...
+            'coefficients',{'j0','alpha','r','jL'},...
+            'independent','Current',...
+            'options',fo);
+        
+        [fitted_curve,gof] = fit(Current,Voltage,fitfun);
+        
+        fit_param = coeffvalues(fitted_curve);
+        
+      
+    case "PS" % Particle swarm approach
+
+        
+        fun = @(x) sum((func_handle(x(1),x(2),x(3),x(4),Current)-Voltage).^2);
+        nvars = 4;
+        lb = [1e-10,0,0,max(Current)];
+        ub = [1,1,40,5];
+        
+        options = optimoptions('particleswarm','SwarmSize',200,'HybridFcn',@fmincon);
+        
+        [fit_param,fval,exitflag,output] = particleswarm(fun,nvars,lb,ub,options);
+        
+end
 
 end
 
