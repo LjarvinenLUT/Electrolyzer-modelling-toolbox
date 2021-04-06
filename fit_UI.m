@@ -24,7 +24,7 @@ switch method
     case "NLLSE" % Non-Linear Least Squares Error regression approach
         % weight beginning and end
         x = (0:length(Current)-1)';
-        weights = exp(x).^(-5/length(x)) + exp(x-x(end)).^(5/length(x));
+        weights = exp(x).^(-7/length(x)) + exp(x-x(end)).^(7/length(x));
 
         
         fo = fitoptions('Method','NonlinearLeastSquares',...
@@ -133,7 +133,7 @@ for i = 1:length(argumentList)
         case 'j0'
             lower(i) = 1e-10;
             upper(i) = 1;
-            start(i) = 0.001;
+            start(i) = 1e-5;
         case 'alpha'
             lower(i) = 0;
             upper(i) = 1;
@@ -144,8 +144,8 @@ for i = 1:length(argumentList)
             start(i) = 1;
         case 'jL'
             lower(i) = max(I);
-            upper(i) = inf;
-            start(i) = max(I)+1;
+            upper(i) = 3;
+            start(i) = max(I)*1.01;
         case 'Uerr'
             lower(i) = -inf;
             upper(i) = inf;
