@@ -16,7 +16,7 @@ method = upper(string(parser.Results.method));
 
 %% Get coefficients and their limits
 coefficients = getFunctionArguments(func_handle);
-[lower, upper, start] = getArgumentLimits(coefficients, Voltage, Current);
+[lb, ub, start] = getArgumentLimits(coefficients, Voltage, Current);
 	
 	
 switch method
@@ -28,8 +28,8 @@ switch method
 
         
         fo = fitoptions('Method','NonlinearLeastSquares',...
-			'Lower',lower,...
-			'Upper',upper,...
+			'Lower',lb,...
+			'Upper',ub,...
 			'StartPoint',start,...
             'Weights',weights,...
             'MaxIter',1500,...
@@ -43,21 +43,25 @@ switch method
         
         [fitted_curve,gof] = fit(Current,Voltage,fitfun);
         
-        fit_param = coeffvalues(fitted_curve);
+        coeff_values = coeffvalues(fitted_curve);
         
       
     case "PS" % Particle swarm approach
-
-        % Not functional
 		
-        fun = @(x) sum((func_handle(x(1),x(2),x(3),x(4),Current)-Voltage).^2);
-        nvars = 4;
-        lb = [1e-10,0,0,max(Current)];
-        ub = [1,1,40,5];
+        nvars = length(coefficients); % Amount of fit parameters
         
+        % Modify function handle to use vector input for fit parameters
+        mod_func_handle = vectorify_func_handle(func_handle,nvars);
+        
+        % Creating objective function for particle swarm: sum of square
+        % residuals
+        fitfun = @(x) sum((mod_func_handle(x,Current)-Voltage).^2);
+        
+        % Particle swarm options
         options = optimoptions('particleswarm','SwarmSize',200,'HybridFcn',@fmincon);
         
-        [fit_param,fval,exitflag,output] = particleswarm(fun,nvars,lb,ub,options);
+        % Minimisation of the objective function using particle swarm
+        [coeff_values,fval,exitflag,output] = particleswarm(fitfun,nvars,lb,ub,options);
         
 end
 
@@ -67,4 +71,108 @@ end
 fit_param = containers.Map(coefficients, coeff_values);
 end
 
+%%
+function [coefficients] = getFunctionArguments(theFcn)
+    %GETFUNCTIONARGUMENTS returns the fucntion arguments from the provided
+    %function as a cell array.
+    
+    % Get the amount of arguments
+    numArguments = nargin( theFcn );
 
+    % Get the string description of the function
+    functionString = func2str( theFcn );
+
+    % Allocate space for the cell-string. One of the arguments is the
+    % independent fit variable which is not needed here
+    coefficients = cell( 1, numArguments - 1);
+
+    % The plan is to move a pair of indices along the "function string" field
+    % looking for the commas. The names we want will be between these indices.
+    %
+    % We know from the form of the string that the first name starts two
+    % characters after the "@"
+    indexOfAtSign = find( functionString == '@', 1, 'first' );
+    ai = indexOfAtSign + 2;
+    % Therefore the first comma must be no sooner that the fourth character
+    bi = 4;
+    % When we start we have found no arguments
+    numFound = 0;
+    % We will keep looping until we have found all the arguments we expect
+    while numFound < numArguments
+        % If we have found the end of a argument name
+        if functionString(bi) == ',' || functionString(bi) == ')'
+            % then increment the "numFound" counter
+            numFound = numFound+1;
+            % ... store the name
+            if ~strcmpi(functionString(ai:(bi-1)), "Current")
+                coefficients{numFound} = functionString(ai:(bi-1));
+            end
+            % and increment the start index
+            ai = bi+1;
+            % Since the end must be beyond the start, we set the end index
+            % beyond the start index.
+            bi = ai+1;
+        else
+            % Otherwise increment the end index
+            bi = bi+1;
+        end
+    end
+end
+
+%%
+function [lower, upper, start] = getArgumentLimits(argumentList, U, I)
+%GETARGUMENTLIMITS gets lower and upper limits and also startpoint of each 
+%fitting parameters
+
+lower = zeros(1, length(argumentList));
+upper = zeros(1, length(argumentList));
+start = zeros(1, length(argumentList));
+
+for i = 1:length(argumentList)
+    switch argumentList{i}
+        case 'j0'
+            lower(i) = 1e-10;
+            upper(i) = 1;
+            start(i) = 0.001;
+        case 'alpha'
+            lower(i) = 0;
+            upper(i) = 1;
+            start(i) = 0.5;
+        case 'r'
+            lower(i) = 0;
+            upper(i) = inf;
+            start(i) = 1;
+        case 'jL'
+            lower(i) = max(I);
+            upper(i) = inf;
+            start(i) = max(I)+1;
+        case 'Uerr'
+            lower(i) = -inf;
+            upper(i) = inf;
+            start(i) = 0;
+        otherwise
+            error('getArgumentLimits.m: No argument limits could be found for ' + argumentList{i});
+    end
+end
+end
+
+
+
+
+%% 
+function mod_func_handle = vectorify_func_handle(func_handle,nvars)
+% VECTORIFY_FUNC_HANDLE returns a function handle with one vector for the 
+% coefficients transformed from input function handle with separate 
+% coefficients 
+       
+    % Creating symbolic variables for the function handle
+    x = num2cell(sym('x', [1 nvars])); % fit parameters
+    syms Current; % Current input
+    
+    % Calculating the symbolic result
+    z = func_handle(x{:},Current);
+    
+    % Creating a modified function handle from the symbolic result
+    mod_func_handle = matlabFunction(z,'Vars',{cell2sym(x),Current});
+    
+end
