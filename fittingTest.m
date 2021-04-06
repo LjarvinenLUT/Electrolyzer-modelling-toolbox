@@ -95,10 +95,11 @@ tic;
 fit_param = fit_UI(Uforfit,Umeassamp,jmeassamp,'method','ps');
 toc
 
-j0fit = fit_param(1);
-alphafit = fit_param(2);
-rfit = fit_param(3);
-jLfit = fit_param(4);
+
+j0fit = fit_param('j0');
+alphafit = fit_param('alpha');
+rfit = fit_param('r');
+jLfit = fit_param('jL');
 % j0fit = j0;
 % alphafit = alpha;
 % rfit = r;
