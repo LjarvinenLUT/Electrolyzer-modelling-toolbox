@@ -96,17 +96,13 @@ tic;
 fit_param1 = fit_UI(Uforfit,Umeassamp,jmeassamp,'method','nllse');
 toc
 
+% Convert table to cell array which can then be used in a function call
+% instead of individual parameters
+fit_param1_cells = table2cell(fit_param1);
 
-j0fit1 = fit_param1('j0');
-alphafit1 = fit_param1('alpha');
-rfit1 = fit_param1('r');
-jLfit1 = fit_param1('jL');
-% j0fit = j0;
-% alphafit = alpha;
-% rfit = r;
-% jLfit = jL;
-
-Ufit1 = Uforfit(j0fit1,alphafit1,rfit1,jLfit1,jmeas);
+% Use fit param cell array instead of individual parameters when calling
+% for voltage function
+Ufit1 = Uforfit(fit_param1_cells{:},jmeas);
 
 MSE1 = mean((Ufit1-Umeas).^2); % Mean squares error
 
@@ -122,23 +118,26 @@ legend("Data", "Fit", "Location", "Best")
 title('Non-linear least squares error')
 hold off;
 
-
 % Particleswarm
 tic;
 fit_param2 = fit_UI(Uforfit,Umeassamp,jmeassamp,'method','ps');
 toc
 
 
-j0fit2 = fit_param2('j0');
-alphafit2 = fit_param2('alpha');
-rfit2 = fit_param2('r');
-jLfit2 = fit_param2('jL');
+j0fit2 = fit_param2.j0;
+alphafit2 = fit_param2.alpha;
+rfit2 = fit_param2.r;
+jLfit2 = fit_param2.jL;
 % j0fit = j0;
 % alphafit = alpha;
 % rfit = r;
 % jLfit = jL;
 
-Ufit2 = Uforfit(j0fit2,alphafit2,rfit2,jLfit2,jmeas);
+% Convert table to cell array which can then be used in a function call
+% instead of individual parameters
+fit_param2_cells = table2cell(fit_param2);
+
+Ufit2 = Uforfit(fit_param2_cells{:},jmeas);
 
 MSE2 = mean((Ufit2-Umeas).^2); % Mean squares error
 

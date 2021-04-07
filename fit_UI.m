@@ -62,13 +62,12 @@ switch method
         
         % Minimisation of the objective function using particle swarm
         [coeff_values,fval,exitflag,output] = particleswarm(fitfun,nvars,lb,ub,options);
-        
 end
 
 
 % Use map to store fitting parameters can be referenced by name
-% Example: fit_param('j0')
-fit_param = containers.Map(coefficients, coeff_values);
+% Example: fit_param.j0)
+fit_param = array2table(coeff_values, 'VariableNames', coefficients);
 end
 
 %%
@@ -122,12 +121,14 @@ end
 %%
 function [lower, upper, start] = getArgumentLimits(argumentList, U, I)
 %GETARGUMENTLIMITS gets lower and upper limits and also startpoint of each 
-%fitting parameters
+%fitting parameter
 
+% Initialize arrays for lower and upper limits and for start points
 lower = zeros(1, length(argumentList));
 upper = zeros(1, length(argumentList));
 start = zeros(1, length(argumentList));
 
+% Get limits for each function argument if none is found give an error
 for i = 1:length(argumentList)
     switch argumentList{i}
         case 'j0'
