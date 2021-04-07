@@ -31,7 +31,7 @@ function Uohm = ohmic(varargin)
     w = parser.Results.w;
     T = parser.Results.Temperature;
     
-    fprintf('Ohmic overpotential calculation properties:\n')
+    fprintf('\nOhmic overpotential calculation properties:\n')
     fprintf('Electrolyzer: %s\n', type)
     fprintf('Conductivity model: %d\n', conductivityModel)
     fprintf('Resistance model: %d\n', resistanceModel)

@@ -152,7 +152,7 @@ for i = 1:length(argumentList)
             upper(i) = inf;
             start(i) = 0;
         otherwise
-            error('getArgumentLimits.m: No argument limits could be found for ' + argumentList{i});
+            error('fit_UI.getArgumentLimits: No argument limits could be found for ' + argumentList{i});
     end
 end
 end

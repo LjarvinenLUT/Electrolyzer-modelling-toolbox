@@ -123,20 +123,12 @@ tic;
 fit_param2 = fit_UI(Uforfit,Umeassamp,jmeassamp,'method','ps');
 toc
 
-
-j0fit2 = fit_param2.j0;
-alphafit2 = fit_param2.alpha;
-rfit2 = fit_param2.r;
-jLfit2 = fit_param2.jL;
-% j0fit = j0;
-% alphafit = alpha;
-% rfit = r;
-% jLfit = jL;
-
 % Convert table to cell array which can then be used in a function call
 % instead of individual parameters
 fit_param2_cells = table2cell(fit_param2);
 
+% Use fit param cell array instead of individual parameters when calling
+% for voltage function
 Ufit2 = Uforfit(fit_param2_cells{:},jmeas);
 
 MSE2 = mean((Ufit2-Umeas).^2); % Mean squares error

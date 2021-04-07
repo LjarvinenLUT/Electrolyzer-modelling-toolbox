@@ -13,7 +13,20 @@ function Uact = activation(T,varargin)
     
     model = parser.Results.model;
     
-
+    % Print parameters to command window
+    fprintf('\nActivation overpotential calculation properties:\n')
+    % TODO: Switch statements could be maybe combined and printing done after the
+    % functionality. However this prevents printing the settings if error
+    % occurs
+    switch model
+        case 1
+            model_str = "Hyperbolic sine approximation with alpha assumed to be 1/2";
+        case 2
+            model_str = "Hyperbolic sine approximation with variable alpha";
+        case 3
+            model_str = "Tafel equation";
+    end
+    fprintf('Activation voltage model: %s\n', model_str)
     
     [F,R,n_e] = get_constants;
         
