@@ -144,7 +144,7 @@ for i = 1:length(argumentList)
             start(i) = 1;
         case 'jL'
             lower(i) = max(I);
-            upper(i) = 3;
+            upper(i) = 3*max(I);
             start(i) = max(I)*1.01;
         case 'Uerr'
             lower(i) = -inf;
