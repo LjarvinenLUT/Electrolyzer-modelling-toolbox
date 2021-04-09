@@ -99,18 +99,19 @@ switch i
         tic;
         fit_param1 = fit_UI(Uforfit,Umeassamp,jmeassamp,'method','nllse');
         toc
+		
+		j0fit1 = fit_param1.j0;
+        alphafit1 = fit_param1.alpha;
+        rfit1 = fit_param1.r;
+        jLfit1 = fit_param1.jL;
         
-        
-        j0fit1 = fit_param1('j0');
-        alphafit1 = fit_param1('alpha');
-        rfit1 = fit_param1('r');
-        jLfit1 = fit_param1('jL');
-        % j0fit = j0;
-        % alphafit = alpha;
-        % rfit = r;
-        % jLfit = jL;
-        
-        Ufit1 = Uforfit(j0fit1,alphafit1,rfit1,jLfit1,jmeas);
+		% Convert table to cell array which can then be used in a function call
+		% instead of individual parameters
+		fit_param1_cells = table2cell(fit_param1);
+
+		% Use fit param cell array instead of individual parameters when calling
+		% for voltage function
+		Ufit1 = Uforfit(fit_param1_cells{:},jmeas);
         
         MSE1 = mean((Ufit1-Umeas).^2); % Mean squares error
         
@@ -133,16 +134,18 @@ switch i
         toc
         
         
-        j0fit2 = fit_param2('j0');
-        alphafit2 = fit_param2('alpha');
-        rfit2 = fit_param2('r');
-        jLfit2 = fit_param2('jL');
-        % j0fit = j0;
-        % alphafit = alpha;
-        % rfit = r;
-        % jLfit = jL;
+        j0fit2 = fit_param2.j0;
+        alphafit2 = fit_param2.alpha;
+        rfit2 = fit_param2.r;
+        jLfit2 = fit_param2.jL;
         
-        Ufit2 = Uforfit(j0fit2,alphafit2,rfit2,jLfit2,jmeas);
+		% Convert table to cell array which can then be used in a function call
+		% instead of individual parameters
+		fit_param2_cells = table2cell(fit_param2);
+
+		% Use fit param cell array instead of individual parameters when calling
+		% for voltage function
+		Ufit2 = Uforfit(fit_param2_cells{:},jmeas);
         
         MSE2 = mean((Ufit2-Umeas).^2); % Mean squares error
         
@@ -160,12 +163,7 @@ switch i
         
         %% Test with original parameters
         
-        j0fit = j0;
-        alphafit = alpha;
-        rfit = r;
-        jLfit = jL;
-        
-        Ufit = Uforfit(j0fit,alphafit,rfit,jLfit,jmeas);
+        Ufit = Uforfit(j0,alpha,r,jL,jmeas);
         
         MSE = mean((Ufit-Umeas).^2); % Mean squares error
         
@@ -206,18 +204,18 @@ switch i
             fit_param1 = fit_UI(Uforfit,Umeas,jmeas,'method','nllse');
             toc
             
+            j0fit(1,j) = fit_param1.j0;
+            alphafit(1,j) = fit_param1.alpha;
+            rfit(1,j) = fit_param1.r;
+            jLfit(1,j) = fit_param1.jL;
             
-            j0fit1 = fit_param1('j0');
-            alphafit1 = fit_param1('alpha');
-            rfit1 = fit_param1('r');
-            jLfit1 = fit_param1('jL');
-            
-            j0fit(1,j) = j0fit1;
-            alphafit(1,j) = alphafit1;
-            rfit(1,j) = rfit1;
-            jLfit(1,j) = jLfit1;
-            
-            Ufit1 = Uforfit(j0fit1,alphafit1,rfit1,jLfit1,jmeas);
+			% Convert table to cell array which can then be used in a function call
+			% instead of individual parameters
+			fit_param1_cells = table2cell(fit_param1);
+
+			% Use fit param cell array instead of individual parameters when calling
+			% for voltage function
+            Ufit1 = Uforfit(fit_param1_cells{:},jmeas);
             
             MSE1 = mean((Ufit1-Umeas).^2); % Mean squares error
             MSE(1,j) = MSE1;
@@ -241,17 +239,18 @@ switch i
             toc
             
             
-            j0fit2 = fit_param2('j0');
-            alphafit2 = fit_param2('alpha');
-            rfit2 = fit_param2('r');
-            jLfit2 = fit_param2('jL');
+            j0fit(2,j) = fit_param2.j0;
+            alphafit(2,j) = fit_param2.alpha;
+            rfit(2,j) = fit_param2.r;
+            jLfit(2,j) = fit_param2.jL;
             
-            j0fit(2,j) = j0fit2;
-            alphafit(2,j) = alphafit2;
-            rfit(2,j) = rfit2;
-            jLfit(2,j) = jLfit2;
-            
-            Ufit2 = Uforfit(j0fit2,alphafit2,rfit2,jLfit2,jmeas);
+			% Convert table to cell array which can then be used in a function call
+			% instead of individual parameters
+			fit_param2_cells = table2cell(fit_param2);
+
+			% Use fit param cell array instead of individual parameters when calling
+			% for voltage function
+            Ufit2 = Uforfit(fit_param2_cells{:},jmeas);
             
             MSE2 = mean((Ufit2-Umeas).^2); % Mean squares error
             MSE(2,j) = MSE2;
@@ -270,4 +269,3 @@ switch i
             
         end
 end
-

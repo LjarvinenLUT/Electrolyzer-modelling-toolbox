@@ -29,6 +29,12 @@ function Uocv = nernst(T,p1,p2,varargin)
     model = parser.Results.model;
     electrolyte = string(parser.Results.electrolyte);
     
+    % Print parameters to command window
+    fprintf('\nOpen circuit voltage calculation properties:\n')
+    fprintf('Electrolyzer type: %s\n', type)
+    fprintf('Reversible voltage model: %d\n', model)
+    fprintf('Electrolyte: %s\n', electrolyte)
+    
     %% Errors
     if strcmp(type,"alkaline")
         if ~strcmp(electrolyte,"KOH")&&~strcmp(electrolyte,"NaOH")
