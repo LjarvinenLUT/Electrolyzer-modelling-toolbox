@@ -24,8 +24,8 @@ switch method
     
     case "NLLSE" % Non-Linear Least Squares Error regression approach
         % weight beginning and end
-        x = (0:length(Current)-1)';
-        weights = exp(x).^(-7/length(x)) + exp(x-x(end)).^(7/length(x));
+        x = Current/max(Current);
+        weights = exp(log(0.1^2)*x) + exp(-log(0.1^2)*(x-x(end)));
 
         
         fo = fitoptions('Method','NonlinearLeastSquares',...
@@ -54,9 +54,13 @@ switch method
         % Modify function handle to use vector input for fit parameters
         mod_func_handle = vectorify_func_handle(func_handle,nvars);
         
+        % weight beginning and end
+        x = Current/max(Current);
+        weights = exp(log(0.1^2)*x) + exp(-log(0.1^2)*(x-x(end)));
+        
         % Creating objective function for particle swarm: sum of square
         % residuals
-        fitfun = @(x) sum((mod_func_handle(x,Current)-Voltage).^2);
+        fitfun = @(x) sum((mod_func_handle(x,Current)-Voltage).^2.*weights);
         
         % Particle swarm options
         options = optimoptions('particleswarm','SwarmSize',600,'HybridFcn',@fmincon);%,'HybridFcn',@fmincon

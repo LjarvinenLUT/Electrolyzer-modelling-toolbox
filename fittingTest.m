@@ -28,7 +28,7 @@ switch i
         
         Uforfit = @(j0,alpha,r,jL,Current) Uocv + Uact(j0,alpha,Current) + Uohm(r,Current) + Ucon(jL,Current);
         
-        alpha = 0.5; %
+        alpha = 0.3; %
         j0 = 1e-6; % A/cm^2, exchange current density
         r = 0.1; % Ohm, total resistance
         jL = 1.5; % A/cm^2, limiting current density
@@ -53,7 +53,7 @@ switch i
         end
         
         % Take samples from the dense data vectors
-        N = 25; % Number of evenly taken current samples
+        N = 50; % Number of evenly taken current samples
         jsamples = linspace(min(jmeas),max(jmeas),N)';
 %         jsamples = linspace(min(jmeas),jL-0.01,N)'; % Excluding mass transport limitations
         jmeassamp = nan(N,1);
