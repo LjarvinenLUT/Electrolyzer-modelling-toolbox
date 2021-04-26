@@ -18,15 +18,16 @@ method = upper(string(parser.Results.method));
 coefficients = getFunctionArguments(func_handle);
 [lb, ub, start] = getArgumentLimits(coefficients, Voltage, Current);
 
+%% Weigh beginning and end of the measured current spectrum
+x = Current/max(Current);
+weights = exp(log(0.1^2)*x) + exp(-log(0.1^2)*(x-x(end)));
 
 %% Perform fit according to the chosen method	
 switch method
     
     case "NLLSE" % Non-Linear Least Squares Error regression approach
-        % weight beginning and end
-        x = Current/max(Current);
-        weights = exp(log(0.1^2)*x) + exp(-log(0.1^2)*(x-x(end)));
 
+        method_str = "Non-Linear Least Squares Error Regression";
         
         fo = fitoptions('Method','NonlinearLeastSquares',...
 			'Lower',lb,...
@@ -42,12 +43,26 @@ switch method
 			'independent','Current',...
 			'options',fo);
         
-        [fitted_curve,gof,output] = fit(Current,Voltage,fitfun);
+        [fitted_curve,~,output] = fit(Current,Voltage,fitfun);
+
         
-        coeff_values = coeffvalues(fitted_curve);
-        err_bounds = confint(fitted_curve)-coeff_values; % Fit 95% confidence bounds [lower upper]
-      
+        % Voltage values obtained from the fit
+        fit_Voltage = fitted_curve(Current);
+        
+        % Unweighted goodness of fit values
+        gof = goodness_of_fit(fit_Voltage,Voltage);
+        
+        % Coefficient values
+        coeff_values = coeffvalues(fitted_curve);       
+        
+        % Fit 95% confidence bounds [lower upper]
+        err_bounds = confint(fitted_curve)-coeff_values; 
+    
+        
+        
     case "PS" % Particle swarm approach
+        
+        method_str = "Particle Swarm Optimisation";
 		
         nvars = length(coefficients); % Amount of fit parameters
         
@@ -63,30 +78,40 @@ switch method
         fitfun = @(x) sum((mod_func_handle(x,Current)-Voltage).^2.*weights);
         
         % Particle swarm options
-        options = optimoptions('particleswarm','SwarmSize',600,'HybridFcn',@fmincon);%,'HybridFcn',@fmincon
+        options = optimoptions('particleswarm','SwarmSize',600,'HybridFcn',@fmincon,'Display','off');%,'HybridFcn',@fmincon
         
-        % Minimisation of the objective function using particle swarm: 
-        % best of three
+        % Retry fitting if R^2 not good enough
         fval_best = Inf;
-        for i = 1:3
+        for i = 1:5
             [coeff,fval,exitflag,output] = particleswarm(fitfun,nvars,lb,ub,options);
-            if fval < fval_best
+            
+            % Voltage values obtained from the fit
+            fit_Voltage = mod_func_handle(coeff,Current);
+            
+            % Unweighted goodness of fit values
+            gof_iter = goodness_of_fit(fit_Voltage,Voltage);
+            
+            if gof_iter.rsquare >0.995 % If good enough fit is achieved:
+                coeff_values = coeff;
+                gof = gof_iter;
+                break; % terminate loop
+            elseif fval < fval_best % If previous best fit is improved
                 fval_best = fval;
                 coeff_values = coeff;
+                gof = gof_iter;
             end
+            
         end
         
-        % Goodness of fit values
-        sse = fval_best;
-        rmse = sqrt(mean((mod_func_handle(coeff_values,Current)-Voltage).^2));
-        rsquare = 1 - sum(((Voltage-mod_func_handle(coeff_values,Current)).^2).^2)/sum((Voltage-mean(Voltage)).^2);
-        
+        % Fit 95% confidence bounds [lower upper] (TODO)
         err_bounds = nan(size(coeff_values));
-        gof = [];
 end
 
+%% Print message about the fit
+fprintf('Data fit performed using %s approach\nR^2: %f\n', method_str,gof.rsquare)
 
-% Use map to store fitting parameters can be referenced by name
+
+%% Use map to store fitting parameters can be referenced by name
 % Example: fit_param.j0)
 fit_param = array2table(coeff_values, 'VariableNames', coefficients);
 end
@@ -197,4 +222,21 @@ function mod_func_handle = vectorify_func_handle(func_handle,nvars)
     % Creating a modified function handle from the symbolic result
     mod_func_handle = matlabFunction(z,'Vars',{cell2sym(x),Current});
     
+end
+
+%%
+function gof = goodness_of_fit(yfit,y)
+% GOODNESS_OF_FIT returns a structure containing unweighted:
+% - SSR (Sum of Square Error)
+% - RMSE (Root Mean Square Error)
+% - R^2 value
+% of the fit
+
+residuals = y-yfit; % Residuals
+
+sse = sum(residuals.^2); % Sum of square residuals
+rmse = sqrt(mean(residuals.^2)); % Root mean square error
+rsquare = 1 - sum(residuals.^2)/sum((y-mean(y)).^2); % R^2 value
+
+gof = struct('sse',sse,'rmse',rmse,'rsquare',rsquare); % Goodness of fit structure
 end

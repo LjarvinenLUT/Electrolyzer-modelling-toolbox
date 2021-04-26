@@ -84,7 +84,7 @@ switch i
         
         % Non-linear least squares error
         tic;
-        [fit_param1,fit_err1] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','nllse');
+        [fit_param1,fit_err1,gof1] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','nllse');
         toc
 		
 		j0fit1 = fit_param1.j0;
@@ -100,7 +100,7 @@ switch i
 		% for voltage function
 		Ufit1 = Uforfit(fit_param1_cells{:},jmeas);
         
-        RMSE1 = mean((Uforfit(fit_param1_cells{:},jmeassamp)-Umeassamper).^2); % Mean squares error
+        RMSE1 = gof1.rmse; % Root mean squares error
         
         % Plotting
         
@@ -117,7 +117,7 @@ switch i
         
         % Particleswarm
         tic;
-        [fit_param2,fit_err2] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','ps');
+        [fit_param2,fit_err2,gof2] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','ps');
         toc
         
         
@@ -134,7 +134,7 @@ switch i
 		% for voltage function
 		Ufit2 = Uforfit(fit_param2_cells{:},jmeas);
         
-        RMSE2 = mean((Uforfit(fit_param2_cells{:},jmeassamp)-Umeassamper).^2); % Mean squares error
+        RMSE2 = gof2.rmse; % Root mean squares error
         
         % Plotting
         
@@ -152,7 +152,7 @@ switch i
         
         Ufit = Uforfit(j0,alpha,r,jL,jmeas);
         
-        RMSE = mean((Uforfit(j0,alpha,r,jL,jmeassamp)-Umeassamper).^2); % Mean squares error
+        RMSE = sqrt(mean((Uforfit(j0,alpha,r,jL,jmeassamp)-Umeassamper).^2)); % Root mean squares error
         
         % Plotting
         
@@ -176,6 +176,7 @@ switch i
         alphafit = nan(2,3);
         rfit = nan(2,3);
         RMSE = nan(2,3);
+        Rsqrd = nan(2,3);
         
         load('JulichData.mat')
         
@@ -204,8 +205,8 @@ switch i
 			% for voltage function
             Ufit1 = Uforfit(fit_param1_cells{:},Imeas);
             
-            RMSE1 = gof1.rmse; % Root mean squares error
-            RMSE(1,j) = RMSE1;
+            RMSE(1,j) = gof1.rmse; % Root mean squares error
+            Rsqrd(1,j) = gof1.rsquare; % R^2 of the fit
             
             % Plotting
             
@@ -238,8 +239,8 @@ switch i
 			% for voltage function
             Ufit2 = Uforfit(fit_param2_cells{:},Imeas);
             
-            RMSE2 = mean((Ufit2-Umeas).^2); % Mean squares error
-            RMSE(2,j) = RMSE2;
+            RMSE(2,j) = gof2.rmse; % Root mean squares error
+            Rsqrd(2,j) = gof2.rsquare; % R^2 of the fit
             
             % Plotting
             
