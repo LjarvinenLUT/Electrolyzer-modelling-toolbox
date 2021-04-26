@@ -1,5 +1,5 @@
 
-function fit_param = fit_UI(func_handle,Voltage,Current,varargin)
+function [fit_param,err_bounds,gof] = fit_UI(func_handle,Voltage,Current,varargin)
 
 defaultMethod = 'PS';
 
@@ -17,8 +17,9 @@ method = upper(string(parser.Results.method));
 %% Get coefficients and their limits
 coefficients = getFunctionArguments(func_handle);
 [lb, ub, start] = getArgumentLimits(coefficients, Voltage, Current);
-	
-	
+
+
+%% Perform fit according to the chosen method	
 switch method
     
     case "NLLSE" % Non-Linear Least Squares Error regression approach
@@ -41,10 +42,10 @@ switch method
 			'independent','Current',...
 			'options',fo);
         
-        [fitted_curve,gof] = fit(Current,Voltage,fitfun);
+        [fitted_curve,gof,output] = fit(Current,Voltage,fitfun);
         
         coeff_values = coeffvalues(fitted_curve);
-        
+        err_bounds = confint(fitted_curve)-coeff_values; % Fit 95% confidence bounds [lower upper]
       
     case "PS" % Particle swarm approach
 		
@@ -58,10 +59,26 @@ switch method
         fitfun = @(x) sum((mod_func_handle(x,Current)-Voltage).^2);
         
         % Particle swarm options
-        options = optimoptions('particleswarm','SwarmSize',200,'HybridFcn',@fmincon);
+        options = optimoptions('particleswarm','SwarmSize',600,'HybridFcn',@fmincon);%,'HybridFcn',@fmincon
         
-        % Minimisation of the objective function using particle swarm
-        [coeff_values,fval,exitflag,output] = particleswarm(fitfun,nvars,lb,ub,options);
+        % Minimisation of the objective function using particle swarm: 
+        % best of three
+        fval_best = Inf;
+        for i = 1:3
+            [coeff,fval,exitflag,output] = particleswarm(fitfun,nvars,lb,ub,options);
+            if fval < fval_best
+                fval_best = fval;
+                coeff_values = coeff;
+            end
+        end
+        
+        % Goodness of fit values
+        sse = fval_best;
+        rmse = sqrt(mean((mod_func_handle(coeff_values,Current)-Voltage).^2));
+        rsquare = 1 - sum(((Voltage-mod_func_handle(coeff_values,Current)).^2).^2)/sum((Voltage-mean(Voltage)).^2);
+        
+        err_bounds = nan(size(coeff_values));
+        gof = [];
 end
 
 
@@ -138,7 +155,7 @@ for i = 1:length(argumentList)
         case 'alpha'
             lower(i) = 0;
             upper(i) = 1;
-            start(i) = 0.5;
+            start(i) = 0.1;
         case 'r'
             lower(i) = 0;
             upper(i) = inf;

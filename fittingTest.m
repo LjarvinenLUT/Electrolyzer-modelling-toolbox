@@ -15,35 +15,22 @@ type = "PEM"; % Cell type
 pH2 = 30; % bar
 pO2 = 2; % bar
 Uocv = nernst(T,pH2,pO2,'type',type);
-Uact = activation(T,'model',3);
+Uact = activation(T,'model',2);
 Uohm = ohmic();
 Ucon = concentration(T);
 
-Uforfit = @(j0,alpha,r,jL,Current) Uocv + Uact(j0,alpha,Current) + Uohm(r,Current) + Ucon(jL,Current);
+
 
 i = 2;
 switch i
 
     case 1 % Created test data
         
-        
-        %             U1 = ((0.01:0.01:32)*(f*T))'; % Uact/(f*T) = 0...10, Activation overpotential
-        %             Tset = ones(size(U1))*T; % T vector
-        %             alpha = 0.4;
-        %             j0 = 1.3e-6;
-        %             x = j0*(exp(alpha./(f*Tset).*U1)-exp((alpha-1)./(f*Tset).*U1)); % "Measured" current based on Buttler-Volmer equation
-        %             r = 0.3;
-        %             U2 = r*x; % Ohmic overpotential
-        %             jL = 1.5;
-        %             U3 = real(Ucon(jL,x));
-        %
-        %             U4 = ones(size(U1))*Uerr; % Constant potential error
-        %             U0 = ones(size(U1))*Uocv; % Open circuit voltage
-        %             z = U0+U1+U2+U3+U4; % "Measured" voltage
+        Uforfit = @(j0,alpha,r,jL,Current) Uocv + Uact(j0,alpha,Current) + Uohm(r,Current) + Ucon(jL,Current);
         
         alpha = 0.5; %
         j0 = 1e-6; % A/cm^2, exchange current density
-        r = 0.3; % Ohm, total resistance
+        r = 0.1; % Ohm, total resistance
         jL = 1.5; % A/cm^2, limiting current density
         Uerr = 0; % V, constant voltage error
         
@@ -56,7 +43,7 @@ switch i
             jmeastemp = j0*(exp(alpha/(f*T)*U1(ii))-exp((alpha-1)/(f*T)*U1(ii))); % "Measured" current based on Buttler-Volmer equation
             if jmeastemp >= jL
                 break;
-            elseif jmeastemp > 0.001
+            elseif jmeastemp > 1e-5
                 U2 = Uohm(r,jmeastemp); % Ohmic overpotential
                 U3 = Ucon(jL,jmeastemp); % Concentration overpotential
                 Umeastemp = Uocv+U1(ii)+U2+U3+Uerr; % "Measured" voltage
@@ -66,9 +53,9 @@ switch i
         end
         
         % Take samples from the dense data vectors
-        N = 100; % Number of evenly taken current samples
-        % jsamples = linspace(min(jmeas),max(jmeas),N)';
-        jsamples = linspace(min(jmeas),jL-0.01,N)'; % Excluding mass transport limitations
+        N = 25; % Number of evenly taken current samples
+        jsamples = linspace(min(jmeas),max(jmeas),N)';
+%         jsamples = linspace(min(jmeas),jL-0.01,N)'; % Excluding mass transport limitations
         jmeassamp = nan(N,1);
         Umeassamp = nan(N,1);
         for ii = 1:N
@@ -81,8 +68,8 @@ switch i
         
         % Adding p*100% error to measurements
         p = 0.01;
-        jmeassamp = jmeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
-        Umeassamp = Umeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
+        jmeassamper = jmeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
+        Umeassamper = Umeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
         
         
         figure
@@ -97,7 +84,7 @@ switch i
         
         % Non-linear least squares error
         tic;
-        fit_param1 = fit_UI(Uforfit,Umeassamp,jmeassamp,'method','nllse');
+        [fit_param1,fit_err1] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','nllse');
         toc
 		
 		j0fit1 = fit_param1.j0;
@@ -113,13 +100,13 @@ switch i
 		% for voltage function
 		Ufit1 = Uforfit(fit_param1_cells{:},jmeas);
         
-        MSE1 = mean((Ufit1-Umeas).^2); % Mean squares error
+        RMSE1 = mean((Uforfit(fit_param1_cells{:},jmeassamp)-Umeassamper).^2); % Mean squares error
         
         % Plotting
         
         figure
         hold on;
-        scatter(jmeassamp,Umeassamp)
+        scatter(jmeassamper,Umeassamper)
         plot(jmeas,Ufit1)
         xlabel("j (A)")
         ylabel("U (V)")
@@ -130,7 +117,7 @@ switch i
         
         % Particleswarm
         tic;
-        fit_param2 = fit_UI(Uforfit,Umeassamp,jmeassamp,'method','ps');
+        [fit_param2,fit_err2] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','ps');
         toc
         
         
@@ -147,13 +134,13 @@ switch i
 		% for voltage function
 		Ufit2 = Uforfit(fit_param2_cells{:},jmeas);
         
-        MSE2 = mean((Ufit2-Umeas).^2); % Mean squares error
+        RMSE2 = mean((Uforfit(fit_param2_cells{:},jmeassamp)-Umeassamper).^2); % Mean squares error
         
         % Plotting
         
         figure
         hold on;
-        scatter(jmeassamp,Umeassamp)
+        scatter(jmeassamper,Umeassamper)
         plot(jmeas,Ufit2)
         xlabel("j (A)")
         ylabel("U (V)")
@@ -165,13 +152,13 @@ switch i
         
         Ufit = Uforfit(j0,alpha,r,jL,jmeas);
         
-        MSE = mean((Ufit-Umeas).^2); % Mean squares error
+        RMSE = mean((Uforfit(j0,alpha,r,jL,jmeassamp)-Umeassamper).^2); % Mean squares error
         
         % Plotting
         
         figure
         hold on;
-        scatter(jmeassamp,Umeassamp)
+        scatter(jmeassamper,Umeassamper)
         plot(jmeas,Ufit)
         xlabel("j (A)")
         ylabel("U (V)")
@@ -183,17 +170,18 @@ switch i
         
     case 2 % Data from Jülich
         
-        j0fit = nan(2,3);
+        Uforfit = @(j0,alpha,r,Current) Uocv + Uact(j0,alpha,Current) + Uohm(r,Current);
+        
+        I0fit = nan(2,3);
         alphafit = nan(2,3);
-        jLfit = nan(2,3);
         rfit = nan(2,3);
-        MSE = nan(2,3);
+        RMSE = nan(2,3);
         
         load('JulichData.mat')
         
         for j = 1:3
             
-            [jmeas,sortInd] = sort(JulichUI(j).I);
+            [Imeas,sortInd] = sort(JulichUI(j).I);
             Umeas = JulichUI(j).U(sortInd);
             
             
@@ -201,13 +189,12 @@ switch i
             
             % Non-linear least squares error
             tic;
-            fit_param1 = fit_UI(Uforfit,Umeas,jmeas,'method','nllse');
+            [fit_param1,fit_err1,gof1] = fit_UI(Uforfit,Umeas,Imeas,'method','nllse');
             toc
             
-            j0fit(1,j) = fit_param1.j0;
+            I0fit(1,j) = fit_param1.j0;
             alphafit(1,j) = fit_param1.alpha;
             rfit(1,j) = fit_param1.r;
-            jLfit(1,j) = fit_param1.jL;
             
 			% Convert table to cell array which can then be used in a function call
 			% instead of individual parameters
@@ -215,18 +202,18 @@ switch i
 
 			% Use fit param cell array instead of individual parameters when calling
 			% for voltage function
-            Ufit1 = Uforfit(fit_param1_cells{:},jmeas);
+            Ufit1 = Uforfit(fit_param1_cells{:},Imeas);
             
-            MSE1 = mean((Ufit1-Umeas).^2); % Mean squares error
-            MSE(1,j) = MSE1;
+            RMSE1 = gof1.rmse; % Root mean squares error
+            RMSE(1,j) = RMSE1;
             
             % Plotting
             
             figure
             hold on;
-            scatter(jmeas,Umeas)
-            plot(jmeas,Ufit1)
-            xlabel("j (A)")
+            scatter(Imeas,Umeas)
+            plot(Imeas,Ufit1)
+            xlabel("I (A)")
             ylabel("U (V)")
             legend("Data", "Fit", "Location", "Best")
             title(['Non-linear least squares error: Jülich ' num2str(j)])
@@ -235,14 +222,13 @@ switch i
             
             % Particleswarm
             tic;
-            fit_param2 = fit_UI(Uforfit,Umeas,jmeas,'method','ps');
+            [fit_param2,fit_err2,gof2] = fit_UI(Uforfit,Umeas,Imeas,'method','ps');
             toc
             
             
-            j0fit(2,j) = fit_param2.j0;
+            I0fit(2,j) = fit_param2.j0;
             alphafit(2,j) = fit_param2.alpha;
             rfit(2,j) = fit_param2.r;
-            jLfit(2,j) = fit_param2.jL;
             
 			% Convert table to cell array which can then be used in a function call
 			% instead of individual parameters
@@ -250,18 +236,18 @@ switch i
 
 			% Use fit param cell array instead of individual parameters when calling
 			% for voltage function
-            Ufit2 = Uforfit(fit_param2_cells{:},jmeas);
+            Ufit2 = Uforfit(fit_param2_cells{:},Imeas);
             
-            MSE2 = mean((Ufit2-Umeas).^2); % Mean squares error
-            MSE(2,j) = MSE2;
+            RMSE2 = mean((Ufit2-Umeas).^2); % Mean squares error
+            RMSE(2,j) = RMSE2;
             
             % Plotting
             
             figure
             hold on;
-            scatter(jmeas,Umeas)
-            plot(jmeas,Ufit2)
-            xlabel("j (A)")
+            scatter(Imeas,Umeas)
+            plot(Imeas,Ufit2)
+            xlabel("I (A)")
             ylabel("U (V)")
             legend("Data", "Fit", "Location", "Best")
             title(['Particleswarm: Jülich ' num2str(j)])
