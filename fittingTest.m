@@ -22,6 +22,7 @@ Ucon = concentration(T);
 
 
 i = 2;
+weights = 'default';
 switch i
 
     case 1 % Created test data
@@ -84,7 +85,7 @@ switch i
         
         % Non-linear least squares error
         tic;
-        [fit_param1,fit_err1,gof1] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','nllse');
+        [fit_param1,fit_err1,gof1] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','nllse','weights',weights);
         toc
 		
 		j0fit1 = fit_param1.j0;
@@ -117,7 +118,7 @@ switch i
         
         % Particleswarm
         tic;
-        [fit_param2,fit_err2,gof2] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','ps');
+        [fit_param2,fit_err2,gof2] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','ps','weights',weights);
         toc
         
         
@@ -183,14 +184,16 @@ switch i
         for j = 1:3
             
             [Imeas,sortInd] = sort(JulichUI(j).I);
-            Umeas = JulichUI(j).U(sortInd);
+            I = [Imeas JulichUI(j).Istd(sortInd)];
+            U = [JulichUI(j).U(sortInd) JulichUI(j).Ustd(sortInd)];
+
             
             
             %% Fit
             
             % Non-linear least squares error
             tic;
-            [fit_param1,fit_err1,gof1] = fit_UI(Uforfit,Umeas,Imeas,'method','nllse');
+            [fit_param1,fit_err1,gof1] = fit_UI(Uforfit,U,I,'method','nllse','weights',weights);
             toc
             
             I0fit(1,j) = fit_param1.j0;
@@ -203,7 +206,7 @@ switch i
 
 			% Use fit param cell array instead of individual parameters when calling
 			% for voltage function
-            Ufit1 = Uforfit(fit_param1_cells{:},Imeas);
+            Ufit1 = Uforfit(fit_param1_cells{:},I(:,1));
             
             RMSE(1,j) = gof1.rmse; % Root mean squares error
             Rsqrd(1,j) = gof1.rsquare; % R^2 of the fit
@@ -212,8 +215,8 @@ switch i
             
             figure
             hold on;
-            scatter(Imeas,Umeas)
-            plot(Imeas,Ufit1)
+            errorbar(I(:,1),U(:,1),U(:,2),U(:,2),I(:,2),I(:,2),'o')
+            plot(I(:,1),Ufit1)
             xlabel("I (A)")
             ylabel("U (V)")
             legend("Data", "Fit", "Location", "Best")
@@ -223,7 +226,7 @@ switch i
             
             % Particleswarm
             tic;
-            [fit_param2,fit_err2,gof2] = fit_UI(Uforfit,Umeas,Imeas,'method','ps');
+            [fit_param2,fit_err2,gof2] = fit_UI(Uforfit,U(:,1),I(:,1),'method','ps','weights',weights);
             toc
             
             
@@ -237,7 +240,7 @@ switch i
 
 			% Use fit param cell array instead of individual parameters when calling
 			% for voltage function
-            Ufit2 = Uforfit(fit_param2_cells{:},Imeas);
+            Ufit2 = Uforfit(fit_param2_cells{:},I(:,1));
             
             RMSE(2,j) = gof2.rmse; % Root mean squares error
             Rsqrd(2,j) = gof2.rsquare; % R^2 of the fit
@@ -246,7 +249,7 @@ switch i
             
             figure
             hold on;
-            scatter(Imeas,Umeas)
+            errorbar(I(:,1),U(:,1),U(:,2),U(:,2),I(:,2),I(:,2),'o')
             plot(Imeas,Ufit2)
             xlabel("I (A)")
             ylabel("U (V)")

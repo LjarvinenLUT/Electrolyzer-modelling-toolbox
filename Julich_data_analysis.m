@@ -3,7 +3,7 @@ close all; clear; clc;
 
 filename = {"Julich_Uj_data1.xlsx","Julich_Uj_data2.xlsx","Julich_Uj_data3.xlsx"};
 
-JulichUI = struct('U',[],'I',[]);
+JulichUI = struct('U',[],'Ustd',[],'I',[],'Istd',[]);
 
 
 for j = 1:3
@@ -25,13 +25,6 @@ for j = 1:3
     [Imeassort,I] = sort(Imeas);
     Umeassort = Umeas(I);
     
-    % Moving average filtering for j == 3
-    if j == 3
-        M = 50;
-        h = 1/M*ones(1,M);
-        Imeas = filter(h,1,Imeas);
-    end
-    
     figure
     yyaxis left
     scatter(1:length(Imeas),Imeas)
@@ -39,14 +32,35 @@ for j = 1:3
     yyaxis right
     scatter(1:length(Umeas),Umeas)
     ylabel('U')
-    title('Jülich UI timeseries')
+    title('Measured Jülich UI timeseries')
     xlabel('timestep')
+    
+    % Moving average filtering for j == 3
+    if j == 3
+        M = 50;
+        h = 1/M*ones(1,M);
+        Ifiltered = filter(h,1,Imeas);
+        
+        figure
+        yyaxis left
+        scatter(1:length(Ifiltered),Ifiltered)
+        ylabel('I')
+        yyaxis right
+        scatter(1:length(Umeas),Umeas)
+        ylabel('U')
+        title('Filtered Jülich UI timeseries')
+        xlabel('timestep')
+    else
+        Ifiltered = Imeas;
+    end
+    
+    
     
 
     
     %% Difference between adjacent measurements
     difU = diff(Umeas);
-    difI = diff(Imeas);
+    difI = diff(Ifiltered);
     
     figure
     yyaxis left
@@ -93,6 +107,8 @@ for j = 1:3
     prev_level = false;
     I = [];
     U = [];
+    Istd = [];
+    Ustd = [];
     Itemp = [];
     Utemp = [];
     
@@ -100,9 +116,11 @@ for j = 1:3
         if ~Ilevel(i)
             if prev_level % If level current ends
                 I = [I;mean(Itemp)];
+                Istd = [Istd;sqrt(var(Itemp))];
                 difUtemp = abs(diff(Utemp));
                 Utemplevel = difUtemp<3e-4;
                 U = [U;mean(Utemp(Utemplevel))];
+                Ustd = [Ustd;sqrt(var(Utemp(Utemplevel)))];
                 Itemp = [];
                 Utemp = [];
             end
@@ -114,14 +132,19 @@ for j = 1:3
         end
     end
     
-    I = I(~isnan(U));
-    U = U(~isnan(U));
+    nans = isnan(U);
+    I = I(~nans);
+    Istd = Istd(~nans);
+    U = U(~nans);
+    Ustd = Ustd(~nans);
     JulichUI(j).U = U;
     JulichUI(j).I = I;
+    JulichUI(j).Ustd = Ustd;
+    JulichUI(j).Istd = Istd;
     
     %% Final measured UI curve
     figure
-    scatter(I,U)
+    errorbar(I,U,Ustd,Ustd,Istd,Istd,'o')
     title('Jülich UI measurement')
     xlabel('I')
     ylabel('U')

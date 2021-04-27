@@ -2,25 +2,64 @@
 function [fit_param,err_bounds,gof] = fit_UI(func_handle,Voltage,Current,varargin)
 
 defaultMethod = 'PS';
+defaultWeights = 'default';
 
 parser = inputParser;
 addRequired(parser,'func_handle',@(x) isa(x,'function_handle'))
 addRequired(parser,'Voltage',@(x) isnumeric(x))
 addRequired(parser,'Current',@(x) isnumeric(x))
 addParameter(parser,'method',defaultMethod,@(x) ischar(x)||isstring(x))
+addParameter(parser,'weights',defaultWeights,@(x) ischar(x)||isstring(x))
 
 parse(parser,func_handle,Voltage,Current,varargin{:});
 
 method = upper(string(parser.Results.method));
+weightsMethod = lower(string(parser.Results.weights));
+
+%% Parse errors, if inputted
+if length(Voltage(1,:)) == 1 % No measurement standard deviation given
+    Vstd = zeros(size(Voltage));
+elseif length(Voltage(1,:)) == 2 % Measurement standard deviation given as the second column of input matrix
+    Vstd = Voltage(:,2);
+    Voltage = Voltage(:,1);
+else
+    error("Voltage input must be either a column vector or a matrix with two columns containing measured value and its standard deviation")
+end
+
+if length(Current(1,:)) == 1 % No measurement standard deviation given
+    Cstd = zeros(size(Current));
+elseif length(Current(1,:)) == 2 % Measurement standard deviation given as the second column of input matrix
+    Cstd = Current(:,2);
+    Current = Current(:,1);
+else
+    error("Current input must be either a column vector or a matrix with two columns containing measured value and its standard deviation")
+end
+
+% Total error obtained from the squared sum
+std = sqrt(Vstd.^2 + Cstd.^2);
+if std == 0
+    errorWeights = 1;
+else
+    errorWeights = 1./std.^2;
+end
 
 
 %% Get coefficients and their limits
 coefficients = getFunctionArguments(func_handle);
 [lb, ub, start] = getArgumentLimits(coefficients, Voltage, Current);
 
-%% Weigh beginning and end of the measured current spectrum
-x = Current/max(Current);
-weights = exp(log(0.1^2)*x) + exp(-log(0.1^2)*(x-x(end)));
+%% Weighting
+switch weightsMethod
+    case "default"
+        % Weigh beginning and end of the measured current spectrum
+        x = Current/max(Current);
+        weights = (exp(log(0.1^2)*x) + exp(-log(0.1^2)*(x-x(end))) - 2*exp(log(0.1^2)))./(1-exp(log(0.1^2)));
+    case "none"
+        % Don't apply wieghts
+        weights = ones(size(Current));
+end
+
+weights = weights.*errorWeights;
 
 %% Perform fit according to the chosen method	
 switch method
@@ -68,10 +107,6 @@ switch method
         
         % Modify function handle to use vector input for fit parameters
         mod_func_handle = vectorify_func_handle(func_handle,nvars);
-        
-        % weight beginning and end
-        x = Current/max(Current);
-        weights = exp(log(0.1^2)*x) + exp(-log(0.1^2)*(x-x(end)));
         
         % Creating objective function for particle swarm: sum of square
         % residuals
