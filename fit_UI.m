@@ -1,6 +1,9 @@
 
 function [fit_param,err_bounds,gof] = fit_UI(func_handle,Voltage,Current,varargin)
 
+% Add path to toolbox with MCMC
+addpath Utils\mcmcstat;
+
 defaultMethod = 'PS';
 defaultWeights = 'default';
 
