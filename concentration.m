@@ -47,7 +47,7 @@ function Ucon = concentration(T,varargin)
             Ucon = @(Cx11,Cx10,Cx21,Cx20) f*T*log((Cx11/Cx10)*(Cx21/Cx20)^(1/2)); % Both concentrations are functions of current
             warning('Chosen concentration overpotential method cannot be used for fitting! Concentration on electrode surface is an unknown function of current. The function handle combines effects of hydrogen and oxygen side. Refer to manual for more information')
         case 2 % ???
-            Ucon = @(j_lim,j) -f*T*log(1 - j/j_lim);
+            Ucon = @(j_lim,Current) -f*T*log(1 - Current/j_lim);
         case 3 % J. Pukrushpan "Modeling and control for PEM fuel cell stack system" https://doi.org/10.1109/ACC.2002.1025268
             p_sat = water_vapor_pressure(T);
             px = p_O2/0.1173 + p_sat;
@@ -58,7 +58,7 @@ function Ucon = concentration(T,varargin)
                 b1 = (8.66*10^-5*T - 0.068)*px + (-1.6*10^-4*T + 0.54);
             end
             
-            Ucon = @(j,b2,j_max) j*(b1*j/j_max)^b2;
+            Ucon = @(Current,b2,j_max) Current*(b1*Current/j_max)^b2;
             warning('Model is based on fuel cell research where the amount of oxygen supplied to the cathode is limiting. Includes experimental numeric parameters that probably cannot be extended for electrolyzers!')
     end
 end

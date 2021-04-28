@@ -22,17 +22,17 @@ Ucon = concentration(T);
 
 
 i = 2;
-weights = 'default';
+weights = 'none';
 switch i
 
     case 1 % Created test data
         
-        Uforfit = @(j0,alpha,r,jL,Current) Uocv + Uact(j0,alpha,Current) + Uohm(r,Current) + Ucon(jL,Current);
+        Uforfit = combineFuncHandles({Uact,Uohm,Ucon,Uocv});
         
         alpha = 0.3; %
         j0 = 1e-6; % A/cm^2, exchange current density
         r = 0.1; % Ohm, total resistance
-        jL = 1.5; % A/cm^2, limiting current density
+        j_lim = 1.5; % A/cm^2, limiting current density
         Uerr = 0; % V, constant voltage error
         
         Umeas = []; % "Measured" voltage
@@ -42,11 +42,11 @@ switch i
         
         for ii = 1:length(U1)
             jmeastemp = j0*(exp(alpha/(f*T)*U1(ii))-exp((alpha-1)/(f*T)*U1(ii))); % "Measured" current based on Buttler-Volmer equation
-            if jmeastemp >= jL
+            if jmeastemp >= j_lim
                 break;
             elseif jmeastemp > 1e-5
                 U2 = Uohm(r,jmeastemp); % Ohmic overpotential
-                U3 = Ucon(jL,jmeastemp); % Concentration overpotential
+                U3 = Ucon(j_lim,jmeastemp); % Concentration overpotential
                 Umeastemp = Uocv+U1(ii)+U2+U3+Uerr; % "Measured" voltage
                 jmeas = [jmeas;jmeastemp];
                 Umeas = [Umeas;Umeastemp];
@@ -91,7 +91,7 @@ switch i
 		j0fit1 = fit_param1.j0;
         alphafit1 = fit_param1.alpha;
         rfit1 = fit_param1.r;
-        jLfit1 = fit_param1.jL;
+        jLfit1 = fit_param1.j_lim;
         
 		% Convert table to cell array which can then be used in a function call
 		% instead of individual parameters
@@ -125,7 +125,7 @@ switch i
         j0fit2 = fit_param2.j0;
         alphafit2 = fit_param2.alpha;
         rfit2 = fit_param2.r;
-        jLfit2 = fit_param2.jL;
+        jLfit2 = fit_param2.j_lim;
         
 		% Convert table to cell array which can then be used in a function call
 		% instead of individual parameters
@@ -151,9 +151,9 @@ switch i
         
         %% Test with original parameters
         
-        Ufit = Uforfit(j0,alpha,r,jL,jmeas);
+        Ufit = Uforfit(alpha,j0,j_lim,r,jmeas);
         
-        RMSE = sqrt(mean((Uforfit(j0,alpha,r,jL,jmeassamp)-Umeassamper).^2)); % Root mean squares error
+        RMSE = sqrt(mean((Uforfit(alpha,j0,j_lim,r,jmeassamp)-Umeassamper).^2)); % Root mean squares error
         
         % Plotting
         
@@ -171,7 +171,7 @@ switch i
         
     case 2 % Data from Jülich
         
-        Uforfit = @(j0,alpha,r,Current) Uocv + Uact(j0,alpha,Current) + Uohm(r,Current);
+        Uforfit = combineFuncHandles({Uocv,Uact,Uohm});
         
         I0fit = nan(2,3);
         alphafit = nan(2,3);

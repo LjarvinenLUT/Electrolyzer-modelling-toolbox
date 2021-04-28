@@ -1,16 +1,27 @@
-function [coefficients] = getFunctionArguments(theFcn)
+function [coefficients] = getFunctionArguments(theFcn,varargin)
     %GETFUNCTIONARGUMENTS returns the fucntion arguments from the provided
     %function as a cell array.
     
+    defaultOmitCurrent = true;
+    
+    parser = inputParser;
+    addRequired(parser,'theFcn',@(x) isa(x,'function_handle'))
+    addParameter(parser,'omitCurrent',defaultOmitCurrent,@(x) islogical(x))
+    
+    parse(parser,theFcn,varargin{:});
+    
+    omitCurrent = parser.Results.omitCurrent;
+    %%
+    
     % Get the amount of arguments
-    numArguments = nargin( theFcn );
+    numArguments = nargin( theFcn ) - 1*omitCurrent;
 
     % Get the string description of the function
     functionString = func2str( theFcn );
 
     % Allocate space for the cell-string. One of the arguments is the
     % independent fit variable which is not needed here
-    coefficients = cell( 1, numArguments - 1);
+    coefficients = cell( 1, numArguments);
 
     % The plan is to move a pair of indices along the "function string" field
     % looking for the commas. The names we want will be between these indices.
@@ -27,10 +38,10 @@ function [coefficients] = getFunctionArguments(theFcn)
     while numFound < numArguments
         % If we have found the end of a argument name
         if functionString(bi) == ',' || functionString(bi) == ')'
-            % then increment the "numFound" counter
-            numFound = numFound+1;
-            % ... store the name
-            if ~strcmpi(functionString(ai:(bi-1)), "Current")
+            if (omitCurrent && ~strcmpi(functionString(ai:(bi-1)), "Current")) || ~omitCurrent
+                % then increment the "numFound" counter
+                numFound = numFound+1;
+                % ... store the name
                 coefficients{numFound} = functionString(ai:(bi-1));
             end
             % and increment the start index

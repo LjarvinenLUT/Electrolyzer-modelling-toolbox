@@ -99,9 +99,9 @@ function Uohm = ohmic(varargin)
     
     switch resistanceModel
         case 1 % https://doi.org/10.1016/j.ijhydene.2015.03.164 "Electrochemical performance modeling of a proton exchange membrane electrolyzer cell for hydrogen energy"
-            Uohm = @(r, j) r.*j;
+            Uohm = @(r, Current) r.*Current;
         case 2
             Ri = delta/sigma;
-            Uohm = @(r, j) (r + Ri).*j;  
+            Uohm = @(r, Current) (r + Ri).*Current;  
     end
 end

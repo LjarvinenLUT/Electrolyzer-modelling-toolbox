@@ -32,11 +32,11 @@ function Uact = activation(T,varargin)
         
     switch model
         case 1 % Hyperbolic sine approximation with alpha assumed to be 1/2
-            Uact = @(j0,a,j) 2*((R.*T)./(n_e*F)).*asinh(j./(2*j0));
+            Uact = @(j0,alpha,Current) 2*((R.*T)./(n_e*F)).*asinh(Current./(2*j0));
         case 2 % Hyperbolic sine approximation with variable alpha
-            Uact = @(j0,a,j) 1/a.*((R.*T)./(n_e*F)).*asinh(j./(2*j0));
+            Uact = @(j0,alpha,Current) 1/alpha.*((R.*T)./(n_e*F)).*asinh(Current./(2*j0));
         case 3 % Tafel equation (valid when j/j0 > 4 https://doi.org/10.1016/j.jpowsour.2005.03.174)
-            Uact = @(j0,a,j) 1/a.*((R.*T)./(n_e*F)).*log(j./j0);
+            Uact = @(j0,alpha,Current) 1/alpha.*((R.*T)./(n_e*F)).*log(Current./j0);
     end
 
 end
