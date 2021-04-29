@@ -1,5 +1,5 @@
 function [coefficients] = getFunctionArguments(theFcn,varargin)
-    %GETFUNCTIONARGUMENTS returns the fucntion arguments from the provided
+    %GETFUNCTIONARGUMENTS returns the function arguments from the provided
     %function as a cell array.
     
     defaultOmitCurrent = true;

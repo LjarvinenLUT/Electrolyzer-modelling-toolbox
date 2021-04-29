@@ -1,3 +1,7 @@
+% Matlab programming style guideline could be used when code is ready to
+% format everything to standard format
+% Guide can be found in Zotero folder "Electrolyzer modeling/matlab style guide"
+
 %% Class for electrolyzer modelling
 % (This should probably be just a superclass and subclasses for each type should be separate)
 
@@ -7,20 +11,20 @@ classdef electrolyzer_model < handle
     properties (SetAccess = protected)
        type; % PEM or alkaline
        electrolyte; % Electrolyte for alkali electrolyzers (should be in its own subclass)
-       overpotential_function; % Function handle for overpotentials
+       overpotential_function; % Function handle for combined overpotential function
        fit_parameters; % Table for fitted parameters. 
                     % Using table for parameters enables use of
                     % models with varying number of fit parameters and
                     % their different namings
        T;   % System temperature
        
-       overpotentials; % Array of all overpotentials
+       overpotentials; % Array of all overpotential function handles
     end
     
     
     methods
        
-        % Creator function
+        % Constructor function
         function obj = electrolyzer_model(varargin)
             defaultElectrolyte = "KOH";
             
@@ -53,13 +57,11 @@ classdef electrolyzer_model < handle
             object = obj;
         end
         
-        % Function for setting overpotential function handles
-        function set_overpotentials(obj)
-            % Miten yhdistetään yhdeksi funktioksi ohjelmallisesti???
-            obj.overpotential_function = @(r, j) sum(cellfun(@(F) F(r, j), obj.overpotentials))
-            for i = 1:length(obj.overpotentials)
-                %obj.overpotential_function = @(r, j) old(r, j) + obj.overpotentials{i};
-            end
+        % Function for combining overpotential function handles
+        function combine_overpotentials(obj)
+            % Call utility function to combine overpotential function
+            % handles to on function
+            overpotential_function = combineFunction(overpotentials);
         end
         
         % Function for fitting UI curve
@@ -102,6 +104,11 @@ classdef electrolyzer_model < handle
                 end
             end
             uniqueArguments = values(argumentMap);
+        end
+        
+        % Clears the overpotential cell array
+        function clear_overpotentials(obj)
+           obj.overpotentials = {}; 
         end
         
     end
