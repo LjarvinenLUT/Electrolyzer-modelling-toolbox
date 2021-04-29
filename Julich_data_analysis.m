@@ -80,6 +80,7 @@ for j = 1:3
         difthresh = [1e-2*ones(18300,1);0.03*ones(length(difI)-18300,1)];
     end
     Ilevel = [abs(difI)<difthresh;false];
+    Ilevel = Ilevel&([false;false;(Ilevel(1:end-4)&Ilevel(2:end-3))|(Ilevel(4:end-1)&Ilevel(5:end));false;false]); % Remove fast switching
     
     figure
     yyaxis left

@@ -22,7 +22,7 @@ weightsMethod = lower(string(parser.Results.weights));
 
 %% Parse error vectors, if inputted
 if length(Voltage(1,:)) == 1 % No measurement standard deviation given
-    Vstd = zeros(size(Voltage));
+    Vstd = 0;
 elseif length(Voltage(1,:)) == 2 % Measurement standard deviation given as the second column of input matrix
     Vstd = Voltage(:,2);
     Voltage = Voltage(:,1);
@@ -31,7 +31,7 @@ else
 end
 
 if length(Current(1,:)) == 1 % No measurement standard deviation given
-    Cstd = zeros(size(Current));
+    Cstd = 0;
 elseif length(Current(1,:)) == 2 % Measurement standard deviation given as the second column of input matrix
     Cstd = Current(:,2);
     Current = Current(:,1);
