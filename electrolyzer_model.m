@@ -76,7 +76,7 @@ classdef electrolyzer_model < handle
             addRequired(parser,'I',@(x) isnumeric(x))
             addParameter(parser,'method',defaultMethod,@(x) ischar(x)||isstring(x)) % Fitting method to be used
             
-            parse(parser,func_handle,U,I,varargin{:});
+            parse(parser,obj,U,I,varargin{:});
             
             method = upper(string(parser.Results.method));
             
