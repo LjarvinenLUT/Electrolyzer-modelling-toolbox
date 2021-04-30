@@ -10,20 +10,18 @@
 %           model - Used reversible potential model reference, numeric, from which article
 %           electrolyte - Electrolyte used for "alkaline"
 
-function Uocv = nernst(T,p1,p2,varargin)
+function output = nernst(vars,varargin)
     
     defaultModel = 6;
     defaultElectrolyte = 'KOH';
 
     parser = inputParser;
-    addRequired(parser,'T',@(x) isnumeric(x));
-    addRequired(parser,'p1',@(x) isnumeric(x));
-    addRequired(parser,'p2',@(x) isnumeric(x));
+    addRequired(parser,'vars',@(x) isstruct(x));
     addParameter(parser,'type',@(x) ischar(x)||isstring(x));
     addParameter(parser,'model',defaultModel,@(x) isnumeric(x)&&isscalar(x))
     addParameter(parser,'electrolyte',defaultElectrolyte,@(x) ischar(x)||isstring(x))
     
-    parse(parser,T,p1,p2,varargin{:});
+    parse(parser,vars,varargin{:});
     
     type = string(lower(parser.Results.type));
     model = parser.Results.model;
@@ -32,8 +30,10 @@ function Uocv = nernst(T,p1,p2,varargin)
     % Print parameters to command window
     fprintf('\nOpen circuit voltage calculation properties:\n')
     fprintf('Electrolyzer type: %s\n', type)
+    if strcmp(type,"alkaline")
+        fprintf('Electrolyte: %s\n', electrolyte)
+    end
     fprintf('Reversible voltage model: %d\n', model)
-    fprintf('Electrolyte: %s\n', electrolyte)
     
     %% Errors
     if strcmp(type,"alkaline")
@@ -46,6 +46,8 @@ function Uocv = nernst(T,p1,p2,varargin)
     
     %% Nernst equation
     
-    Uocv = reversible(T,model) + nernst_pressure_correction(T,p1,p2,'type',type,'electrolyte',electrolyte);
+    Uocv = @(coeffs,vars) reversible(vars.T,model) + nernst_pressure_correction(vars,'type',type,'electrolyte',electrolyte);
+    coeffs = struct([]);
     
+    output = struct('name','Uocv','func',Uocv,'coeffs',coeffs);
 end

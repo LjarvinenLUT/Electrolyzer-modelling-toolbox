@@ -11,14 +11,10 @@ classdef electrolyzer_model < handle
     properties (SetAccess = protected)
        type; % PEM or alkaline
        electrolyte; % Electrolyte for alkali electrolyzers (should be in its own subclass)
-       overpotential_function; % Function handle for combined overpotential function
-       fit_parameters; % Table for fitted parameters. 
-                    % Using table for parameters enables use of
-                    % models with varying number of fit parameters and
-                    % their different namings
-       T;   % System temperature
-       
-       overpotentials; % Array of all overpotential function handles
+       potential_func; % Function handle for combined overpotential function
+       coeffs; % Structure for model coefficients.
+       vars;   % System measured variables
+       potentials; % Structure array of all potentials
     end
     
     
@@ -26,17 +22,28 @@ classdef electrolyzer_model < handle
        
         % Constructor function
         function obj = electrolyzer_model(varargin)
+            defaultType = "pem";
             defaultElectrolyte = "KOH";
             
             parser = inputParser;
-            addParameter(parser,'type',@(x) ischar(x)||isstring(x));
+            addParameter(parser,'type',defaultType,@(x) ischar(x)||isstring(x));
             addParameter(parser,'electrolyte',defaultElectrolyte,@(x) ischar(x)||isstring(x))
             
             parse(parser,varargin{:});
             
-            parser.Results.type
+            parser.Results.type;
             set_type(obj, parser.Results.type);
             set_electrolyte(obj, string(parser.Results.electrolyte));
+            
+            obj.potentials = struct('name',{},'func',{},'coeffs',{});
+            obj.coeffs = struct([]);
+            if strcmp(obj.type,"pem")
+                obj.vars = struct('T',[],'Current',[],'Voltage',[],'p1',[],'p2',[]);
+            elseif strcmp(obj.type,"alkaline")
+                obj.vars = struct('T',[],'Current',[],'Voltage',[],'p',[],'m',[]);
+            else
+                obj.vars = struct('T',[],'Current',[],'Voltage',[]);
+            end
         end
         
         % Function for setting electrolyzer type
@@ -46,23 +53,41 @@ classdef electrolyzer_model < handle
         
         % Function for setting electrolyte for alkali electrolyzers
         function set_electrolyte(obj,electrolyte)
-            if ~strcmp(obj.type,"alkaline")
-                error("Setting electrolyte possible only with alkali electrolyzers")
+            if strcmp(obj.type,"alkaline")
+                obj.electrolyte = electrolyte;
+            else
+                obj.electrolyte = "none";
             end
-            obj.electrolyte = electrolyte;
         end
         
-        function object = add_overpotential(obj, overpotential)
-            obj.overpotentials{end+1} = overpotential;
-            object = obj;
+        % Function for ssetting measured variables
+        function set_vars(obj,vars)
+            obj.vars = vars;
         end
         
-        % Function for combining overpotential function handles
-        function combine_overpotentials(obj)
-            % Call utility function to combine overpotential function
-            % handles to on function
-            overpotential_function = combineFunction(overpotentials);
+        function add_potential(obj, added_potential)
+            obj.potentials = [obj.potentials,added_potential];
+            obj.coeffs = mergeStructs(added_potential.coeffs,obj.coeffs);
+            if isempty(obj.potential_func)
+                obj.potential_func = @(coeffs,vars) added_potential.func(coeffs,vars);
+            else
+                old_potential_func = obj.potential_func;
+                obj.potential_func = @(coeffs,vars) old_potential_func(coeffs,vars) + added_potential.func(coeffs,vars);
+            end
         end
+        
+%         % Function for combining overpotential function handles
+%         function combine_overpotentials(obj)
+%             % Call utility function to combine overpotential function
+%             % handles to one function handle
+%             
+%             l = length(obj.potentials);
+%             
+%             for i = 1:l
+%                 
+%             
+%             obj.potential_func = combineFunction(overpotentials);
+%         end
         
         % Function for fitting UI curve
         function fit_UI(obj,U,I,varargin)

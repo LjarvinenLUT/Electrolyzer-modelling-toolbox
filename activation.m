@@ -1,15 +1,14 @@
 % Activation overpotetial function handle generator
 % Inputs:       model - Used model reference, numeric, from which article
 
-function Uact = activation(T,varargin)
+function output = activation(varargin)
     
     defaultModel = 2;
 
     parser = inputParser;
-    addRequired(parser,'T',@(x) isnumeric(x))
     addParameter(parser,'model',defaultModel,@(x) isnumeric(x)&&isscalar(x))
     
-    parse(parser,T,varargin{:});
+    parse(parser,varargin{:});
     
     model = parser.Results.model;
     
@@ -32,11 +31,16 @@ function Uact = activation(T,varargin)
         
     switch model
         case 1 % Hyperbolic sine approximation with alpha assumed to be 1/2
-            Uact = @(j0,alpha,Current) 2*((R.*T)./(n_e*F)).*asinh(Current./(2*j0));
+            Uact = @(coeffs,vars) 2*((R.*vars.T)./(n_e*F)).*asinh(vars.Current./(2*coeffs.j0));
+            coeffs = struct('alpha',1/2,'j0',[]);
         case 2 % Hyperbolic sine approximation with variable alpha
-            Uact = @(j0,alpha,Current) 1/alpha.*((R.*T)./(n_e*F)).*asinh(Current./(2*j0));
+            Uact = @(coeffs,vars) 1/coeffs.alpha.*((R.*vars.T)./(n_e*F)).*asinh(vars.Current./(2*coeffs.j0));
+            coeffs = struct('alpha',[],'j0',[]);
         case 3 % Tafel equation (valid when j/j0 > 4 https://doi.org/10.1016/j.jpowsour.2005.03.174)
-            Uact = @(j0,alpha,Current) 1/alpha.*((R.*T)./(n_e*F)).*log(Current./j0);
+            Uact = @(coeffs,vars) 1/coeffs.alpha.*((R.*vars.T)./(n_e*F)).*log(vars.Current./coeffs.j0);
+            coeffs = struct('alpha',[],'j0',[]);
     end
 
+    output = struct('name','Uact','func',Uact,'coeffs',coeffs);
+    
 end

@@ -9,18 +9,16 @@
 %           type - Electrolysis type, "PEM" or "alkaline"
 %           electrolyte - Electrolyte used for "alkaline"
 
-function Ucor = nernst_pressure_correction(T,p1,p2,varargin)
+function Ucor = nernst_pressure_correction(vars,varargin)
     
     defaultElectrolyte = 'KOH';
 
     parser = inputParser;
-    addRequired(parser,'T',@(x) isnumeric(x));
-    addRequired(parser,'p1',@(x) isnumeric(x));
-    addRequired(parser,'p2',@(x) isnumeric(x));
+    addRequired(parser,'vars',@(x) isstruct(x));
     addParameter(parser,'type',@(x) ischar(x)||isstring(x));
     addParameter(parser,'electrolyte',defaultElectrolyte,@(x) ischar(x)||isstring(x))
     
-    parse(parser,T,p1,p2,varargin{:});
+    parse(parser,vars,varargin{:});
     
     type = string(lower(parser.Results.type));
     electrolyte = string(parser.Results.electrolyte);
@@ -40,31 +38,29 @@ function Ucor = nernst_pressure_correction(T,p1,p2,varargin)
 
     switch type
         case "pem"
-            psv = water_vapor_pressure(T); % Vapor pressure from Antoine equation
+            psv = water_vapor_pressure(vars.T); % Vapor pressure from Antoine equation
             
-            pH2 = p1 - psv; % bar, Hydrogen partial pressure
-            pO2 = p2 - psv; % bar, Oxygen partial pressure
+            pH2 = vars.p1 - psv; % bar, Hydrogen partial pressure
+            pO2 = vars.p2 - psv; % bar, Oxygen partial pressure
             
             if any(pH2 < 0 | pO2 < 0)
                 error('Pressure too low! Anode or cathode pressure lower than saturated vapor pressure.')
             end
             
             % Nernst equation pressure correction
-            Ucor = (R.*T)/(n_e*F).*log(pH2.*pO2.^(1/2));
+            Ucor = (R.*vars.T)/(n_e*F).*log(pH2.*pO2.^(1/2));
             
         case "alkaline"
-            p = p1; % bar, System pressure
-            m = p2; % mol/kg of solvent, Molality of the electrolyte
             
-            [psvEl,aH2OEl] = electrolyte_parameters(T,m,electrolyte); % TODO!
+            [psvEl,aH2OEl] = electrolyte_parameters(vars.T,vars.m,electrolyte);
             
-            ps = p - psvEl; % bar, Partial pressure of hydrogen and oxygen
+            ps = vars.p - psvEl; % bar, Partial pressure of hydrogen and oxygen
             
             if any(ps < 0)
                 error('Pressure too low! System pressure lower than saturated vapor pressure of the electrolyte solution.')
             end
             
             % Nernst equation pressure correction
-            Ucor = (R.*T)/(n_e*F).*log(ps.^(3/2)./aH2OEl);
+            Ucor = (R.*vars.T)/(n_e*F).*log(ps.^(3/2)./aH2OEl);
     end
 end
