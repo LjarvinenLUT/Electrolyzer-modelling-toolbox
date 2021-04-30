@@ -9,21 +9,21 @@
 classdef electrolyzer_model < handle
     
     properties (SetAccess = protected)
-       type; % PEM or alkaline
-       electrolyte; % Electrolyte for alkali electrolyzers (should be in its own subclass)
-       overpotential_function; % Function handle for combined overpotential function
-       fit_parameters; % Table for fitted parameters. 
-                    % Using table for parameters enables use of
-                    % models with varying number of fit parameters and
-                    % their different namings
-       T;   % System temperature
-       
-       overpotentials; % Array of all overpotential function handles
+        type; % PEM or alkaline
+        electrolyte; % Electrolyte for alkali electrolyzers (should be in its own subclass)
+        overpotential_function; % Function handle for combined overpotential function
+        fit_parameters; % Table for fitted parameters.
+                        % Using table for parameters enables use of
+                        % models with varying number of fit parameters and
+                        % their different namings
+        T;   % System temperature
+        
+        overpotentials; % Array of all overpotential function handles
     end
     
     
     methods
-       
+        
         % Constructor function
         function obj = electrolyzer_model(varargin)
             defaultElectrolyte = "KOH";
@@ -54,14 +54,12 @@ classdef electrolyzer_model < handle
         
         function object = add_overpotential(obj, overpotential)
             obj.overpotentials{end+1} = overpotential;
-            object = obj;
-        end
-        
-        % Function for combining overpotential function handles
-        function object = combine_overpotentials(obj)
-            % Call utility function to combine overpotential function
-            % handles to on function
-            obj.overpotential_function = combineFuncHandles(obj.overpotentials);
+            
+            % Combine function handles if necessary
+            if length(obj.overpotentials) > 1
+                obj.overpotential_function = combineFuncHandles(obj.overpotentials);
+            end
+            
             object = obj;
         end
         
@@ -112,7 +110,7 @@ classdef electrolyzer_model < handle
         
         % Clears the overpotential cell array
         function clear_overpotentials(obj)
-           obj.overpotentials = {}; 
+            obj.overpotentials = {};
         end
         
     end
