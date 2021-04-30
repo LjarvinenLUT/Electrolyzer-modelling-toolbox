@@ -24,7 +24,7 @@ function Ucon = concentration(T,varargin)
     f = R/(n_e*F);
     
     fprintf('\nConcentration overpotential calculation properties:\n')
-    fprintf('Electrolyzer: %d\n', model)
+    fprintf('Model: %d\n', model)
     %% Error checking
     
     if model == 3 && ~isnumeric(p_O2)

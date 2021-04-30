@@ -58,14 +58,15 @@ classdef electrolyzer_model < handle
         end
         
         % Function for combining overpotential function handles
-        function combine_overpotentials(obj)
+        function object = combine_overpotentials(obj)
             % Call utility function to combine overpotential function
             % handles to on function
-            overpotential_function = combineFunction(overpotentials);
+            obj.overpotential_function = combineFuncHandles(obj.overpotentials);
+            object = obj;
         end
         
         % Function for fitting UI curve
-        function fit_UI(obj,U,I,varargin)
+        function object = fit_UI(obj,U,I,varargin)
             
             defaultMethod = 'PS';
             
@@ -81,11 +82,14 @@ classdef electrolyzer_model < handle
             
             obj.fit_parameters = fit_UI(obj.overpotential_function,U,I,'method',method);
             
+            object = obj;
         end
         
         % Function for plotting UI curve
-        function show_UI(obj)
+        function object = show_UI(obj)
+            display("Print figures")
             
+            object = obj;
         end
         
         % Get all unique arguments from the given overpotential function

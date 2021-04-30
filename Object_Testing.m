@@ -2,24 +2,18 @@
 clear; clc; close all;
 addpath("Utils");
 
+T = 285;
 obj = electrolyzer_model("type", "alkaline", "electrolyte", "KOH") ...
-    .add_overpotential(ohmic()) ...
-    .add_overpotential(ohmic()) ...
-    .add_overpotential(ohmic());
-
-uniqueArguments = obj.getOverpotentialArguments()
-obj.set_overpotentials()
-obj.overpotential_function(1, 1)
-
-ohm = ohmic();
-real = ohm(1,1) * 3
+    .add_overpotential(nernst(T, 1, 10, "type", "alkaline", "electrolyte", "KOH")) ...
+    .add_overpotential(ohmic('type', 'alkaline')) ...
+    .add_overpotential(activation(T)) ...
+    .add_overpotential(concentration(T)) ...
+    .combine_overpotentials() ...
+    .show_UI();
 
 
-%% Random testing
-
-fun = @(a) a + 1
-cells = {"x"}
-funString = "@(" + cells{:} + ") fun(" + cells{:} + ")"
-ff = str2func(funString)
-f = @(x) ff(x)
-f(1) 
+%%
+%uniqueArguments = obj.getOverpotentialArguments()
+obj.combine_overpotentials()
+obj.overpotential_function
+obj.overpotential_function(0.5, 1e-6, 2, 10, 4)
