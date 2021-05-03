@@ -84,8 +84,25 @@ classdef electrolyzer_model < handle
         end
         
         % Function for plotting UI curve
-        function object = show_UI(obj)
-            display("Print figures")
+        function object = show_UI(obj, jmeas)            
+            % Convert table to cell array which can then be used in a function call
+            % instead of individual parameters
+            fit_parameters_cells = table2cell(obj.fit_parameters);
+            
+            % Use fit param cell array instead of individual parameters when calling
+            % for voltage function
+            Ufit = obj.overpotential_function(fit_parameters_cells{:},jmeas);
+            
+            figure
+            hold on;
+            %scatter(jmeassamper,Umeassamper)
+            plot(jmeas,Ufit)
+            xlabel("j (A)")
+            ylabel("U (V)")
+            %legend("Data", "Fit", "Location", "Best")
+            legend("Fit", "Location", "Best")
+            title('Particleswarm')
+            hold off;
             
             object = obj;
         end
