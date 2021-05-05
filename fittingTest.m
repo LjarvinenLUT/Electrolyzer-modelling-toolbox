@@ -2,6 +2,8 @@ clear;
 close all;
 clc;
 
+addpath Utils
+
 %% Global parameters
 [F,R,n_e] = get_constants();
 
@@ -21,11 +23,12 @@ Ucon = concentration(T);
 
 
 
-i = 2;
+i = 3;
 weights = 'none';
 switch i
 
-    case 1 % Created test data
+    case 1 
+        %% Created test data
         
         Uforfit = combineFuncHandles({Uact,Uohm,Ucon,Uocv});
         
@@ -169,7 +172,8 @@ switch i
 
 
         
-    case 2 % Data from Jülich
+    case 2 
+        %% Data from Jülich
         
         Uforfit = combineFuncHandles({Uocv,Uact,Uohm});
         
@@ -258,4 +262,100 @@ switch i
             hold off;
             
         end
+        
+    
+    case 3 
+        %% Data from Baby Piel
+        
+        load('AlkaliData.mat')
+        
+        T = mean(AlkaliUI.T(:,1));
+        P = mean(AlkaliUI.P(:,1));
+        
+        type = "alkaline"; % Cell type
+        m = 7.64; % electrolyte molality for 30% KOH solution
+        Uocv = nernst(T,P,m,'type',type,'electrolyte','NaOH');
+        activation_model = 2;
+        Uact = activation(T,'model',activation_model);
+        Uohm = ohmic();
+        
+        Uforfit = combineFuncHandles({Uocv,Uact,Uohm});
+        
+        %% Fit
+        
+        % Non-linear least squares error
+        tic;
+        [fit_param1,fit_err1,gof1] = fit_UI(Uforfit,AlkaliUI.U,AlkaliUI.j,'method','nllse','weights',weights);
+        toc
+        
+        I0fit(1,1) = fit_param1.j0;
+        if activation_model == 1
+            alphafit(1,1) = 1/2;
+        else
+            alphafit(1,1) = fit_param1.alpha;
+        end
+        rfit(1,1) = fit_param1.r;
+        
+        % Convert table to cell array which can then be used in a function call
+        % instead of individual parameters
+        fit_param1_cells = table2cell(fit_param1);
+        
+        % Use fit param cell array instead of individual parameters when calling
+        % for voltage function
+        test_j = 0.001:0.001:max(AlkaliUI.j(:,1));
+        Ufit1 = Uforfit(fit_param1_cells{:},test_j);
+        
+        RMSE(1,1) = gof1.rmse; % Root mean squares error
+        Rsqrd(1,1) = gof1.rsquare; % R^2 of the fit
+        
+        % Plotting
+        
+        figure
+        hold on;
+        errorbar(AlkaliUI.j(:,1),AlkaliUI.U(:,1),AlkaliUI.U(:,2),AlkaliUI.U(:,2),AlkaliUI.j(:,2),AlkaliUI.j(:,2),'o')
+        plot(test_j,Ufit1)
+        xlabel("I (A)")
+        ylabel("U (V)")
+        legend("Data", "Fit", "Location", "Best")
+        title('Non-linear least squares error: Alkali')
+        hold off;
+        
+        
+        % Particleswarm
+        tic;
+        [fit_param2,fit_err2,gof2] = fit_UI(Uforfit,AlkaliUI.U(:,1),AlkaliUI.j(:,1),'method','ps','weights',weights);
+        toc
+        
+        
+        I0fit(2,1) = fit_param2.j0;
+        if activation_model == 1
+            alphafit(2,1) = 1/2;
+        else
+            alphafit(2,1) = fit_param2.alpha;
+        end
+        rfit(2,1) = fit_param2.r;
+        
+        % Convert table to cell array which can then be used in a function call
+        % instead of individual parameters
+        fit_param2_cells = table2cell(fit_param2);
+        
+        % Use fit param cell array instead of individual parameters when calling
+        % for voltage function
+        Ufit2 = Uforfit(fit_param2_cells{:},test_j);
+        
+        RMSE(2,1) = gof2.rmse; % Root mean squares error
+        Rsqrd(2,1) = gof2.rsquare; % R^2 of the fit
+        
+        % Plotting
+        
+        figure
+        hold on;
+        errorbar(AlkaliUI.j(:,1),AlkaliUI.U(:,1),AlkaliUI.U(:,2),AlkaliUI.U(:,2),AlkaliUI.j(:,2),AlkaliUI.j(:,2),'o')
+        plot(test_j,Ufit2)
+        xlabel("I (A)")
+        ylabel("U (V)")
+        legend("Data", "Fit", "Location", "Best")
+        title('Particleswarm: Alkali')
+        hold off;
+        
 end
