@@ -10,18 +10,18 @@
 %           model - Used reversible potential model reference, numeric, from which article
 %           electrolyte - Electrolyte used for "alkaline"
 
-function output = nernst(vars,varargin)
+function output = nernst(varargin)
     
     defaultModel = 6;
+    defaultType = 'NaN';
     defaultElectrolyte = 'KOH';
 
     parser = inputParser;
-    addRequired(parser,'vars',@(x) isstruct(x));
-    addParameter(parser,'type',@(x) ischar(x)||isstring(x));
+    addParameter(parser,'type',defaultType,@(x) ischar(x)||isstring(x));
     addParameter(parser,'model',defaultModel,@(x) isnumeric(x)&&isscalar(x))
     addParameter(parser,'electrolyte',defaultElectrolyte,@(x) ischar(x)||isstring(x))
     
-    parse(parser,vars,varargin{:});
+    parse(parser,varargin{:});
     
     type = string(lower(parser.Results.type));
     model = parser.Results.model;
@@ -38,10 +38,10 @@ function output = nernst(vars,varargin)
     %% Errors
     if strcmp(type,"alkaline")
         if ~strcmp(electrolyte,"KOH")&&~strcmp(electrolyte,"NaOH")
-            error('Only KOH and NaOH defined as alkaline electrolytes')
+            error("Only KOH and NaOH defined as alkaline electrolytes. Define the electrolyte by calling this function with parameter 'electrolyte' followed by one of the options.")
         end
     elseif ~strcmp(type,"pem")
-        error('Only PEM and alkaline electrolysis defined for Nernst equation.')
+        error("Only PEM and alkaline electrolysis defined for Nernst equation. Define the electrolyzer type by calling function with parameter 'type' followed by one of the options.")
     end
     
     %% Nernst equation

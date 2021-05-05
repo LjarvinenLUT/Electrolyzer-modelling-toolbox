@@ -35,6 +35,8 @@ for i = 1:length(f_b)
         if isempty(struct_b.(f_b{i}))
             merged_struct.(f_b{i}) = struct_a.(f_b{i});
             continue;
+        elseif isstruct(struct_b.(f_b{i})) && isstruct(struct_a.(f_b{i}))
+            merged_struct.(f_b{i}) = mergeStructs(struct_a.(f_b{i}),struct_b.(f_b{i}));
         else
             merged_struct.(f_b{i}) = struct_b.(f_b{i});
             overwritten_fields = true;
