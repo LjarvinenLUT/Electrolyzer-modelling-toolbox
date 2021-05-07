@@ -4,38 +4,48 @@
 %           resistanceModel - Used resistance model
 %           delta - Alkaline: Electrolyte layer thickness, PEM: Membrane thickness
 
-function output = ohmic(varargin)
+function Uohm = ohmic(varargin)
 
+    addpath('Utils')
+    
     defaultConductivityModel = 1;
     defaultResistanceModel = 1;
-    defaultType = 'Pem';
+    defaultType = 'pem';
+    defaultTemperature = [];
 
     parser = inputParser;
-    addOptional(parser,'vars',@(x) isstruct(x));
+%     addOptional(parser,'Variables',defaultVariables,@(x) isstruct(x));
     addParameter(parser,'type',defaultType,@(x) ischar(x)||isstring(x));
     addParameter(parser,'conductivityModel',defaultConductivityModel,@(x) isnumeric(x)&&isscalar(x));
     addParameter(parser,'resistanceModel',defaultResistanceModel,@(x) isnumeric(x)&&isscalar(x));
-%     addParameter(parser,'delta',@(x) isnumeric(x));
-%     addParameter(parser,'lambda',@(x) isnumeric(x));
-%     addParameter(parser,'m',@(x) isnumeric(x));
-%     addParameter(parser,'w',@(x) isnumeric(x));
-%     addParameter(parser,'Temperature',@(x) isnumeric(x));
+    addParameter(parser,'delta',@(x) isnumeric(x));
+    addParameter(parser,'lambda',@(x) isnumeric(x));
+    addParameter(parser,'m',@(x) isnumeric(x));
+    addParameter(parser,'w',@(x) isnumeric(x));
+    addParameter(parser,'Temperature',defaultTemperature,@(x) isnumeric(x));
     
     parse(parser, varargin{:});
     
     type = string(lower(parser.Results.type));
     conductivityModel = parser.Results.conductivityModel;
     resistanceModel = parser.Results.resistanceModel;
-%     delta = parser.Results.delta;
-%     lambda = parser.Results.lambda;
-%     m = parser.Results.m;
-%     w = parser.Results.w;
-%     T = parser.Results.Temperature;
+%     Variables = mergeStructs(defaultVariables,parser.Results.Variables);
+%     if ~ismember('Current',fieldnames(Variables))
+%         Variables.Current = [];
+%     end
+    delta = parser.Results.delta;
+    lambda = parser.Results.lambda;
+    m = parser.Results.m;
+    w = parser.Results.w;
+    Variables.T = parser.Results.Temperature;
+    Variables.current = [];
     
     fprintf('\nOhmic overpotential calculation properties:\n')
     fprintf('Electrolyzer: %s\n', type)
-    fprintf('Conductivity model: %d\n', conductivityModel)
     fprintf('Resistance model: %d\n', resistanceModel)
+    if resistanceModel ~= 1
+        fprintf('Conductivity model: %d\n', conductivityModel)
+    end
     
     %% Error checking
     
@@ -44,27 +54,27 @@ function output = ohmic(varargin)
             
         case 2
             if strcmpi(type,"PEM") && conductivityModel == 1
-                    if ~isnumeric(vars.lambda)
-                        error('Variable "lambda" (water content) has to be set for PEM conductivity model 1 (TODO: Check which units)')
-                    elseif  vars.lambda <= 1
-                        error('Lambda has to be greater than 1 when using conductivity model 1')
+                    if ~isnumeric(lambda)
+                        error('Variable "lambda" (water content) has to be set for PEM conductivity model 1 with resistance model 2 (TODO: Check which units)')
+                    elseif  lambda <= 1
+                        error('Lambda has to be greater than 1 when using PEM conductivity model 1')
                     end
             end
             if strcmpi(type,"Alkaline")
                 if conductivityModel == 1
-                    if ~isnumeric(vars.m)
-                        error('Variable "m" (molar concentration) has to be set for alkaline conductivity model 1')
+                    if ~isnumeric(m)
+                        error('Variable "m" (molar concentration) has to be set for alkaline conductivity model 1 with resistance model 2')
                     end
                 elseif conductivityModel == 2
-                    if ~isnumeric(vars.w)
+                    if ~isnumeric(w)
                         error('Variable "w" (mass concentration wt%)  has to be set for alkaline conductivity model 2')
                     end
                 end
             end
-            if  ~isnumeric(vars.delta)
+            if  ~isnumeric(delta)
                 error('Variable "delta" (electrolyte thickness) has to be set when using resistance model 2(TODO: Check which units)')
             end
-            if ~isnumeric(vars.T)
+            if ~isnumeric(Variables.T) || isempty(Variables.T)
                 error('Variable "T" (temperature) has to be set when using resistance model 2 (TODO: Check which units)')
             end
     end
@@ -83,31 +93,33 @@ function output = ohmic(varargin)
             case 1 % (Alkaline) Gilliam et al. "A review of specific conductivities of potassium hydroxide solutions for various concentrations and temperatures", 2007
                 A = -2.041;  B = -0.0028;  C = 0.005332;
                 D = 207.2;  E = 0.001043; F = -0.0000003;
-                sigma = A*vars.m + B*vars.m^2 + C*vars.m*vars.T + D*(vars.m/vars.T) + E*vars.m^3 + F*vars.m^2*vars.T^2;
+                sigma = A*m + B*m^2 + C*m*Variables.T + D*(m/Variables.T) + E*m^3 + F*m^2*Variables.T^2;
             case 2 % (Alkaline, KOH) See et al. "Temperature and Concentration Dependence of the Specific Conductivity of Concentrated Solutions of Potassium Hydroxide"
                 K1 = 0.279844803; K2 = -0.009241294; K3 = -0.000149660371;
                 K4 = -0.000905209551; K5 = 0.000114933252; K6 = 0.1765;
                 K7 = 0.0696648518; K8 = -28.9815658;
-                sigma = K1*(100*vars.w) + K2*vars.T + K3 * vars.T^2 + K4 * (vars.T*100*vars.w) ...
-                    + K5*(vars.T^2*(100*vars.w)^K6) + K7*(vars.T/(100*vars.w)) + K8*((100*vars.w)/vars.T);
+                sigma = K1*(100*w) + K2*Variables.T + K3 * Variables.T^2 + K4 * (Variables.T*100*w) ...
+                    + K5*(Variables.T^2*(100*w)^K6) + K7*(Variables.T/(100*w)) + K8*((100*w)/Variables.T);
         end
     elseif strcmpi(type,"PEM") && resistanceModel ~= 1
         switch conductivityModel
             case 1 % (PEM) https://doi.org/10.1149/1.2085971 Springer et al. "Polymer Electrolyte Fuel Cell Model"
-                sigma = 0.005139 * vars.lambda - 0.00326 * exp(1268 * (1/303 - 1/vars.T));
+                sigma = 0.005139 * lambda - 0.00326 * exp(1268 * (1/303 - 1./Variables.T));
         end
     end
     
     switch resistanceModel
         case 1 % https://doi.org/10.1016/j.ijhydene.2015.03.164 "Electrochemical performance modeling of a proton exchange membrane electrolyzer cell for hydrogen energy"
-            Uohm = @(coeff, vars) coeff.r.*vars.Current;
-            coeffs = struct('r',[]);
+            Coefficients = struct('r',[]);
+            funcHandle = @(Workspace) Workspace.Coefficients.r.*Workspace.Variables.current;
         case 2
-            Ri = vars.delta/sigma;
-            Uohm = @(coeff, vars) (coeff.r_electronics + Ri).*vars.Current;
-            coeffs = struct('r_electronics',[]);
+            Variables.Ri = delta./sigma;
+            Coefficients = struct('r_electronics',[]);
+            funcHandle = @(Workspace) (Workspace.Coefficients.r_electronics + Workspace.Variables.Ri).*Workspace.Variables.current;
     end
     
-    output = struct('name','Uohm','func',Uohm,'coeffs',coeffs);
+    Workspace = struct('Coefficients',Coefficients,'Variables',Variables);
+    
+    Uohm = func(funcHandle,Workspace);
     
 end

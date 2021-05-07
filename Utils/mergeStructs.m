@@ -31,15 +31,17 @@ f_b = fieldnames(struct_b);
 for i = 1:length(f_b)
     if isempty(f_a)
         continue;
-    elseif any(f_b{i} == [f_a{:}]) && ~isempty(struct_a.(f_b{i}))
+    elseif ismember(f_b{i},f_a) && ~isempty(struct_a.(f_b{i}))
         if isempty(struct_b.(f_b{i}))
             merged_struct.(f_b{i}) = struct_a.(f_b{i});
             continue;
         elseif isstruct(struct_b.(f_b{i})) && isstruct(struct_a.(f_b{i}))
             merged_struct.(f_b{i}) = mergeStructs(struct_a.(f_b{i}),struct_b.(f_b{i}));
         else
+            if struct_b.(f_b{i}) ~= struct_a.(f_b{i})
+                overwritten_fields = true;
+            end
             merged_struct.(f_b{i}) = struct_b.(f_b{i});
-            overwritten_fields = true;
         end
     else
         merged_struct.(f_b{i}) = struct_b.(f_b{i});

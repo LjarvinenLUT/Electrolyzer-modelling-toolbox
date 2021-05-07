@@ -1,7 +1,7 @@
 % Activation overpotetial function handle generator
 % Inputs:       model - Used model reference, numeric, from which article
 
-function output = activation(varargin)
+function Uact = activation(varargin)
     
     defaultModel = 2;
 
@@ -27,20 +27,23 @@ function output = activation(varargin)
     end
     fprintf('Activation voltage model: %s\n', model_str)
     
-    [F,R,n_e] = get_constants;
+    [Constants.F,Constants.R,Constants.n_e] = get_constants;
+    
+    Variables = struct('current',[],'T',[]);
         
     switch model
         case 1 % Hyperbolic sine approximation with alpha assumed to be 1/2
-            Uact = @(coeffs,vars) 2*((R.*vars.T)./(n_e*F)).*asinh(vars.Current./(2*coeffs.j0));
-            coeffs = struct('alpha',1/2,'j0',[]);
+            Coefficients = struct('alpha',1/2,'j0',[]);
+            funcHandle = @(Workspace) 2*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
         case 2 % Hyperbolic sine approximation with variable alpha
-            Uact = @(coeffs,vars) 1/coeffs.alpha.*((R.*vars.T)./(n_e*F)).*asinh(vars.Current./(2*coeffs.j0));
-            coeffs = struct('alpha',[],'j0',[]);
+            Coefficients = struct('alpha',[],'j0',[]);
+            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((R.*Workspace.Variables.T)./(n_e*F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
         case 3 % Tafel equation (valid when j/j0 > 4 https://doi.org/10.1016/j.jpowsour.2005.03.174)
-            Uact = @(coeffs,vars) 1/coeffs.alpha.*((R.*vars.T)./(n_e*F)).*log(vars.Current./coeffs.j0);
-            coeffs = struct('alpha',[],'j0',[]);
+            Coefficients = struct('alpha',[],'j0',[]);
+            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((R.*Workspace.Variables.T)./(n_e*F)).*log(Workspace.Variables.current./Workspace.Coefficients.j0);
     end
 
-    output = struct('name','Uact','func',Uact,'coeffs',coeffs);
+    Workspace = struct('Variables',Variables,'Constants',Constants,'Coefficients',Coefficients);
+    Uact = func(funcHandle,Workspace);
     
 end
