@@ -27,23 +27,22 @@ function Uact = activation(varargin)
     end
     fprintf('Activation voltage model: %s\n', model_str)
     
-    [Constants.F,Constants.R,Constants.n_e] = get_constants;
+    [Workspace.Constants.F,Workspace.Constants.R,Workspace.Constants.n_e] = get_constants;
     
-    Variables = struct('current',[],'T',[]);
+    Workspace.Variables = struct('current',[],'voltage',[],'T',[]);
         
     switch model
         case 1 % Hyperbolic sine approximation with alpha assumed to be 1/2
-            Coefficients = struct('alpha',1/2,'j0',[]);
+            Workspace.Coefficients = struct('alpha',1/2,'j0',[]);
             funcHandle = @(Workspace) 2*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
         case 2 % Hyperbolic sine approximation with variable alpha
-            Coefficients = struct('alpha',[],'j0',[]);
-            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((R.*Workspace.Variables.T)./(n_e*F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
+            Workspace.Coefficients = struct('alpha',[],'j0',[]);
+            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
         case 3 % Tafel equation (valid when j/j0 > 4 https://doi.org/10.1016/j.jpowsour.2005.03.174)
-            Coefficients = struct('alpha',[],'j0',[]);
-            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((R.*Workspace.Variables.T)./(n_e*F)).*log(Workspace.Variables.current./Workspace.Coefficients.j0);
+            Workspace.Coefficients = struct('alpha',[],'j0',[]);
+            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(Workspace.Variables.current./Workspace.Coefficients.j0);
     end
 
-    Workspace = struct('Variables',Variables,'Constants',Constants,'Coefficients',Coefficients);
     Uact = func(funcHandle,Workspace);
     
 end

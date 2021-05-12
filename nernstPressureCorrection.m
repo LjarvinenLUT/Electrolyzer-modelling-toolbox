@@ -22,7 +22,7 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
     
     parse(parser,T,p1,p2,varargin{:});
     
-    Variables.T = T;
+    Workspace.Variables = struct('T',T,'voltage',[]);
     type = string(lower(parser.Results.type));
     if strcmp(type,"alkali")
         type = "alkaline";
@@ -38,37 +38,33 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
         error('Only PEM and alkaline electrolysis defined for Nernst equation.')
     end
     %%
-    [Constants.F,Constants.R,Constants.n_e] = get_constants;
+    [Workspace.Constants.F,Workspace.Constants.R,Workspace.Constants.n_e] = get_constants;
 
     %%
 
     switch type
         case "pem"
-            psv = water_vapor_pressure(T); % Vapor pressure from Antoine equation
+            psv = water_vapor_pressure(Workspace.Variables.T); % Vapor pressure from Antoine equation
             
-            Variables.pH2 = p1 - psv; % bar, Hydrogen partial pressure
-            Variables.pO2 = p2 - psv; % bar, Oxygen partial pressure
+            Workspace.Variables.pH2 = p1 - psv; % bar, Hydrogen partial pressure
+            Workspace.Variables.pO2 = p2 - psv; % bar, Oxygen partial pressure
             
-            if any(Variables.pH2 < 0 | Variables.pO2 < 0)
+            if any(Workspace.Variables.pH2 < 0 | Workspace.Variables.pO2 < 0)
                 error('Pressure too low! Anode or cathode pressure lower than saturated vapor pressure.')
             end
-            
-            Workspace = struct('Constants',Constants,'Variables',Variables);
-            
+                      
             % Nernst equation pressure correction
             funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log(Workspace.Variables.pH2.*Workspace.Variables.pO2.^(1/2));
             
         case "alkaline"
             
-            [psvEl,Variables.aH2OEl] = electrolyte_parameters(Variables.T,p2,electrolyte);
+            [psvEl,Workspace.Variables.aH2OEl] = electrolyte_parameters(Workspace.Variables.T,p2,electrolyte);
             
-            Variables.ps = p1 - psvEl; % bar, Partial pressure of both hydrogen and oxygen in the system
+            Workspace.Variables.ps = p1 - psvEl; % bar, Partial pressure of both hydrogen and oxygen in the system
             
-            if any(Variables.ps < 0)
+            if any(Workspace.Variables.ps < 0)
                 error('Pressure too low! System pressure lower than saturated vapor pressure of the electrolyte solution.')
             end
-            
-            Workspace = struct('Constants',Constants,'Variables',Variables);
             
             % Nernst equation pressure correction
             funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log(Workspace.Variables.ps.^(3/2)./Workspace.Variables.aH2OEl);
