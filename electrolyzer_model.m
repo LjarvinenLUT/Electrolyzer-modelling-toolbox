@@ -11,10 +11,10 @@ classdef electrolyzer_model < handle
     properties (SetAccess = protected)
        type; % PEM or alkaline
        electrolyte; % Electrolyte for alkali electrolyzers (should be in its own subclass)
-       potential_func; % Function handle for combined overpotential function
-       coeffs; % Structure for model coefficients.
-       vars;   % System measured variables
-       potentials; % Structure array of all potentials
+       potentialFunc; % Func object for combined overpotential function
+%        coeffs; % Structure for model coefficients.
+%        vars;   % System measured variables
+%        potentials; % Structure array of all potentials
     end
     
     
@@ -35,15 +35,16 @@ classdef electrolyzer_model < handle
             set_type(obj, parser.Results.type);
             set_electrolyte(obj, string(parser.Results.electrolyte));
             
-            obj.potentials = struct('name',{},'func',{},'coeffs',{});
-            obj.coeffs = struct([]);
-            if strcmp(obj.type,"pem")
-                obj.vars = struct('T',[],'Current',[],'Voltage',[],'p1',[],'p2',[]);
-            elseif strcmp(obj.type,"alkaline")
-                obj.vars = struct('T',[],'Current',[],'Voltage',[],'p',[],'m',[]);
-            else
-                obj.vars = struct('T',[],'Current',[],'Voltage',[]);
-            end
+            obj.potentialFunc = "Potential function not defined";
+%             obj.potentials = struct('name',{},'func',{},'coeffs',{});
+%             obj.coeffs = struct([]);
+%             if strcmp(obj.type,"pem")
+%                 obj.vars = struct('T',[],'Current',[],'Voltage',[],'p1',[],'p2',[]);
+%             elseif strcmp(obj.type,"alkaline")
+%                 obj.vars = struct('T',[],'Current',[],'Voltage',[],'p',[],'m',[]);
+%             else
+%                 obj.vars = struct('T',[],'Current',[],'Voltage',[]);
+%             end
         end
         
         % Function for setting electrolyzer type
@@ -65,29 +66,18 @@ classdef electrolyzer_model < handle
             obj.vars = vars;
         end
         
-        function add_potential(obj, added_potential)
-            obj.potentials = [obj.potentials,added_potential];
-            obj.coeffs = mergeStructs(added_potential.coeffs,obj.coeffs);
-            if isempty(obj.potential_func)
-                obj.potential_func = @(coeffs,vars) added_potential.func(coeffs,vars);
+        function add_potential(obj, addedPotentialFunc)
+%             obj.potentials = [obj.potentials,added_potential];
+%             obj.coeffs = mergeStructs(added_potential.coeffs,obj.coeffs);
+            if ~isa(addedPotentialFunc,'func')
+                error("Potential to be added has to be in a form of a func object")
+            elseif ~isa(obj.potentialFunc,'func')
+                obj.potentialFunc = addedPotentialFunc;
             else
-                old_potential_func = obj.potential_func;
-                obj.potential_func = @(coeffs,vars) old_potential_func(coeffs,vars) + added_potential.func(coeffs,vars);
+                obj.potentialFunc = addFuncs(obj.potentialFunc,addedPotentialFunc);
             end
         end
-        
-%         % Function for combining overpotential function handles
-%         function combine_overpotentials(obj)
-%             % Call utility function to combine overpotential function
-%             % handles to one function handle
-%             
-%             l = length(obj.potentials);
-%             
-%             for i = 1:l
-%                 
-%             
-%             obj.potential_func = combineFunction(overpotentials);
-%         end
+
         
         % Function for fitting UI curve
         function fit_UI(obj,U,I,varargin)
@@ -100,11 +90,11 @@ classdef electrolyzer_model < handle
             addRequired(parser,'I',@(x) isnumeric(x))
             addParameter(parser,'method',defaultMethod,@(x) ischar(x)||isstring(x)) % Fitting method to be used
             
-            parse(parser,func_handle,U,I,varargin{:});
+            parse(parser,obj,U,I,varargin{:});
             
             method = upper(string(parser.Results.method));
             
-            obj.fit_parameters = fit_UI(obj.overpotential_function,U,I,'method',method);
+            obj.fit_parameters = fit_UI(obj.potentialFunc,U,I,'method',method);
             
         end
         
@@ -132,8 +122,8 @@ classdef electrolyzer_model < handle
         end
         
         % Clears the overpotential cell array
-        function clear_overpotentials(obj)
-           obj.overpotentials = {}; 
+        function clearOverpotentials(obj)
+           obj.potentialFunc = "Potential function not defined"; 
         end
         
     end

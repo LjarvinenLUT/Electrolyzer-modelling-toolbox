@@ -1,5 +1,10 @@
-
 function [fit_param,err_bounds,gof] = fit_UI(func,voltage,current,varargin)
+% FIT_UI Fits a given function for a UI curve with given voltage and
+% current data to find unknown coefficient values.
+%
+%   [fit_param,err_bounds,gof] = FIT_UI(func,voltage,current) fits the
+%       given function to data using particle swarm optimisation and
+%       weighting beginning and end of the dataset.
 
 addpath Utils;
 % Add path to toolbox with MCMC

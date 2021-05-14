@@ -1,8 +1,19 @@
-% Antoine equation for determining saturated water vapor pressure
-% Inputs:   T - Measured temperature
-%          
-
-function psv = water_vapor_pressure(T,varargin)
+function psv = waterVaporPressure(T,varargin)
+% WATERVAPORPRESSURE Calculate water vapor pressure in temperature T in
+% kelvins. Output is in units of bars.
+%
+%   psv = WATERVAPORPRESSURE(T) calculates water vapor pressure using
+%       equation presented by Balej, J. in "Water Vapour Partial Pressures 
+%       and Water Activities in Potassium and Sodium Hydroxide Solutions 
+%       Over Wide Concentration and Temperature Ranges", 
+%       J. Hydrogen Energy, Vol. 10, No. 4. pp. 233--243, 1985
+%
+%   psv = WATERVAPORPRESSURE(T,'model',m) uses one of the two available
+%       models:
+%           #1 -- Antoine equation
+%           #2 -- Equation presented by Balej, J. (default)
+%
+% See also ELECTROLYTEPARAMETERS
 
 defaultModel = 2; % Default experimental parameters
 
@@ -50,22 +61,6 @@ switch model
             % Equation
             psv(j) = 10^(A(i)-B(i)/(T(j)+C(i)));
         end
-       
-%     case 2 % Bridgeman-Aldrich equation, from  Balej, J., "Water Vapour Partial Pressures and Water Activities in Potassium and Sodium Hydroxide Solutions Over Wide Concentration and Temperature Ranges", J. Hydrogen Energy, Vol. 10, No. 4. pp. 233--243, 1985
-%         % Does not work!!! Way too complicated... Adds just unnecessary complication
-%         % Parameters
-%         t = T - 273.15; % Temperature in degC
-%         A = 1.06994980;
-%         Y1 = 4.16385282*(t-187)./(t+237.098157);
-%         B = 1.0137921;
-%         C = 5.83531e-4;
-%         Z = -1.87 + 3.74*(1.152894 - 0.745794*acosh(654.2906./(t+266.778)));
-%         alpha = Z.^2.*(187^2 - Z.^2)./(0.30231574.*(1 + 3.377565e-3.*t));
-%         Y2 = 3^1.5/(2*1.87^3).*(0.01*(t-187-alpha)).*(187^2 - (0.01*(t-187-alpha)).^2);
-%         
-%         % Equation
-%         
-%         psv = 10.^(A + Y1 - B.*(1 + C.*t).*Y2);
         
     case 2 % Experimental fit: Balej, J., "Water Vapour Partial Pressures and Water Activities in Potassium and Sodium Hydroxide Solutions Over Wide Concentration and Temperature Ranges", J. Hydrogen Energy, Vol. 10, No. 4. pp. 233--243, 1985
         

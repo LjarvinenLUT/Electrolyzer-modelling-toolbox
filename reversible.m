@@ -1,10 +1,29 @@
-% Reversible voltage
-% Inputs:   T - Measured temperature
-%           model - Used model reference, numeric, from which article
+function Urev = reversible(T,model)
+% REVERSIBLE  Create a func object for calculation of reversible potential
+% of the water splitting reaction for Nernst equation.
+%
+%   Urev = REVERSIBLE(T) uses default model, #6 
+% 
+%   Urev = REVERSIBLE(_,'model',n) uses a model defined by parameter n
+% 
+%   REVERSIBLE has six (6) models available. Their more in detail
+%   description can be found in the mathematical documentation of this
+%   tool.
+%
+%   The output func object has the following fields in workspace
+%   structures:
+%       Constants (obtained by the function automatically):
+%           F -- Faraday's constant
+%           R -- Universal gas constant
+%           n_e -- Number of electrons transferred in a single
+%                   electrochemical water splitting reaction
+%       Variables:
+%           T -- Temperature in kelvin
+% 
+%   See also NERNST, FUNC, NERNSTPRESSURECORRECTION,
 
-function U_0 = reversible(T,model)
 
-[Workspace.Constants.F,~,Workspace.Constants.n_e] = get_constants;
+[Workspace.Constants.F,~,Workspace.Constants.n_e] = getConstants;
 
 Workspace.Variables = struct('T',T);
     
@@ -31,6 +50,6 @@ Workspace.Variables = struct('T',T);
     
     Workspace.Coefficients = struct();
     
-    U_0 = func(funcHandle,Workspace);
+    Urev = func(funcHandle,Workspace);
 
 end

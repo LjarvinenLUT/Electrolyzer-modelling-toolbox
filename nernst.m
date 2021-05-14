@@ -1,19 +1,38 @@
-% Nernst equation for open circuit voltage
-% Inputs:   T - Measured temperature
-%           p1 - Parameter 1: 
-%               for "PEM" cathode pressure, in bar
-%               for "alkaline" system pressure, in bar
-%           p2 - Parameter 2: 
-%               for "PEM" anode pressure, in bar
-%               for "alkaline" electrolyte molality, in mol/kg of solvent
-%           type - Electrolysis type, "PEM" or "alkaline"
-%           model - Used reversible potential model reference, numeric, from which article
-%           electrolyte - Electrolyte used for "alkaline"
-
 function Uocv = nernst(T,p1,p2,varargin)
+% NERNST  Create a func object for calculation of open circuit potential
+% using Nernst equation in modelling of water electrolysis.
+%
+%   Uocv = NERNST(T,p1,p2,'type',t) creates func object for
+%           electrolyzer type defined by variable t. 
+%           Electrolyzer types availabel are:
+%               PEM -- Polymer electrolyte membrane electrolysis
+%               Alkaline -- Alkaline electrolysis.
+%           Inputs: T -- Measured temperature
+%                   p1 -- Parameter 1: 
+%                       for PEM: cathode pressure, in bar
+%                       for alkaline: system pressure, in bar
+%                   p2 - Parameter 2: 
+%                       for PEM: anode pressure, in bar
+%                       for alkaline: electrolyte molality, in mol/kg of solvent
+% 
+%   Uocv = NERNST(_,'type','alkaline','electrolyte',e) changes the 
+%           electrolyte when alkaline electrolysis is considered.
+%           Available electrolytes are:
+%               KOH -- Potassium hydroxide (default)
+%               NaOH -- Sodium hydroxide
+%
+%   Uocv = NERNST(_,'model',n) uses a model defined by number n for the
+%           reversible voltage. Models available are presented in function 
+%           reversible
+% 
+%   NERNST calls functions reversible and nernstPressureCorrection and
+%   combines their output FUNC objects.
+% 
+%   See also ACTIVATION, OHMIC, CONCENTRATION, FUNC, REVERSIBLE,
+%   NERNSTPRESSURECORRECTION
 
     addpath('Utils')
-    
+    %% Parse inputs
     defaultModel = 6;
     defaultType = 'NaN';
     defaultElectrolyte = 'KOH';
@@ -35,7 +54,7 @@ function Uocv = nernst(T,p1,p2,varargin)
     model = parser.Results.model;
     electrolyte = string(parser.Results.electrolyte);
     
-    % Print parameters to command window
+    %% Print parameters to command window
     fprintf('\nOpen circuit voltage calculation properties:\n')
     fprintf('Reversible voltage model: %d\n', model)
     fprintf('Electrolyzer type: %s\n', type)

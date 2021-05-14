@@ -1,7 +1,33 @@
-% Activation overpotetial function handle generator
-% Inputs:       model - Used model reference, numeric, from which article
-
 function Uact = activation(varargin)
+% ACTIVATION  Create a func object for activation overpotential in 
+% modelling of water electrolysis.
+%
+%   Uact = ACTIVATION() uses hyperbolic sine approximation with variable
+%   electron transfer coefficient, alpha
+%
+%   Uact = ACTIVATION('model',n) uses a model defined by number n.  
+%
+%   Models available currently are:
+%       #1 -- Hyperbolic sine approximation with alpha assumed to be 1/2
+%       #2 -- Hyperbolic sine approximation with variable alpha
+%       #3 -- Tafel equation
+%
+%   All the models require the following func Workspace structure values:
+%       Constants (obtained by the function automatically):
+%           F -- Faraday's constant
+%           R -- Universal gas constant
+%           n_e -- Number of electrons transferred in a single
+%                   electrochemical water splitting reaction
+%       Variables: 
+%           current -- Current density
+%           T -- Temperature in kelvins
+%   	Coefficients:
+%           alpha -- Electron transfer coefficient
+%           j0 -- Exchange current density
+%
+%   See also NERNST, OHMIC, CONCENTRATION, FUNC
+    
+    %% Parse input
     
     defaultModel = 2;
 
@@ -12,37 +38,40 @@ function Uact = activation(varargin)
     
     model = parser.Results.model;
     
-    % Print parameters to command window
+    %% Define the func object
+
+    [Workspace.Constants.F,Workspace.Constants.R,Workspace.Constants.n_e] = getConstants;
+    
+    Workspace.Variables = struct('current',[],'T',[]);
+    
+    switch model
+        case 1 % Hyperbolic sine approximation with alpha assumed to be 1/2
+            modelStr = "Hyperbolic sine approximation with alpha assumed to be 1/2";
+            Workspace.Coefficients = struct('alpha',1/2,'j0',[]);
+            funcHandle = @(Workspace) 2*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
+        case 2 % Hyperbolic sine approximation with variable alpha
+            modelStr = "Hyperbolic sine approximation with variable alpha";
+            Workspace.Coefficients = struct('alpha',[],'j0',[]);
+            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
+        case 3 % Tafel equation (valid when j/j0 > 4 https://doi.org/10.1016/j.jpowsour.2005.03.174)
+            modelStr = "Tafel equation";
+            Workspace.Coefficients = struct('alpha',[],'j0',[]);
+            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(Workspace.Variables.current./Workspace.Coefficients.j0);
+        otherwise
+            error("Activation overpotential model #" + num2str(model) + " not defined.")
+    end
+    
+
+    Uact = func(funcHandle,Workspace);
+    
+    %% Print information to command window
+    
     fprintf('\nActivation overpotential calculation properties:\n')
     % TODO: Switch statements could be maybe combined and printing done after the
     % functionality. However this prevents printing the settings if error
     % occurs
-    switch model
-        case 1
-            model_str = "Hyperbolic sine approximation with alpha assumed to be 1/2";
-        case 2
-            model_str = "Hyperbolic sine approximation with variable alpha";
-        case 3
-            model_str = "Tafel equation";
-    end
-    fprintf('Activation voltage model: %s\n', model_str)
-    
-    [Workspace.Constants.F,Workspace.Constants.R,Workspace.Constants.n_e] = get_constants;
-    
-    Workspace.Variables = struct('current',[],'T',[]);
-        
-    switch model
-        case 1 % Hyperbolic sine approximation with alpha assumed to be 1/2
-            Workspace.Coefficients = struct('alpha',1/2,'j0',[]);
-            funcHandle = @(Workspace) 2*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
-        case 2 % Hyperbolic sine approximation with variable alpha
-            Workspace.Coefficients = struct('alpha',[],'j0',[]);
-            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
-        case 3 % Tafel equation (valid when j/j0 > 4 https://doi.org/10.1016/j.jpowsour.2005.03.174)
-            Workspace.Coefficients = struct('alpha',[],'j0',[]);
-            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(Workspace.Variables.current./Workspace.Coefficients.j0);
-    end
+    fprintf('Activation voltage model: %s\n', modelStr)
 
-    Uact = func(funcHandle,Workspace);
+        
     
 end

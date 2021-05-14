@@ -1,6 +1,7 @@
-%% Function for obtaining the constants needed for electrolysis modelling
-
-function [F,R,n_e] = get_constants()
+function [F,R,n_e] = getConstants()
+% GETCONSTANTS Provides the accurate values of Faraday's constant,
+% universal gasconstant and number of electrons transferred in a single
+% electrochemical water splitting reaction.
 
 N_A = 6.02214076e23; % 1/mol, Avogadro constant
 k_B = 1.380649e-23; % J/K, Boltzmann constant

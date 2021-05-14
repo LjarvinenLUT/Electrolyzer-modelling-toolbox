@@ -1,16 +1,44 @@
-% Pressure correction for Nernst equation
-% Inputs:   T - Measured temperature
-%           p1 - Parameter 1: 
-%               for "PEM" cathode pressure
-%               for "alkaline" system pressure
-%           p2 - Parameter 2: 
-%               for "PEM" anode pressure
-%               for "alkaline" electrolyte molality
-%           type - Electrolysis type, "PEM" or "alkaline"
-%           electrolyte - Electrolyte used for "alkaline"
-
 function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
+% NERNSTPRESSURECORRECTION  Create a func object for pressure correction 
+% term of Nernst equation in modelling of water electrolysis.
+%
+%   Ucor = NERNSTPRESSURECORRECTION(T,p1,p2,'type',t) creates func object
+%           for electrolyzer type defined by variable t. 
+%           Electrolyzer types availabel are:
+%               PEM -- Polymer electrolyte membrane electrolysis
+%               Alkaline -- Alkaline electrolysis.
+%           Inputs: T -- Measured temperature
+%                   p1 -- Parameter 1: 
+%                       for PEM: cathode pressure, in bar
+%                       for alkaline: system pressure, in bar
+%                   p2 - Parameter 2: 
+%                       for PEM: anode pressure, in bar
+%                       for alkaline: electrolyte molality, in mol/kg of solvent
+% 
+%   Ucor = NERNSTPRESSURECORRECTION(_,'type','alkaline','electrolyte',e) changes the 
+%           electrolyte when alkaline electrolysis is considered.
+%           Available electrolytes are:
+%               KOH -- Potassium hydroxide (default)
+%               NaOH -- Sodium hydroxide
+%   
+%   The output func object has the following fields in workspace
+%   structures, depending on the type of electrolyzer:
+%       Constants (obtained by the function automatically):
+%           F -- Faraday's constant
+%           R -- Universal gas constant
+%           n_e -- Number of electrons transferred in a single
+%                   electrochemical water splitting reaction
+%       Varaibles:
+%           T -- Temperature in kelvins
+%           pO2 -- Oxygen partial pressure (for PEM only)
+%           pH2 -- Hydrogen partial pressure (for PEM only)
+%           ps -- System pressure (for alkaline only)
+%           aH2OEl -- Water activity in electrolyte solution
+% 
+%   See also NERNST, REVERSIBLE, FUNC, WATERVAPORPRESSURE,
+%   ELECTROLYTEPARAMETERS
     
+%% Parse input
     defaultElectrolyte = 'KOH';
 
     parser = inputParser;
@@ -37,14 +65,14 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
     elseif ~strcmp(type,"pem")
         error('Only PEM and alkaline electrolysis defined for Nernst equation.')
     end
-    %%
-    [Workspace.Constants.F,Workspace.Constants.R,Workspace.Constants.n_e] = get_constants;
+    %% Constants
+    [Workspace.Constants.F,Workspace.Constants.R,Workspace.Constants.n_e] = getConstants;
 
-    %%
+    %% Define the func object
 
     switch type
         case "pem"
-            psv = water_vapor_pressure(Workspace.Variables.T); % Vapor pressure from Antoine equation
+            psv = waterVaporPressure(Workspace.Variables.T); % Vapor pressure from Antoine equation
             
             Workspace.Variables.pH2 = p1 - psv; % bar, Hydrogen partial pressure
             Workspace.Variables.pO2 = p2 - psv; % bar, Oxygen partial pressure
@@ -58,7 +86,7 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
             
         case "alkaline"
             
-            [psvEl,Workspace.Variables.aH2OEl] = electrolyte_parameters(Workspace.Variables.T,p2,electrolyte);
+            [psvEl,Workspace.Variables.aH2OEl] = electrolyteParameters(Workspace.Variables.T,p2,electrolyte);
             
             Workspace.Variables.ps = p1 - psvEl; % bar, Partial pressure of both hydrogen and oxygen in the system
             

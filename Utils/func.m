@@ -155,10 +155,15 @@ classdef func < handle
             
         end
         
+        %%
         function childFunc = copy(obj)
             childFunc = func(obj.funcHandle,obj.Workspace);
         end
         
+        %%
+        function output = viewWorkspace(obj)
+            % TODO
+        end
         
     end
 end

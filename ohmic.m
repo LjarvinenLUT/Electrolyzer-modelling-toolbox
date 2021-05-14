@@ -1,10 +1,50 @@
-% Ohmic overpotetial
-% Inputs:   type - Electrolysis type, "PEM" or "alkaline"
-%           conductivityModel - Used conductivity model 1-3
-%           resistanceModel - Used resistance model
-%           delta - Alkaline: Electrolyte layer thickness, PEM: Membrane thickness
-
 function Uohm = ohmic(varargin)
+% OHMIC  Create a func object for calculation of ohmic overpotential
+% for modelling of water electrolysis.
+%
+%   Uohm = OHMIC() creates a func object with simple Ohm's law, resistance
+%           model #1.
+% 
+%   Uohm = OHMIC('resistanceModel',rm) uses resistance model defined by rm.
+%           Available models are:
+%               #1 -- Simple Ohm's law with total resistance. Output func
+%                       objects workspace contains the following fields in 
+%                       workspace:
+%                       Variables: current -- Current density
+%                       Coefficients: r -- Area specific resistance
+%               #2 -- Ohm's law with electrolyte specific resistance
+%               separated.
+%                   - Requires electrolysis type as a name-value pair:
+%
+%                     Uohm = OHMIC(_,'type',e)
+%                     
+%                     Availabel types are 'PEM' and 'alkaline'.
+%
+%                   - Conductivity model for alkali electrolysis can be
+%                     changed with name-value pair:
+%
+%                     Uohm = OHMIC(_,'conductivityModel',cm)
+%                       
+%                     Available models are #1 and #2.
+%
+%                   - Parameters required for resistance model #2:
+%                       delta -- electrolyte/membrane thickness
+%                       lambda -- PEM membrane water content
+%                       m -- Alkaline solution molality or molarity (TODO)
+%                       w -- Alkaline solution mass concentration
+%                       T -- Temperature
+% 
+%                   - Output func objects workspace contains the following 
+%                       fields in workspace:
+%                       Variables: 
+%                           current -- Current density
+%                           R_ionic -- Ionic resistance
+%                       Coefficients: 
+%                           r_electronics -- Area specific resistance of
+%                               the electronics only
+%                      
+% 
+%   See also NERNST, ACTIVATION, CONCENTRATION, FUNC
 
     addpath('Utils')
     
@@ -21,7 +61,7 @@ function Uohm = ohmic(varargin)
     addParameter(parser,'lambda',@(x) isnumeric(x));
     addParameter(parser,'m',@(x) isnumeric(x));
     addParameter(parser,'w',@(x) isnumeric(x));
-    addParameter(parser,'Temperature',defaultTemperature,@(x) isnumeric(x));
+    addParameter(parser,'T',defaultTemperature,@(x) isnumeric(x));
     
     parse(parser, varargin{:});
     
@@ -33,7 +73,7 @@ function Uohm = ohmic(varargin)
     m = parser.Results.m;
     w = parser.Results.w;
     Workspace.Variables = struct('current',[]);
-    T = parser.Results.Temperature;
+    T = parser.Results.T;
 
     
     fprintf('\nOhmic overpotential calculation properties:\n')
@@ -49,6 +89,7 @@ function Uohm = ohmic(varargin)
         case 1
             
         case 2
+            fprintf('\nTODO: Check units for ohmic overpotential parameters!\n')
             if strcmpi(type,"PEM") && conductivityModel == 1
                     if ~isnumeric(lambda)
                         error('Variable "lambda" (water content) has to be set for PEM conductivity model 1 with resistance model 2 (TODO: Check which units)')
@@ -95,6 +136,7 @@ function Uohm = ohmic(varargin)
             Workspace.Variables.T = T;
             switch type
                 case "alkaline"
+                    warning('Ohmic overpotential using resistance model 2 in alkaline is currently only available for KOH electrolyte!')
                     switch conductivityModel
                         case 1 % (Alkaline) Gilliam et al. "A review of specific conductivities of potassium hydroxide solutions for various concentrations and temperatures", 2007
                             A = -2.041;  B = -0.0028;  C = 0.005332;

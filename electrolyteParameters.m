@@ -1,12 +1,19 @@
-% Function for determining liquid electrolyte properties
-% Outputs:  psvEl   - Saturated vapor pressure of the electrolyte
-%           aH2OEl  - Water activity
-% Inputs:   T       - Measured temperature
-%           m       - Electrolyte molality, mol/kg of solvent
-%           electrolyte - Name of the electrolyte
-%          
-
-function [psvEl,aH2OEl] = electrolyte_parameters(T,m,electrolyte,varargin)
+function [psvEl,aH2OEl] = electrolyteParameters(T,m,electrolyte,varargin)
+% ELECTROLYTEPARAMETERS Calculate saturated water vapor pressure and water
+% activity for a water solution of KOH or NaOH.
+%
+%   [psvEl,aH2OEl] = ELECTROLYTEPARAMETERS(T,m,electrolyte) calculates values
+%       using equations from Balej, J., "Water Vapour Partial Pressures and 
+%       Water Activities in Potassium and Sodium Hydroxide Solutions Over 
+%       Wide Concentration and Temperature Ranges", 
+%       J. Hydrogen Energy, Vol. 10, No. 4. pp. 233--243, 1985
+%
+%   [psvEl,aH2OEl] = ELECTROLYTEPARAMETERS(_,'model',m)
+%       allows changing the model for one of the two contained:
+%           #1 -- Equations presented by Balej J. (default)
+%           #2 -- Ideal solution approximation
+%
+% See also WATERVAPORPRESSURE
 
 defaultModel = 1; % Default experimental parameters
 
