@@ -22,7 +22,7 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
     
     parse(parser,T,p1,p2,varargin{:});
     
-    Workspace.Variables = struct('T',T,'voltage',[]);
+    Workspace.Variables = struct('T',T);
     type = string(lower(parser.Results.type));
     if strcmp(type,"alkali")
         type = "alkaline";
@@ -69,6 +69,8 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
             % Nernst equation pressure correction
             funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log(Workspace.Variables.ps.^(3/2)./Workspace.Variables.aH2OEl);
     end
+    
+    Workspace.Coefficients = struct();
     
     Ucor = func(funcHandle,Workspace);
 end

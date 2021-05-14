@@ -34,10 +34,10 @@ Uocv = nernst(T,p1,p2,'type','pem')
 
 %% Activation overpotential
 
-Uact = activation('model',1)
+% Uact = activation('model',)
 % 
-% % %%
-% Uact = activation('model',2)
+% %%
+Uact = activation('model',2)
 % 
 % %%
 % Uact = activation('model',3)
@@ -57,5 +57,20 @@ Ucon = concentration()
 
 U = addFuncs(addFuncs(Uocv,Uact),addFuncs(Uohm,Ucon))
 
+%U.Workspace.Variables.current = linspace(0.1,10,length(T));
 
+%% Destructurize function handle for fitting
+[UFuncHandle,coeffNames,problemNames,problem] = U.destructurize('current')
+
+
+%% Calculate
+alpha = 0.4;
+j0 = 1e-5;
+j_lim = 1.5;
+r = 5;
+current = linspace(0.01,j_lim-0.01,81);
+
+tic
+result = U.calculate('alpha',alpha,'j0',j0,'j_lim',j_lim,'r',r,'current',current);
+toc
 

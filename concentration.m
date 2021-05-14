@@ -70,8 +70,6 @@ function Ucon = concentration(varargin)
             warning('Concentration overpotential model is based on fuel cell research where the amount of oxygen supplied to the cathode is limiting. Includes experimental numeric parameters that probably cannot be extended for electrolyzers!')
     end
     
-    Workspace.Variables.voltage = [];
-    
     Ucon = func(funcHandle,Workspace);
     
 end

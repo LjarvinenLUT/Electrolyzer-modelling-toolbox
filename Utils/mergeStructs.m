@@ -12,15 +12,16 @@ parse(parser,struct_a,struct_b,varargin{:});
 warn_duplicates = parser.Results.warn_duplicates;
 
 %%
-% If one of the structres is empty do not merge
-if isempty(struct_a)
+% If one of the structres is empty, use the other one
+if isempty(fieldnames(struct_a))||isempty(struct_a)
     merged_struct=struct_b;
     return
 end
-if isempty(struct_b)
+if isempty(fieldnames(struct_b))||isempty(struct_b)
     merged_struct=struct_a;
     return
 end
+
 %%insert struct a
 merged_struct=struct_a;
 
@@ -29,9 +30,7 @@ overwritten_fields = false;
 f_a = fieldnames(struct_a);
 f_b = fieldnames(struct_b);
 for i = 1:length(f_b)
-    if isempty(f_a)
-        continue;
-    elseif ismember(f_b{i},f_a) && ~isempty(struct_a.(f_b{i}))
+    if ismember(f_b{i},f_a) && ~isempty(struct_a.(f_b{i}))
         if isempty(struct_b.(f_b{i}))
             merged_struct.(f_b{i}) = struct_a.(f_b{i});
             continue;

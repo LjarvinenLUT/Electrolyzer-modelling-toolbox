@@ -15,9 +15,9 @@ type = "PEM"; % Cell type
 pH2 = 30; % bar
 pO2 = 2; % bar
 Uocv = nernst(T,pH2,pO2,'type',type);
-Uact = activation(T,'model',2);
+Uact = activation('model',2);
 Uohm = ohmic();
-Ucon = concentration(T);
+Ucon = concentration();
 
 
 
@@ -27,27 +27,33 @@ switch i
 
     case 1 % Created test data
         
-        Uforfit = combineFuncHandles({Uact,Uohm,Ucon,Uocv});
+        Uforfit = addFuncs(addFuncs(Uocv,Uact),addFuncs(Uohm,Ucon));
+        Uforfit1 = Uforfit.copy;
+        Uforfit2 = Uforfit.copy;
         
         alpha = 0.3; %
         j0 = 1e-6; % A/cm^2, exchange current density
         r = 0.1; % Ohm, total resistance
         j_lim = 1.5; % A/cm^2, limiting current density
-        Uerr = 0; % V, constant voltage error
+        
         
         Umeas = []; % "Measured" voltage
         jmeas = []; % "Measured" current based on Buttler-Volmer equation
         
         U1 = ((0:0.001:100)*(f*T))'; % Uact/(f*T) = 0...10, Activation overpotential sweep limits
         
+        UohmFuncHandle = matlabFunction(str2sym(Uohm.equation));
+        UconFuncHandle = matlabFunction(str2sym(Ucon.equation));
+        U0 = Uocv.calculate;
+        
         for ii = 1:length(U1)
             jmeastemp = j0*(exp(alpha/(f*T)*U1(ii))-exp((alpha-1)/(f*T)*U1(ii))); % "Measured" current based on Buttler-Volmer equation
             if jmeastemp >= j_lim
                 break;
             elseif jmeastemp > 1e-5
-                U2 = Uohm(r,jmeastemp); % Ohmic overpotential
-                U3 = Ucon(j_lim,jmeastemp); % Concentration overpotential
-                Umeastemp = Uocv+U1(ii)+U2+U3+Uerr; % "Measured" voltage
+                U2 = UohmFuncHandle(jmeastemp,r); % Ohmic overpotential
+                U3 = UconFuncHandle(F,R,T,jmeastemp,j_lim,n_e); % Concentration overpotential
+                Umeastemp = U0+U1(ii)+U2+U3; % "Measured" voltage
                 jmeas = [jmeas;jmeastemp];
                 Umeas = [Umeas;Umeastemp];
             end
@@ -81,25 +87,21 @@ switch i
         xlabel('j')
         ylabel('U')
         
+        
         %% Fit
         
         % Non-linear least squares error
         tic;
-        [fit_param1,fit_err1,gof1] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','nllse','weights',weights);
+        [fit_param1,fit_err1,gof1] = fit_UI(Uforfit1,Umeassamper,jmeassamper,'method','nllse','weights',weights);
         toc
 		
-		j0fit1 = fit_param1.j0;
-        alphafit1 = fit_param1.alpha;
-        rfit1 = fit_param1.r;
-        jLfit1 = fit_param1.j_lim;
-        
-		% Convert table to cell array which can then be used in a function call
-		% instead of individual parameters
-		fit_param1_cells = table2cell(fit_param1);
+		j0_fit1 = fit_param1.j0;
+        alpha_fit1 = fit_param1.alpha;
+        r_fit1 = fit_param1.r;
+        j_lim_fit1 = fit_param1.j_lim;
 
-		% Use fit param cell array instead of individual parameters when calling
-		% for voltage function
-		Ufit1 = Uforfit(fit_param1_cells{:},jmeas);
+		% Calculate voltage with calculate-method of func-object
+		Ufit1 = Uforfit1.calculate('current',jmeas);
         
         RMSE1 = gof1.rmse; % Root mean squares error
         
@@ -118,22 +120,17 @@ switch i
         
         % Particleswarm
         tic;
-        [fit_param2,fit_err2,gof2] = fit_UI(Uforfit,Umeassamper,jmeassamper,'method','ps','weights',weights);
+        [fit_param2,fit_err2,gof2] = fit_UI(Uforfit2,Umeassamper,jmeassamper,'method','ps','weights',weights);
         toc
         
         
-        j0fit2 = fit_param2.j0;
-        alphafit2 = fit_param2.alpha;
-        rfit2 = fit_param2.r;
-        jLfit2 = fit_param2.j_lim;
+		j0_fit2 = fit_param2.j0;
+        alpha_fit2 = fit_param2.alpha;
+        r_fit2 = fit_param2.r;
+        j_lim_fit2 = fit_param2.j_lim;
         
-		% Convert table to cell array which can then be used in a function call
-		% instead of individual parameters
-		fit_param2_cells = table2cell(fit_param2);
-
-		% Use fit param cell array instead of individual parameters when calling
-		% for voltage function
-		Ufit2 = Uforfit(fit_param2_cells{:},jmeas);
+		% Calculate voltage with calculate-method of func-object
+		Ufit2 = Uforfit2.calculate('current',jmeas);
         
         RMSE2 = gof2.rmse; % Root mean squares error
         
@@ -151,9 +148,14 @@ switch i
         
         %% Test with original parameters
         
-        Ufit = Uforfit(alpha,j0,j_lim,r,jmeas);
+        Uforfit.Workspace.Coefficients.alpha = alpha ; %
+        Uforfit.Workspace.Coefficients.j0 = j0; % A/cm^2, exchange current density
+        Uforfit.Workspace.Coefficients.r = r; % Ohm, total resistance
+        Uforfit.Workspace.Coefficients.j_lim = j_lim; % A/cm^2, limiting current density
         
-        RMSE = sqrt(mean((Uforfit(alpha,j0,j_lim,r,jmeassamp)-Umeassamper).^2)); % Root mean squares error
+        Ufit = Uforfit.calculate('current',jmeas);
+        
+        RMSE = sqrt(mean((Uforfit.calculate('current',jmeassamp)-Umeassamper).^2)); % Root mean squares error
         
         % Plotting
         
@@ -171,7 +173,9 @@ switch i
         
     case 2 % Data from Jülich
         
-        Uforfit = combineFuncHandles({Uocv,Uact,Uohm});
+        Uforfit = addFuncs(addFuncs(Uocv,Uact),Uohm);
+        
+        
         
         I0fit = nan(2,3);
         alphafit = nan(2,3);
@@ -187,26 +191,22 @@ switch i
             I = [Imeas JulichUI(j).Istd(sortInd)];
             U = [JulichUI(j).U(sortInd) JulichUI(j).Ustd(sortInd)];
 
-            
+            Uforfit1 = Uforfit.copy;
+            Uforfit2 = Uforfit.copy;
             
             %% Fit
             
             % Non-linear least squares error
             tic;
-            [fit_param1,fit_err1,gof1] = fit_UI(Uforfit,U,I,'method','nllse','weights',weights);
+            [fit_param1,fit_err1,gof1] = fit_UI(Uforfit1,U,I,'method','nllse','weights',weights);
             toc
             
             I0fit(1,j) = fit_param1.j0;
             alphafit(1,j) = fit_param1.alpha;
             rfit(1,j) = fit_param1.r;
             
-			% Convert table to cell array which can then be used in a function call
-			% instead of individual parameters
-			fit_param1_cells = table2cell(fit_param1);
-
-			% Use fit param cell array instead of individual parameters when calling
-			% for voltage function
-            Ufit1 = Uforfit(fit_param1_cells{:},I(:,1));
+            % Calculate voltage with calculate-method of func-object
+            Ufit1 = Uforfit1.calculate('current',Imeas);
             
             RMSE(1,j) = gof1.rmse; % Root mean squares error
             Rsqrd(1,j) = gof1.rsquare; % R^2 of the fit
@@ -216,7 +216,7 @@ switch i
             figure
             hold on;
             errorbar(I(:,1),U(:,1),U(:,2),U(:,2),I(:,2),I(:,2),'o')
-            plot(I(:,1),Ufit1)
+            plot(Imeas,Ufit1)
             xlabel("I (A)")
             ylabel("U (V)")
             legend("Data", "Fit", "Location", "Best")
@@ -226,7 +226,7 @@ switch i
             
             % Particleswarm
             tic;
-            [fit_param2,fit_err2,gof2] = fit_UI(Uforfit,U(:,1),I(:,1),'method','ps','weights',weights);
+            [fit_param2,fit_err2,gof2] = fit_UI(Uforfit2,U(:,1),I(:,1),'method','ps','weights',weights);
             toc
             
             
@@ -234,13 +234,8 @@ switch i
             alphafit(2,j) = fit_param2.alpha;
             rfit(2,j) = fit_param2.r;
             
-			% Convert table to cell array which can then be used in a function call
-			% instead of individual parameters
-			fit_param2_cells = table2cell(fit_param2);
-
-			% Use fit param cell array instead of individual parameters when calling
-			% for voltage function
-            Ufit2 = Uforfit(fit_param2_cells{:},I(:,1));
+			% Calculate voltage with calculate-method of func-object
+            Ufit2 = Uforfit2.calculate('current',Imeas);
             
             RMSE(2,j) = gof2.rmse; % Root mean squares error
             Rsqrd(2,j) = gof2.rsquare; % R^2 of the fit

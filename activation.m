@@ -29,7 +29,7 @@ function Uact = activation(varargin)
     
     [Workspace.Constants.F,Workspace.Constants.R,Workspace.Constants.n_e] = get_constants;
     
-    Workspace.Variables = struct('current',[],'voltage',[],'T',[]);
+    Workspace.Variables = struct('current',[],'T',[]);
         
     switch model
         case 1 % Hyperbolic sine approximation with alpha assumed to be 1/2
