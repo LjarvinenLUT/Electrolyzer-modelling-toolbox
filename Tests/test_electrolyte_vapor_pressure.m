@@ -1,7 +1,5 @@
 % KOH electrolyte water vapor pressure comparison
 
-
-addpath("Utils");
 [fileOutputPath,FigSizeWidth,FigSizeHeight] = setFigureParameters();
 
 m = 0:0.1:18; % Molality, mol/kg of solvent

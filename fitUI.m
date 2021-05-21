@@ -1,14 +1,50 @@
-function [fit_param,err_bounds,gof] = fit_UI(func,voltage,current,varargin)
-% FIT_UI Fits a given function for a UI curve with given voltage and
+function [fitParam,gof] = fitUI(func,voltage,current,varargin)
+% FITUI Fits a given function for a UI curve with given voltage and
 % current data to find unknown coefficient values.
 %
-%   [fit_param,err_bounds,gof] = FIT_UI(func,voltage,current) fits the
+%   [fitParam,gof] = FITUI(func,voltage,current) fits the
 %       given function to data using particle swarm optimisation and
 %       weighting beginning and end of the dataset.
+%       Inputs:
+%           func -- A func object containing a function handle for the UI
+%                   curve and all the necessary coefficients, constants and
+%                   measured values for the fit.
+%           voltage -- Measured voltage values to be used for fitting. Can
+%                       be a nx1 column vector containing the data or a nx2 
+%                       matrix containing the data in the first column and 
+%                       its standard deviation in the second column.
+%           current -- Measured current values to be used for fitting. Can
+%                       be a nx1 column vector containing the data or a nx2 
+%                       matrix containing the data in the first column and 
+%                       its standard deviation in the second column.
+%
+%   [_] = FITUI(_,'method',m) uses the given method for fitting. Available
+%           methods are:
+%               - 'NLLSE' -- Non-Linear Least Squares Error regression
+%               - 'PS' -- Particleswarm optimisation for the least squares
+%                       error.
+%
+%   [_] = FITUI(_,'weights',w) allows user to choose whether the beginning
+%           and end of the data set are weighted more than the middle. The 
+%           reason for the weights is to improve fitting of activation and
+%           concentration overpotentials, whose effects are limited to low
+%           and high current densities, respectively. Available options
+%           are:
+%               - 'default' -- Use exponentially changing weight for the 
+%                               beginning and end.
+%               - 'none' -- Do not use weights for the beginning and end
+% 
+%   Output:
+%       fitParam -- Fit coefficient values in a table with their confidence
+%                   intervals (default 95%). 
+%                   (TODO: enable choosing the level)
+%       gof -- Goodness of fit values in a structure.
+%       
+%   Function FITUI updates the workspace of input func to include the
+%   coefficients
+%
+%	See also FUNC, ELECTROLYZERMODEL
 
-addpath Utils;
-% Add path to toolbox with MCMC
-addpath Utils\mcmcstat;
 
 defaultMethod = 'PS';
 defaultWeights = 'default';
@@ -25,6 +61,9 @@ parse(parser,func,voltage,current,varargin{:});
 method = upper(string(parser.Results.method));
 weightsMethod = lower(string(parser.Results.weights));
 
+if length(voltage)~=length(current)
+    error('Given voltage and current vectors have incompatible sizes.')
+end
 
 %% Destructurize function handle, get coefficients and their limits, problem variable names and their values
 [funcHandle,coefficients,problemVariableNames,problemVariables] = func.destructurize('current');
@@ -78,7 +117,7 @@ switch method
 
     case "NLLSE" % Non-Linear Least Squares Error regression approach
 
-        method_str = "Non-Linear Least Squares Error Regression";
+        methodStr = "Non-Linear Least Squares Error Regression";
         
         fo = fitoptions('Method','NonlinearLeastSquares',...
 			'Lower',lb,...
@@ -102,28 +141,28 @@ switch method
         fitVoltage = fittedCurve(current);
         
         % Unweighted goodness of fit values
-        gof = goodness_of_fit(fitVoltage,voltage);
+        gof = goodnessOfFit(fitVoltage,voltage);
         
         % Coefficient values
         coeffValues = coeffvalues(fittedCurve);       
         
         % Fit 95% confidence bounds [lower upper]
-        err_bounds = confint(fittedCurve)-coeffValues; 
+        errBounds = confint(fittedCurve)-coeffValues; 
     
         
     
     case "PS" % Particle swarm approach
         
-        method_str = "Particle Swarm Optimisation";
+        methodStr = "Particle Swarm Optimisation";
 		
         nvars = length(coefficients); % Amount of fit parameters
         
         % Modify function handle to use vector input for fit parameters
-        modFuncHandle = vectorifyFuncHandle(funcHandle,coefficients,problemVariableNames);
+        modFuncHandle = vectorifyFuncHandle(funcHandle,length(coefficients),length(problemVariableNames));
         
         % Creating objective function for particle swarm: sum of square
         % residuals
-        fitfun = @(x) sum((modFuncHandle(x,problemVariables,current)-voltage).^2.*weights);
+        fitfun = @(x) sum((modFuncHandle(x,problemVariables{:},current)-voltage).^2.*weights);
         
         % Particle swarm options
         options = optimoptions('particleswarm','SwarmSize',600,'HybridFcn',@fmincon,'Display','off');%,'HybridFcn',@fmincon
@@ -134,34 +173,34 @@ switch method
             [coeff,fval,exitflag,output] = particleswarm(fitfun,nvars,lb,ub,options);
             
             % Voltage values obtained from the fit
-            fitVoltage = modFuncHandle(coeff,problemVariables,current);
+            fitVoltage = modFuncHandle(coeff,problemVariables{:},current);
             
             % Unweighted goodness of fit values
-            gof_iter = goodness_of_fit(fitVoltage,voltage);
+            gofIter = goodnessOfFit(fitVoltage,voltage);
             
-            if gof_iter.rsquare >0.995 % If good enough fit is achieved:
+            if gofIter.rsquare >0.995 % If good enough fit is achieved:
                 coeffValues = coeff;
-                gof = gof_iter;
+                gof = gofIter;
                 break; % terminate loop
             elseif fval < fval_best % If previous best fit is improved
                 fval_best = fval;
                 coeffValues = coeff;
-                gof = gof_iter;
+                gof = gofIter;
             end
             
         end
         
         % Fit 95% confidence bounds [lower upper] (TODO)
-        err_bounds = nan(size(coeffValues));
+        errBounds = nan(size(coeffValues));
 end
 
 %% Print message about the fit
-fprintf('\nData fit performed using %s approach\nR^2: %f\n', method_str,gof.rsquare)
+fprintf('\nData fit performed using %s approach\nR^2: %f\n', methodStr,gof.rsquare)
 
 
 %% Use map to store fitting parameters can be referenced by name
 % Example: fit_param.j0)
-fit_param = array2table(coeffValues, 'VariableNames', coefficients);
+fitParam = array2table([coeffValues;errBounds], 'VariableNames', coefficients);
 
 % Input fitted coefficients to the func object
 for i = 1:length(coefficients)
@@ -172,8 +211,20 @@ end
 
 %%
 function [lower, upper, start] = getArgumentLimits(argumentList, I)
-%GETARGUMENTLIMITS gets lower and upper limits and also startpoint of each 
-%fitting parameter
+% GETARGUMENTLIMITS gets lower and upper limits and also startpoint of each 
+%	fitting coefficient.
+%       Inputs:
+%           argumentList -- List of coefficient names in a cell array.
+%           I -- Current density for determining the limits for limiting
+%                   current density, 'j_lim'.
+%       Outputs:
+%           lower -- Array of the lower limits for the coefficients in the
+%                       same order as listed in argumentList.
+%           higher -- Array of the higher limits for the coefficients in 
+%                       the same order as listed in argumentList.
+%           start -- Array of starting points for non-linear least squares
+%                       error estimation listed in the same order as in
+%                       argumentsList
 
 % Initialize arrays for lower and upper limits and for start points
 lower = zeros(1, length(argumentList));
@@ -213,31 +264,47 @@ end
 
 
 %% 
-function mod_func_handle = vectorifyFuncHandle(func_handle,coeffs,probVarsNames)
-% VECTORIFY_FUNC_HANDLE returns a function handle with one vector for the 
-% coefficients transformed from input function handle with separate 
-% coefficients 
+function modFuncHandle = vectorifyFuncHandle(funcHandle,nCoeffs,nProbVars)
+% VECTORIFYFUNCHANDLE returns a function handle with one vector for the 
+%   coefficients transformed from input function handle with separate 
+%   coefficients that are organized in order 
+%   (coefficients, problem variables, independent variable).
+%       Inputs:
+%           funcHandle -- The function handle to modify
+%           nCoeffs -- Number of coefficients for the fit function
+%           nProbVars -- Number of problem variables
+%       Output:
+%           modFuncHandle -- Function handle modified to take cell array
+%                               inputs for coefficients and problem
+%                               variables instead of listing them
+%                               separately.
        
     % Creating symbolic variables for the function handle
-    x = num2cell(sym('x', [1 length(coeffs)])); % fit parameters
-    y = num2cell(sym('y', [1 length(probVarsNames)])); % problem variables
+    x = num2cell(sym('x', [1 nCoeffs])); % fit parameters
+    y = num2cell(sym('y', [1 nProbVars])); % problem variables
     syms current; % Current input
     
     % Calculating the symbolic result
-    z = func_handle(x{:},y{:},current);
+    z = funcHandle(x{:},y{:},current);
     
     % Creating a modified function handle from the symbolic result
-    mod_func_handle = matlabFunction(z,'Vars',{cell2sym(x),cell2sym(y),current});
+    modFuncHandle = matlabFunction(z,'Vars',{cell2sym(x),y{:},current});
     
 end
 
 %%
-function gof = goodness_of_fit(yfit,y)
-% GOODNESS_OF_FIT returns a structure containing unweighted:
-% - SSR (Sum of Square Error)
-% - RMSE (Root Mean Square Error)
-% - R^2 value
-% of the fit
+function gof = goodnessOfFit(yfit,y)
+% GOODNESSOFFIT returns a structure containing unweighted:
+%   - SSR (Sum of Square Error)
+%   - RMSE (Root Mean Square Error)
+%   - R^2 value
+%   of the fit
+%       Inputs:
+%           yfit -- y values calculated based on the fit.
+%           y -- Measured y values.
+%       Output:
+%           gof -- A structure containing the abovementioned goodness of
+%           fit values.
 
 residuals = y-yfit; % Residuals
 

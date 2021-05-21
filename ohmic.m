@@ -45,8 +45,6 @@ function Uohm = ohmic(varargin)
 %                      
 % 
 %   See also NERNST, ACTIVATION, CONCENTRATION, FUNC
-
-    addpath('Utils')
     
     defaultConductivityModel = 1;
     defaultResistanceModel = 1;

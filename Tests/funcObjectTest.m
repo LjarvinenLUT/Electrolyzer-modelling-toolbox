@@ -1,7 +1,6 @@
 close all; clear; clc;
 
 %% Func object test script
-addpath('Utils')
 
 Coefficients1 = struct('a',3,'b',12);
 Variables1 = struct('I',1:30,'V',linspace(0,2,30));

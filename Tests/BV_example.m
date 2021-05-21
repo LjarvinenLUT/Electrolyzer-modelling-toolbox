@@ -1,6 +1,5 @@
 clear;
 close all;
-addpath("Utils");
 
 % Script for plotting different models for activity overpotential
 [fileOutputPath,FigSizeWidth,FigSizeHeight] = setFigureParameters();

@@ -3,7 +3,7 @@ close all;
 clc;
 
 %% Global parameters
-[F,R,n_e] = get_constants();
+[F,R,n_e] = getConstants();
 
 f = R/(n_e*F);
 
@@ -21,15 +21,14 @@ Ucon = concentration();
 
 
 
-i = 2;
+i = 1;
 weights = 'none';
 switch i
 
     case 1 % Created test data
         
         Uforfit = addFuncs(addFuncs(Uocv,Uact),addFuncs(Uohm,Ucon));
-        Uforfit1 = Uforfit.copy;
-        Uforfit2 = Uforfit.copy;
+        
         
         alpha = 0.3; %
         j0 = 1e-6; % A/cm^2, exchange current density
@@ -58,6 +57,9 @@ switch i
                 Umeas = [Umeas;Umeastemp];
             end
         end
+        Tmeas = T*ones(size(jmeas));
+        pH2meas = Uforfit.Workspace.Variables.pH2.*ones(size(jmeas));
+        pO2meas = Uforfit.Workspace.Variables.pO2.*ones(size(jmeas));
         
         % Take samples from the dense data vectors
         N = 50; % Number of evenly taken current samples
@@ -71,13 +73,19 @@ switch i
             jmeassamp(ii) = jmeas(ind); % Final sampled current vector
             Umeassamp(ii) = Umeas(ind); % Final sampled voltage vector
         end
+        Tmeassamp = T*ones(size(jmeassamp));
+        pH2meassamp = Uforfit.Workspace.Variables.pH2.*ones(size(jmeassamp));
+        pO2meassamp = Uforfit.Workspace.Variables.pO2.*ones(size(jmeassamp));
         
         
         % Adding p*100% error to measurements
         p = 0.01;
         jmeassamper = jmeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
         Umeassamper = Umeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
-        
+        Tmeassamper = Tmeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
+        Uforfit.Workspace.Variables.T = Tmeassamper;
+        Uforfit.Workspace.Variables.pH2 = pH2meassamp;
+        Uforfit.Workspace.Variables.pO2 = pO2meassamp;
         
         figure
         scatter(jmeassamp,Umeassamp)
@@ -87,21 +95,25 @@ switch i
         xlabel('j')
         ylabel('U')
         
+        %% Create electrolyzer model objects
+        Emodel1 = electrolyzerModel('type',type);
+        Emodel1.addPotential(Uforfit.copy);
+        Emodel2 = Emodel1.copy;
         
         %% Fit
         
         % Non-linear least squares error
         tic;
-        [fit_param1,fit_err1,gof1] = fit_UI(Uforfit1,Umeassamper,jmeassamper,'method','nllse','weights',weights);
+        [fitParam1,gof1] = Emodel1.fitUI(Umeassamper,jmeassamper,'method','nllse','weights',weights);
         toc
 		
-		j0_fit1 = fit_param1.j0;
-        alpha_fit1 = fit_param1.alpha;
-        r_fit1 = fit_param1.r;
-        j_lim_fit1 = fit_param1.j_lim;
+		j0_fit1 = fitParam1.j0(1);
+        alpha_fit1 = fitParam1.alpha(1);
+        r_fit1 = fitParam1.r(1);
+        j_lim_fit1 = fitParam1.j_lim(1);
 
 		% Calculate voltage with calculate-method of func-object
-		Ufit1 = Uforfit1.calculate('current',jmeas);
+		Ufit1 = Emodel1.calculate('current',jmeas,'T',Tmeas,'pH2',pH2meas,'pO2',pO2meas);
         
         RMSE1 = gof1.rmse; % Root mean squares error
         
@@ -120,17 +132,17 @@ switch i
         
         % Particleswarm
         tic;
-        [fit_param2,fit_err2,gof2] = fit_UI(Uforfit2,Umeassamper,jmeassamper,'method','ps','weights',weights);
+        [fitParam2,gof2] = Emodel2.fitUI(Umeassamper,jmeassamper,'method','ps','weights',weights);
         toc
         
         
-		j0_fit2 = fit_param2.j0;
-        alpha_fit2 = fit_param2.alpha;
-        r_fit2 = fit_param2.r;
-        j_lim_fit2 = fit_param2.j_lim;
+		j0_fit2 = fitParam2.j0(1);
+        alpha_fit2 = fitParam2.alpha(1);
+        r_fit2 = fitParam2.r(1);
+        j_lim_fit2 = fitParam2.j_lim(1);
         
 		% Calculate voltage with calculate-method of func-object
-		Ufit2 = Uforfit2.calculate('current',jmeas);
+		Ufit2 = Emodel2.calculate('current',jmeas,'T',Tmeas,'pH2',pH2meas,'pO2',pO2meas);
         
         RMSE2 = gof2.rmse; % Root mean squares error
         
@@ -153,7 +165,7 @@ switch i
         Uforfit.Workspace.Coefficients.r = r; % Ohm, total resistance
         Uforfit.Workspace.Coefficients.j_lim = j_lim; % A/cm^2, limiting current density
         
-        Ufit = Uforfit.calculate('current',jmeas);
+        Ufit = Uforfit.calculate('current',jmeas,'T',Tmeas,'pH2',pH2meas,'pO2',pO2meas);
         
         RMSE = sqrt(mean((Uforfit.calculate('current',jmeassamp)-Umeassamper).^2)); % Root mean squares error
         
@@ -198,12 +210,12 @@ switch i
             
             % Non-linear least squares error
             tic;
-            [fit_param1,fit_err1,gof1] = fit_UI(Uforfit1,U,I,'method','nllse','weights',weights);
+            [fitParam1,gof1] = fitUI(Uforfit1,U,I,'method','nllse','weights',weights);
             toc
             
-            I0fit(1,j) = fit_param1.j0;
-            alphafit(1,j) = fit_param1.alpha;
-            rfit(1,j) = fit_param1.r;
+            I0fit(1,j) = fitParam1.j0(1);
+            alphafit(1,j) = fitParam1.alpha(1);
+            rfit(1,j) = fitParam1.r(1);
             
             % Calculate voltage with calculate-method of func-object
             Ufit1 = Uforfit1.calculate('current',Imeas);
@@ -226,13 +238,13 @@ switch i
             
             % Particleswarm
             tic;
-            [fit_param2,fit_err2,gof2] = fit_UI(Uforfit2,U(:,1),I(:,1),'method','ps','weights',weights);
+            [fitParam2,gof2] = fitUI(Uforfit2,U(:,1),I(:,1),'method','ps','weights',weights);
             toc
             
             
-            I0fit(2,j) = fit_param2.j0;
-            alphafit(2,j) = fit_param2.alpha;
-            rfit(2,j) = fit_param2.r;
+            I0fit(2,j) = fitParam2.j0(1);
+            alphafit(2,j) = fitParam2.alpha(1);
+            rfit(2,j) = fitParam2.r(1);
             
 			% Calculate voltage with calculate-method of func-object
             Ufit2 = Uforfit2.calculate('current',Imeas);

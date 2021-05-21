@@ -1,9 +1,6 @@
 close all; clearvars; clc;
 % Test script for all the overpotential functions
 
-addpath('../')
-addpath('../Utils')
-
 %% Reversible potential
 
 T = 273.15+(0:80);

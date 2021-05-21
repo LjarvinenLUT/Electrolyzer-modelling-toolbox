@@ -31,7 +31,6 @@ function Uocv = nernst(T,p1,p2,varargin)
 %   See also ACTIVATION, OHMIC, CONCENTRATION, FUNC, REVERSIBLE,
 %   NERNSTPRESSURECORRECTION
 
-    addpath('Utils')
     %% Parse inputs
     defaultModel = 6;
     defaultType = 'NaN';

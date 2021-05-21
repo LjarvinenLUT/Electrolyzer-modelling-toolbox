@@ -1,5 +1,8 @@
-%%
 function Structure = addValuesToStruct(Structure,names,values)
+% ADDVALUESTOSTRUCT Adds user specified values to the user specified fields
+%   in the given structure. The function doesn't add fields but only adds
+%   values to existing ones.
+
 
 if ~iscell(names)
     names = num2cell(names);

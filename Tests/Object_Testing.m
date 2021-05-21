@@ -1,6 +1,5 @@
 % Electrolyzer_model object testing
 clear; clc; close all;
-addpath("Utils");
 
 obj = electrolyzer_model("type", "alkaline", "electrolyte", "KOH") ...
     .add_overpotential(ohmic()) ...
