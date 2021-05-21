@@ -12,7 +12,7 @@ classdef func < handle
     %   input parameter, there is no requirement for the exact order of
     %   inputs.
     %
-    %   Properties:
+    %   FUNC Properties:
     %       equation -- Function handle as a easily human-readable string.
     %       funcHandle -- The structure based function handle that uses
     %                       only Workspace as an input.
@@ -21,7 +21,7 @@ classdef func < handle
     %                       - Variables for measured variable values,
     %                       - Coefficients for system coefficients.
     %
-    %   Methods:
+    %   FUNC Methods:
     %       calculate -- Calculates voltage from the UI curve based on
     %                       workspace and user-given values.
     %       copy -- Creates a copy of the object with a new handle.
@@ -44,7 +44,7 @@ classdef func < handle
     end
     
     properties
-       Workspace; % Structure containing:
+       Workspace; % Structure containing the Coefficients, Variables and Constants:
 %         Coefficients; % Structure containing the coefficients
 %         Variables; % Structure containing the variables
 %         Constants; % Structure containing the constants
