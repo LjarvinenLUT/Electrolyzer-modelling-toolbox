@@ -1,6 +1,6 @@
-%% Function for setting figure parameters
-
 function [fileOutputPath,FigSizeWidth,FigSizeHeight] = setFigureParameters
+% SETFIGUREPARAMETERS A function that helps in setting the default figure
+%   parameters and obtaining default output path and figure size values.
 
 currentFolder = pwd;
 fileFormat = '.pdf';

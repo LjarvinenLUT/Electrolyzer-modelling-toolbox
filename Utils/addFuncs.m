@@ -1,4 +1,8 @@
 function newFunc = addFuncs(func1,func2)
+% ADDFUNCS Add two func objects together combining their workspaces and
+%   using addition for combining their function handles.
+%
+%   See also FUNC, MERGESTRUCTS 
 
     if ~isa(func1,'func')||~isa(func2,'func')
         error("Functions to be added should both be of type 'func'")

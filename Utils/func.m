@@ -36,7 +36,7 @@ classdef func < handle
     %       viewWorkspace -- Outputs a human-readable raport of the
     %                           contents of the Workspace structure.
     %
-    %   See also ADDFUNCS
+    %   See also FUNCTION_HANDLE, ADDFUNCS, ISCOMPLETESTRUCT
    
     properties (SetAccess = protected)
        equation; % Function handle in string form
@@ -99,7 +99,7 @@ classdef func < handle
             
             % The result is calculated if the TempWorkspace contains all
             % necessary values in all the fields.
-            if isCompleteStructure(TempWorkspace)
+            if isCompleteStruct(TempWorkspace)
                 result = obj.funcHandle(TempWorkspace);
             else
                 error('Result cannot be calculated because one or more workspace entries are missing. Either add the missing entries to the workspace of the func object or input them to calculate method as name-value pairs.')
@@ -134,7 +134,7 @@ classdef func < handle
             %                           problemVariableNames.
             
             % Constants
-            if ~isCompleteStructure(obj.Workspace.Constants)
+            if ~isCompleteStruct(obj.Workspace.Constants)
                 error('Missing constant values. Not able to destructurize function handle for fitting.')
             end
             %

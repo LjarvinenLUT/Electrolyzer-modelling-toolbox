@@ -1,4 +1,17 @@
-function [merged_struct] = mergeStructs(struct_a,struct_b,varargin)
+function MergedStruct = mergeStructs(StructA,StructB,varargin)
+% MERGESTRUCTS Merges two structures recursively.
+%
+%   MergedStruct = MERGESTRUCTS(StructA,StructB)
+%   The merged structure contains all the fields from both the original
+%   structures. 
+%
+%   If the same field is contained in both the original structures, the one
+%   with a value assigned to it is preferred. If both the structures have a
+%   different value assigned to a shared field, then a warning of data loss
+%   is issued. This warning can be supressed with a boolean parameter
+%   'warn_duplicates' inputed as a name-value pair.
+%
+%   See also ADDVALUESTOSTRUCT, ISCOMPLETESTRUCT
 
 defaultWarnDuplicates = true;
 
@@ -7,43 +20,43 @@ addRequired(parser,'struct_a',@(x) isstruct(x))
 addRequired(parser,'struct_b',@(x) isstruct(x))
 addParameter(parser,'warn_duplicates',defaultWarnDuplicates,@(x) islogical(x))
 
-parse(parser,struct_a,struct_b,varargin{:});
+parse(parser,StructA,StructB,varargin{:});
 
 warn_duplicates = parser.Results.warn_duplicates;
 
 %%
 % If one of the structres is empty, use the other one
-if isempty(fieldnames(struct_a))||isempty(struct_a)
-    merged_struct=struct_b;
+if isempty(fieldnames(StructA))||isempty(StructA)
+    MergedStruct=StructB;
     return
 end
-if isempty(fieldnames(struct_b))||isempty(struct_b)
-    merged_struct=struct_a;
+if isempty(fieldnames(StructB))||isempty(StructB)
+    MergedStruct=StructA;
     return
 end
 
 %%insert struct a
-merged_struct=struct_a;
+MergedStruct=StructA;
 
 %%insert struct b
 overwritten_fields = false;
-f_a = fieldnames(struct_a);
-f_b = fieldnames(struct_b);
+f_a = fieldnames(StructA);
+f_b = fieldnames(StructB);
 for i = 1:length(f_b)
-    if ismember(f_b{i},f_a) && ~isempty(struct_a.(f_b{i}))
-        if isempty(struct_b.(f_b{i}))
-            merged_struct.(f_b{i}) = struct_a.(f_b{i});
+    if ismember(f_b{i},f_a) && ~isempty(StructA.(f_b{i}))
+        if isempty(StructB.(f_b{i}))
+            MergedStruct.(f_b{i}) = StructA.(f_b{i});
             continue;
-        elseif isstruct(struct_b.(f_b{i})) && isstruct(struct_a.(f_b{i}))
-            merged_struct.(f_b{i}) = mergeStructs(struct_a.(f_b{i}),struct_b.(f_b{i}));
+        elseif isstruct(StructB.(f_b{i})) && isstruct(StructA.(f_b{i}))
+            MergedStruct.(f_b{i}) = mergeStructs(StructA.(f_b{i}),StructB.(f_b{i}));
         else
-            if struct_b.(f_b{i}) ~= struct_a.(f_b{i})
+            if StructB.(f_b{i}) ~= StructA.(f_b{i})
                 overwritten_fields = true;
             end
-            merged_struct.(f_b{i}) = struct_b.(f_b{i});
+            MergedStruct.(f_b{i}) = StructB.(f_b{i});
         end
     else
-        merged_struct.(f_b{i}) = struct_b.(f_b{i});
+        MergedStruct.(f_b{i}) = StructB.(f_b{i});
     end
 end
 
