@@ -21,7 +21,7 @@ Ucon = concentration();
 
 
 
-i = 1;
+i = 2;
 weights = 'none';
 switch i
 
@@ -96,24 +96,23 @@ switch i
         ylabel('U')
         
         %% Create electrolyzer model objects
-        Emodel1 = electrolyzerModel('type',type);
-        Emodel1.addPotential(Uforfit.copy);
-        Emodel2 = Emodel1.copy;
+        Emodel = electrolyzerModel('type',type);
+        Emodel.addPotential(Uforfit.copy);
         
         %% Fit
         
         % Non-linear least squares error
         tic;
-        [fitParam1,gof1] = Emodel1.fitUI(Umeassamper,jmeassamper,'method','nllse','weights',weights);
+        [fitParam1,gof1] = Emodel.fitUI(Umeassamper,jmeassamper,'method','nllse','weights',weights);
         toc
 		
-		j0_fit1 = fitParam1.j0(1);
-        alpha_fit1 = fitParam1.alpha(1);
-        r_fit1 = fitParam1.r(1);
-        j_lim_fit1 = fitParam1.j_lim(1);
+		j0_fit1 = fitParam1.j0;
+        alpha_fit1 = fitParam1.alpha;
+        r_fit1 = fitParam1.r;
+        j_lim_fit1 = fitParam1.j_lim;
 
 		% Calculate voltage with calculate-method of func-object
-		Ufit1 = Emodel1.calculate('current',jmeas,'T',Tmeas,'pH2',pH2meas,'pO2',pO2meas);
+		Ufit1 = Emodel.calculate('current',jmeas,'T',Tmeas,'pH2',pH2meas,'pO2',pO2meas);
         
         RMSE1 = gof1.rmse; % Root mean squares error
         
@@ -132,17 +131,17 @@ switch i
         
         % Particleswarm
         tic;
-        [fitParam2,gof2] = Emodel2.fitUI(Umeassamper,jmeassamper,'method','ps','weights',weights);
+        [fitParam2,gof2] = Emodel.fitUI(Umeassamper,jmeassamper,'method','ps','weights',weights);
         toc
         
         
-		j0_fit2 = fitParam2.j0(1);
-        alpha_fit2 = fitParam2.alpha(1);
-        r_fit2 = fitParam2.r(1);
-        j_lim_fit2 = fitParam2.j_lim(1);
+		j0_fit2 = fitParam2.j0;
+        alpha_fit2 = fitParam2.alpha;
+        r_fit2 = fitParam2.r;
+        j_lim_fit2 = fitParam2.j_lim;
         
 		% Calculate voltage with calculate-method of func-object
-		Ufit2 = Emodel2.calculate('current',jmeas,'T',Tmeas,'pH2',pH2meas,'pO2',pO2meas);
+		Ufit2 = Emodel.calculate('current',jmeas,'T',Tmeas,'pH2',pH2meas,'pO2',pO2meas);
         
         RMSE2 = gof2.rmse; % Root mean squares error
         
@@ -189,36 +188,37 @@ switch i
         
         
         
-        I0fit = nan(2,3);
-        alphafit = nan(2,3);
-        rfit = nan(2,3);
+        I0fit = nan(4,3);
+        alphafit = nan(4,3);
+        rfit = nan(4,3);
         RMSE = nan(2,3);
         Rsqrd = nan(2,3);
         
         load('JulichData.mat')
+        
+        %% Create electrolyzer model objects
+        Emodel = electrolyzerModel('type','PEM');
+        Emodel.addPotential(Uforfit.copy);
         
         for j = 1:3
             
             [Imeas,sortInd] = sort(JulichUI(j).I);
             I = [Imeas JulichUI(j).Istd(sortInd)];
             U = [JulichUI(j).U(sortInd) JulichUI(j).Ustd(sortInd)];
-
-            Uforfit1 = Uforfit.copy;
-            Uforfit2 = Uforfit.copy;
             
             %% Fit
             
             % Non-linear least squares error
             tic;
-            [fitParam1,gof1] = fitUI(Uforfit1,U,I,'method','nllse','weights',weights);
+            [fitParam1,gof1] = Emodel.fitUI(U,I,'method','nllse','weights',weights);
             toc
             
-            I0fit(1,j) = fitParam1.j0(1);
-            alphafit(1,j) = fitParam1.alpha(1);
-            rfit(1,j) = fitParam1.r(1);
+            I0fit(1:2,j) = fitParam1.j0;
+            alphafit(1:2,j) = fitParam1.alpha;
+            rfit(1:2,j) = fitParam1.r;
             
             % Calculate voltage with calculate-method of func-object
-            Ufit1 = Uforfit1.calculate('current',Imeas);
+            Ufit1 = Emodel.calculate('current',Imeas);
             
             RMSE(1,j) = gof1.rmse; % Root mean squares error
             Rsqrd(1,j) = gof1.rsquare; % R^2 of the fit
@@ -238,16 +238,16 @@ switch i
             
             % Particleswarm
             tic;
-            [fitParam2,gof2] = fitUI(Uforfit2,U(:,1),I(:,1),'method','ps','weights',weights);
+            [fitParam2,gof2] = Emodel.fitUI(U(:,1),I(:,1),'method','ps','weights',weights);
             toc
             
             
-            I0fit(2,j) = fitParam2.j0(1);
-            alphafit(2,j) = fitParam2.alpha(1);
-            rfit(2,j) = fitParam2.r(1);
+            I0fit(3:4,j) = fitParam2.j0;
+            alphafit(3:4,j) = fitParam2.alpha;
+            rfit(3:4,j) = fitParam2.r;
             
 			% Calculate voltage with calculate-method of func-object
-            Ufit2 = Uforfit2.calculate('current',Imeas);
+            Ufit2 = Emodel.calculate('current',Imeas);
             
             RMSE(2,j) = gof2.rmse; % Root mean squares error
             Rsqrd(2,j) = gof2.rsquare; % R^2 of the fit

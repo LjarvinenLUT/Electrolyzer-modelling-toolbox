@@ -1,12 +1,14 @@
-function y=chainstats(chain,results,fid)
+function y=chainstats(chain,results,verbosity,fid)
 %CHAINSTATS some statistics from the MCMC chain
 % chainstats(chain,results)
 %    chain    nsimu*npar MCMC chain
 %    results  output from mcmcrun function
 
 % $Revision: 1.4 $  $Date: 2009/08/13 15:47:35 $
+% $Modified by Pietari Puranen, 2021/05/25:$
+%   $ to enable suppressing of output to command window$ 
 
-if nargin<3, fid=1; end % fid=1, standard output
+if nargin<3, fid=1; verbosity=0; end % fid=1, no output
 
 if nargin>1
   if isstruct(results) % results struct from mcmcrun
@@ -24,27 +26,30 @@ stats  = [mean(chain)',std(chain)',mcerr',tau', p'];
 
 [m,n] = size(stats);
 
-fprintf(fid,'MCMC statistics, nsimu = %g\n\n', size(chain,1));
-
-if nargin>1
-  fprintf(fid,'% 10s ','');
+if verbosity > 0 % Modification by Pietari Puranen, 2021/05/25 to enable 
+    % suppressing output to command window. 
+    fprintf(fid,'MCMC statistics, nsimu = %g\n\n', size(chain,1));
+    
+    if nargin>1
+        fprintf(fid,'% 10s ','');
+    end
+    fprintf(fid,'% 10s  % 10s  % 10s  % 10s  % 10s\n','mean','std','MC_err','tau','geweke');
+    if nargin>1
+        fprintf(fid,'-----------');
+    end
+    fprintf(fid,'----------------------------------------------------------\n');
+    for i = 1:m
+        if nargin>1
+            fprintf(fid,'% 10s ',names{i});
+        end
+        fprintf(fid,'%10.5g  %10.5g  %10.5g  %10.5g  %10.5g\n',stats(i,:));
+    end
+    if nargin>1
+        fprintf(fid,'-----------');
+    end
+    fprintf(fid,'----------------------------------------------------------\n');
+    fprintf(fid,'\n');
 end
-fprintf(fid,'% 10s  % 10s  % 10s  % 10s  % 10s\n','mean','std','MC_err','tau','geweke');
-if nargin>1
-  fprintf(fid,'-----------');
-end
-fprintf(fid,'----------------------------------------------------------\n');
-for i = 1:m
-  if nargin>1
-    fprintf(fid,'% 10s ',names{i});
-  end
-  fprintf(fid,'%10.5g  %10.5g  %10.5g  %10.5g  %10.5g\n',stats(i,:));
-end
-if nargin>1
-  fprintf(fid,'-----------');
-end
-fprintf(fid,'----------------------------------------------------------\n');
-fprintf(fid,'\n');
 
 if nargout>0
   %  y=[stats,stats2];

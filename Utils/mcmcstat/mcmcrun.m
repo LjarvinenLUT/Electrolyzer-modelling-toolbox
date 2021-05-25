@@ -76,6 +76,10 @@ function [results,chain,s2chain,sschain, hchain]=mcmcrun(model,data,params,optio
 
 % Marko Laine  2003 <marko.laine@fmi.fi>
 % $Revision: 1.63 $  $Date: 2017/03/30 07:09:39 $
+%
+% $Modified by Pietari Puranen 2021/05/24$
+%   to accept function handles that have independent and dependent
+%   variables already calculated in having only coefficients as parameters.
 
 %% check input structs
 goodopt={'nsimu','adaptint','ntry','method','printint',...
@@ -314,6 +318,9 @@ else
   if isa(ssfun,'function_handle')
 %    ni = nargin(func2str(ssfun)); % is this needed?
     ni = nargin(ssfun);
+    if ni == 1 % Modification by Pietari Puranen, 24.5.2021
+        ssstyle = 3;
+    end
   elseif isa(ssfun,'inline') || exist(ssfun) == 2 % ssfun is an mfile
     ni = nargin(ssfun);
   else
@@ -839,6 +846,8 @@ function ss = sseval(ssfun,ssstyle,theta,parind,value,local,data,modelfun)
 value(parind) = theta;
 if ssstyle == 1
   ss = feval(ssfun,value(:)',data);
+elseif ssstyle == 3 % Modification by Pietari Puranen, 24.5.2021
+  ss = feval(ssfun,value(:)');
 elseif ssstyle == 4
   ss = mcmcssfun(value(:)',data,local,modelfun);
 else

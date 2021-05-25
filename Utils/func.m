@@ -58,7 +58,10 @@ classdef func < handle
             %       funcHandle -- The structure-based function handle.
             %       Workspace -- The workspace structure.
             obj.setFuncHandle(funcHandle);
-            if any(~ismember(fieldnames(Workspace),{'Coefficients';'Variables';'Constants'}))
+            if any(~ismember(fieldnames(Workspace),...
+                             {'Coefficients';...
+                             'Variables';...
+                             'Constants'}))
                 error("Workspace structure of object func should contain exclusively fields 'Coefficients', 'Variables' or 'Constants'.")
             else
                 obj.Workspace = Workspace;
@@ -94,7 +97,9 @@ classdef func < handle
             % variables in addition to the ones found from.
             TempWorkspace = obj.Workspace;
             if nargin>1
-                TempWorkspace = addValuesToStruct(TempWorkspace,varargin(1:2:end),varargin(2:2:end));
+                TempWorkspace = addValuesToStruct(TempWorkspace,...
+                                                  varargin(1:2:end),...
+                                                  varargin(2:2:end));
             end
             
             % The result is calculated if the TempWorkspace contains all
@@ -107,7 +112,11 @@ classdef func < handle
         end
         
         
-        function [destructurizedFuncHandle,coefficientsNamesForFit,problemVariableNames,problemVariables] = destructurize(obj,independentVariableName)
+        function [destructurizedFuncHandle,...
+                coefficientsNamesForFit,...
+                problemVariableNames,...
+                problemVariables] = destructurize(obj,...
+                                                  independentVariableName)
             % DESTRUCTURIZE Destructurizes the structure-based function handle.
             %   Modifies the function handle to use separate input
             %   parameters instead of a  singleWorkspace structure.
@@ -140,33 +149,37 @@ classdef func < handle
             %
             % Coefficients
             coefficientsNamesForFit = {};
-            predefinedCoefficientNames = {};
-            predefinedCoefficients = [];
-            predefCoeffsExist = false;
+            constantCoefficientNames = {};
+            constantCoefficients = [];
             if ~isempty(obj.Workspace.Coefficients)
                 allCoefficientNames = fieldnames(obj.Workspace.Coefficients);
                 for i = 1:length(allCoefficientNames)
                     coefficient = obj.Workspace.Coefficients.(allCoefficientNames{i});
-                    if isempty(coefficient)
-                        coefficientsNamesForFit = [coefficientsNamesForFit;allCoefficientNames{i}];
-                    else
-                        predefCoeffsExist = true;
-                        predefinedCoefficientNames = [predefinedCoefficientNames;allCoefficientNames{i}];
-                        predefinedCoefficients = [predefinedCoefficients;coefficient];
+                    if contains(obj.getEquationBody,['Workspace.Coefficients.' allCoefficientNames{i}])
+                        % If the coefficient is used in the equation
+                        coefficientsNamesForFit = [coefficientsNamesForFit;...
+                                                   allCoefficientNames{i}];
+                    else % If the coefficient is not used in the equation
+                        if ~isempty(coefficient)
+                            constantCoefficientNames = [constantCoefficientNames;...
+                                                        allCoefficientNames{i}];
+                            constantCoefficients = [constantCoefficients;...
+                                                    coefficient];
+                        else
+                            warning("There is a coefficient whose name is not found from the equation but no value has been assigned to it.")
+                        end
                     end
                 end
-            end
-            
-            if predefCoeffsExist
-                warning("There were one or more predefined coefficients in the workspace. The predefined value for these coefficients have been used.")
+            else
+                warning("No coefficients defined for the function.")
             end
 
             % Variables
             allVariableNames = fieldnames(obj.Workspace.Variables);
-            if ~ismember(independentVariableName,allVariableNames)
-                error('Inependent variable is not included in the workspace. Not able to destructurize function handle for fitting.')
-            else
+            if ismember(independentVariableName,allVariableNames)
                 independentVariable = obj.Workspace.Variables.(independentVariableName);
+            else
+                error('Inependent variable is not included in the workspace. Not able to destructurize function handle for fitting.')
             end
             problemVariableNames = {};
             problemVariables = {};
@@ -180,10 +193,12 @@ classdef func < handle
                 elseif isempty(variable)
                     error('One or more variables missing. Not able to destructurize function handle for fitting.')
                 elseif length(variable) == 1
-                    nonProblemVariableNames = [nonProblemVariableNames;variableName];
+                    nonProblemVariableNames = [nonProblemVariableNames;...
+                                               variableName];
                     nonProblemVariables = [nonProblemVariables;variable];
                 else
-                    problemVariableNames = [problemVariableNames;variableName];
+                    problemVariableNames = [problemVariableNames;...
+                                            variableName];
                     problemVariables = [problemVariables;variable];
                 end                    
             end
@@ -199,8 +214,8 @@ classdef func < handle
                 Coefficients.(coefficientsNamesForFit{i}) = sym(coefficientsNamesForFit{i});
             end
             %
-            for i = 1:length(predefinedCoefficientNames)
-                Coefficients.(predefinedCoefficientNames{i}) = predefinedCoefficients(i);
+            for i = 1:length(constantCoefficientNames)
+                Coefficients.(constantCoefficientNames{i}) = constantCoefficients(i);
             end
            
             % Variables
@@ -215,11 +230,16 @@ classdef func < handle
             Variables.(independentVariableName) = sym(independentVariableName);
             
             % Build new function handle in symbolic form
-            symbolicFunction = obj.funcHandle(struct('Constants',Constants,'Variables',Variables,'Coefficients',Coefficients));
+            symbolicFunction = obj.funcHandle(struct('Constants',Constants,...
+                                                     'Variables',Variables,...
+                                                     'Coefficients',Coefficients));
             
             % Modify back to function handle
-            varsList = [coefficientsNamesForFit;problemVariableNames;independentVariableName];
-            destructurizedFuncHandle = matlabFunction(symbolicFunction,'Vars',varsList);
+            varsList = [coefficientsNamesForFit;...
+                        problemVariableNames;...
+                        independentVariableName];
+            destructurizedFuncHandle = matlabFunction(symbolicFunction,...
+                                                      'Vars',varsList);
         end
         
 
@@ -230,8 +250,7 @@ classdef func < handle
         
         
         function output = viewWorkspace(obj)
-            % VIEWWORKSPACE Outputs a human-readable raport of the
-            %   contents of the Workspace structure.
+            % VIEWWORKSPACE Outputs a human-readable raport of the contents of the Workspace structure.
             % TODO
         end
         
@@ -244,7 +263,11 @@ classdef func < handle
             % GETEQUATION Erases all occurences of Workspace from the
             %   equation body leaving a string with human-readable
             %   equation structure.
-            equationStr = erase(obj.getEquationBody,{'Workspace.Coefficients.','Workspace.Variables.','Workspace.Constants.'});
+            equationStr = erase(obj.getEquationBody,...
+                                {'Workspace.Coefficients.',...
+                                'Workspace.Variables.',...
+                                'Workspace.Constants.'});
         end
+        
     end
 end

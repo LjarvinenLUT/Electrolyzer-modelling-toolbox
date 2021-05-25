@@ -146,8 +146,8 @@ switch method
         % Coefficient values
         coeffValues = coeffvalues(fittedCurve);       
         
-        % Fit 95% confidence bounds [lower upper]
-        errBounds = confint(fittedCurve)-coeffValues; 
+        % Fit 2 sigma confidence bounds [lower upper]
+        twosigma = mean(abs(confint(fittedCurve)-coeffValues)); 
     
         
     
@@ -178,20 +178,26 @@ switch method
             % Unweighted goodness of fit values
             gofIter = goodnessOfFit(fitVoltage,voltage);
             
-            if gofIter.rsquare >0.995 % If good enough fit is achieved:
-                coeffValues = coeff;
-                gof = gofIter;
-                break; % terminate loop
-            elseif fval < fval_best % If previous best fit is improved
+            if fval < fval_best % If previous best fit is improved
                 fval_best = fval;
                 coeffValues = coeff;
                 gof = gofIter;
+                if gofIter.rsquare >0.995 % If good enough fit is achieved:
+                    break; % terminate loop
+                end
             end
             
         end
         
-        % Fit 95% confidence bounds [lower upper] (TODO)
-        errBounds = nan(size(coeffValues));
+        %% Call MCMC for uncertainty estimation
+        
+        coeffStruct = cell(1,length(coefficients));
+        for i = 1:length(coefficients)
+            coeffStruct{i} = {coefficients{i},coeffValues(i),lb(i),ub(i)};
+        end
+        
+        % Fit 95% confidence bounds [lower upper]
+        twosigma = mcmc(current,voltage,coeffStruct,fitfun,gof.ssr);
 end
 
 %% Print message about the fit
@@ -200,7 +206,7 @@ fprintf('\nData fit performed using %s approach\nR^2: %f\n', methodStr,gof.rsqua
 
 %% Use map to store fitting parameters can be referenced by name
 % Example: fit_param.j0)
-fitParam = array2table([coeffValues;errBounds], 'VariableNames', coefficients);
+fitParam = array2table([coeffValues;twosigma], 'VariableNames', coefficients);
 
 % Input fitted coefficients to the func object
 for i = 1:length(coefficients)
@@ -275,9 +281,8 @@ function modFuncHandle = vectorifyFuncHandle(funcHandle,nCoeffs,nProbVars)
 %           nProbVars -- Number of problem variables
 %       Output:
 %           modFuncHandle -- Function handle modified to take cell array
-%                               inputs for coefficients and problem
-%                               variables instead of listing them
-%                               separately.
+%                               inputs for coefficients instead of listing 
+%                               them separately.
        
     % Creating symbolic variables for the function handle
     x = num2cell(sym('x', [1 nCoeffs])); % fit parameters
@@ -288,9 +293,10 @@ function modFuncHandle = vectorifyFuncHandle(funcHandle,nCoeffs,nProbVars)
     z = funcHandle(x{:},y{:},current);
     
     % Creating a modified function handle from the symbolic result
-    modFuncHandle = matlabFunction(z,'Vars',{cell2sym(x),y{:},current});
+    modFuncHandle = matlabFunction(z,'Vars',[{cell2sym(x)},y(:)',{current}]); 
     
 end
+
 
 %%
 function gof = goodnessOfFit(yfit,y)
@@ -308,9 +314,53 @@ function gof = goodnessOfFit(yfit,y)
 
 residuals = y-yfit; % Residuals
 
-sse = sum(residuals.^2); % Sum of square residuals
+ssr = sum(residuals.^2); % Sum of square residuals
 rmse = sqrt(mean(residuals.^2)); % Root mean square error
 rsquare = 1 - sum(residuals.^2)/sum((y-mean(y)).^2); % R^2 value
 
-gof = struct('sse',sse,'rmse',rmse,'rsquare',rsquare); % Goodness of fit structure
+gof = struct('ssr',ssr,'rmse',rmse,'rsquare',rsquare); % Goodness of fit structure
+end
+
+
+%%
+function twosigma = mcmc(x,y,coeffs,ssfun,ssr)
+% MCMC estimates the posterior distribution for fit coefficients using
+%   Markov Chain Monte Carlo
+%
+% the coeffs structure: name, init.val, min, max
+% coeffs = {
+% {'\theta_1',initVal,lowB,upB}
+% {'\theta_2',initVal,lowB,upB}
+% };
+
+n = length(x); % Length of the data
+data = [x,y]; % Data matrix
+
+% Model
+% if length(coeffs)
+%     
+% end
+Model.ssfun = ssfun; % Sum of squares function
+Model.sigma2 = ssr/(n-2); % Proposal variance
+
+% Options
+Options.nsimu = 20000; % number of samples
+Options.qcov = 0.01*eye(n); % (initial) proposal covariance
+Options.method = 'dram'; % method: DRAM
+Options.adaptint = 100; % adaptation interval
+Options.verbosity = 0; % Suppress output
+
+% calling MCMCRUN
+[results,chain] = mcmcrun(Model,data,coeffs,Options);
+
+% visualizing the results using MCMCPLOT
+% figure
+% mcmcplot(chain,[],results.names);
+% figure
+% mcmcplot(chain,[],results.names,'pairs');
+
+y = chainstats(chain,results,0);
+
+twosigma = 2*y(:,2)';
+
 end
