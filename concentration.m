@@ -70,7 +70,7 @@ function Ucon = concentration(varargin)
     [Workspace.Constants.F,Workspace.Constants.R,Workspace.Constants.n_e] = getConstants;
     
     fprintf('\nConcentration overpotential calculation properties:\n')
-    fprintf('Electrolyzer: %d\n', model)
+    fprintf('Model: %d\n', model)
     %% Error checking
     
     if model == 3 && isempty(T)
