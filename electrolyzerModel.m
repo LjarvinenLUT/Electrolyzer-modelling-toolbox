@@ -19,10 +19,7 @@ classdef electrolyzerModel < handle
     %                       model
     %
     %   ELECTROLYZERMODEL Methods:
-    %       addAllPotentials -- Adds all the potentials listed as input
-    %                           to the potentialFunc object with their
-    %                           default settings.
-    %       addPotential -- Adds an expression of a given potential to
+    %       addPotentials -- Adds the expressions of the given potentials to
     %                       the potentialFunc object.
     %       calculate -- Calculates voltage from the UI curve for given 
 	%                       currents.
@@ -31,8 +28,12 @@ classdef electrolyzerModel < handle
     %               longer linked to the parent.
     %       fitUI -- Performs a fit for the UI curve extracting values for
     %                   its coefficients.
+    %       getCoefficients -- Outputs the coefficient structure from
+    %                           potentialFunc Workspace.
     %       removeVariables -- Remove variables from the Variables
     %                           structure.
+    %       replaceParams --  A method for replacing parameters in the 
+    %                           potentialFunc Workspace structure.
     %       showCoefficients -- Lists fit coefficient values.
     %       showUI -- Plots the UI curve for the model.
     %       setVariables -- Set variables in the Variables structure
@@ -71,6 +72,7 @@ classdef electrolyzerModel < handle
             setElectrolyte(obj, string(parser.Results.electrolyte));
             
             obj.potentialFunc = "Potential function not defined";
+            obj.Variables = struct();
         end
         
         function setVariables(obj,varargin)
@@ -103,53 +105,67 @@ classdef electrolyzerModel < handle
         end
         
         
-        function showCoefficients(obj)
-%            SHOWCOEFFICIENTS  A method for showing fit UI curve coefficients. 
-%               (TODO) coefficients found from the workspace of potentialFunc
+        function replaceParams(obj,varargin)
+%           REPLACEPARAMS  A method for replacing parameters in the potentialFunc Workspace structure.
+%               Parameters should be provided as a name-value pair or 
+%               directly as a structure.
+            if isempty(varargin{1})
+                return;
+            elseif length(varargin) == 1 && isstruct(varargin{1})
+                paramsToReplace = varargin{1};
+            elseif mod(nargin,2)
+                for i = 1:2:length(varargin)
+                    paramsToReplace.(varargin{i}) = varargin{i+1};
+                end
+            else
+                error('Parameters to be replaced have to be either set as a single structure or as name-value pairs')
+            end
+            
+            obj.potentialFunc.Workspace = addValuesToStruct(obj.potentialFunc.Workspace,paramsToReplace);
         end
         
         
-        function addPotential(obj, argin)
-%           ADDPOTENTIAL  Adds the given potential term to the total potential func object. 
-%               Input of a string uses getPotential function to get the 
+        
+        function addPotentials(obj, varargin)
+%           ADDPOTENTIALS  Adds the given potential terms to the total potential func object. 
+%               Input of a list of string uses getPotential function to get the 
 %               default func object. Alternatively the user can input a 
-%               func object directly.
+%               list of func object directly.
 %
 %           Examples:
 %
-%           obj.ADDPOTENTIAL('nernst') adds the Nernst potential term to
+%           obj.ADDPOTENTIALS('nernst') adds the Nernst potential term to
 %               the potentialFunc parameter using variables and 
 %               electrolyzer type defined for the electrolyzerModel object.
 %
-%           obj.ADDPOTENTIAL(func) adds the potential term defined by the
+%           obj.ADDPOTENTIALS(func) adds the potential term defined by the
 %               input func object to potentialFunc parameter.
+%
+%           obj.ADDPOTENTIALS('nernst','activation',func1,func2) adds the
+%               all the given potential terms to the potentialFunc
+%               parameter using the functionality meant for each type of
+%               input.
 
-            if isstring(argin) || ischar(argin)
-                addedPotentialFunc = obj.getPotential(argin);
-            elseif isa(argin,'func')
-                addedPotentialFunc = argin;
+            if length(varargin) == 1 && iscell(varargin{1})
+                potentials = varargin{1};
             else
-                error("Potential to be added has to be a func object, or you have to specify with a string which potential term you want to add")
+                potentials = varargin;
             end
             
-            if ~isa(obj.potentialFunc,'func')
-                obj.potentialFunc = addedPotentialFunc;
-            else
-                obj.potentialFunc = addFuncs(obj.potentialFunc,addedPotentialFunc);
-            end
-        end
-        
-        function addAllPotentials(obj, varargin)
-%            ADDALLPOTENTIALS Adds all the potentials that user has requested.
-%               Names to be added are provided in an input cell array or 
-%               as separate input values.
-            if length(varargin) == 1 && iscell(varargin{1})
-                potentialNames = varargin{1};
-            else
-                potentialNames = varargin;
-            end
-            for i = 1:length(potentialNames)
-                obj.addPotential(potentialNames{i})
+            for i = 1:length(potentials)
+                if isstring(potentials{i}) || ischar(potentials{i})
+                    addedPotentialFunc = obj.getPotential(potentials{i});
+                elseif isa(potentials{i},'func')
+                    addedPotentialFunc = potentials{i};
+                else
+                    error("Potential to be added has to be a func object, or you have to specify with a string which potential term you want to add")
+                end
+                
+                if ~isa(obj.potentialFunc,'func') % If no previous potential function is assigned
+                    obj.potentialFunc = addedPotentialFunc;
+                else
+                    obj.potentialFunc = addFuncs(obj.potentialFunc,addedPotentialFunc);
+                end
             end
         end
 
@@ -241,9 +257,25 @@ classdef electrolyzerModel < handle
             
         end
         
+        function Coefficients = getCoefficients(obj)
+            % GETCOEFFICIENTS Outputs a structure containing fit coefficients
+            Coefficients = obj.potentialFunc.Workspace.Coefficients;
+        end
         
-        function clearOverpotentials(obj)
-            % CLEAROVERPOTENTIALS Clears the potential function
+        function varargout = viewWorkspace(obj)
+            % VIEWWORKSPACE Outputs the workspace of potentialFunc in a human-readable table
+            report = obj.potentialFunc.viewWorkspace;
+            disp(report)
+            if nargout == 1
+                varargout{1} = report;
+            elseif nargout > 1
+                error("Too many output arguments.")
+            end
+        end
+        
+        
+        function clearPotentials(obj)
+            % CLEARPOTENTIALS Clears the potential function
             obj.potentialFunc = "Potential function not defined";
         end
         
@@ -252,7 +284,9 @@ classdef electrolyzerModel < handle
             %   Properties of the child object are no longer related to
             %   those of the parent.
             childObj = electrolyzerModel('type',obj.type,'electrolyte',obj.electrolyte);
-            childObj.addPotential(obj.potentialFunc.copy);
+            if isa(obj.potentialFunc,'func')
+                childObj.addPotentials(obj.potentialFunc.copy);
+            end
             childObj.setVariables(obj.Variables);
         end
     end

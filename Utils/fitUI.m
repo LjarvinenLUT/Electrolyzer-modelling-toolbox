@@ -68,7 +68,7 @@ end
 %% Destructurize function handle, get coefficients and their limits, problem variable names and their values
 [funcHandle,coefficients,problemVariableNames,problemVariables] = func.destructurize('current');
 
-[lb, ub, start] = getArgumentLimits(coefficients, current);
+[lb, ub, start] = getArgumentLimits(coefficients, current(:,1));
 
 %% Parse error vectors, if included
 if length(voltage(1,:)) == 1 % No measurement standard deviation given
@@ -117,37 +117,55 @@ switch method
 
     case "NLLSE" % Non-Linear Least Squares Error regression approach
 
-        methodStr = "Non-Linear Least Squares Error Regression";
-        
-        fo = fitoptions('Method','NonlinearLeastSquares',...
-			'Lower',lb,...
-			'Upper',ub,...
-			'StartPoint',start,...
-            'Weights',weights,...
-            'MaxIter',1500,...
-            'Display','notify');
-        
-        fitfun = fittype(funcHandle,...
-			'dependent','voltage',...
-			'coefficients',coefficients,...
-			'independent','current',...
-            'problem',problemVariableNames,...
-			'options',fo);
-        
-        [fittedCurve,~,output] = fit(current,voltage,fitfun,'problem',problemVariables);
+        methodStr = "Non-Linear Least Squares Error Regression";        
 
-        
-        % Voltage values obtained from the fit
-        fitVoltage = fittedCurve(current);
-        
-        % Unweighted goodness of fit values
-        gof = goodnessOfFit(fitVoltage,voltage);
-        
-        % Coefficient values
-        coeffValues = coeffvalues(fittedCurve);       
+        % Retry fitting if R^2 not good enough
+        ssr_best = Inf;
+        for i = 1:5
+            fo = fitoptions('Method','NonlinearLeastSquares',...
+                'Robust','Bisquare',...
+                'Lower',lb,...
+                'Upper',ub,...
+                'StartPoint',start,...
+                'Weights',weights,...
+                'MaxIter',5000,...
+                'Display','notify');
+            
+            fitfun = fittype(funcHandle,...
+                'dependent','voltage',...
+                'coefficients',coefficients,...
+                'independent','current',...
+                'problem',problemVariableNames,...
+                'options',fo);
+            
+            [fittedCurve,~,output] = fit(current,voltage,fitfun,'problem',problemVariables);
+            
+            
+            % Voltage values obtained from the fit
+            fitVoltage = fittedCurve(current);
+            
+            % Unweighted goodness of fit values
+            gofIter = goodnessOfFit(fitVoltage,voltage);
+            
+            if gofIter.ssr < ssr_best
+                ssr_best = gofIter.ssr;
+                % Coefficient values
+                coeffValues = coeffvalues(fittedCurve);
+                gof = gofIter;
+                if gofIter.rsquare >0.998 % If good enough fit is achieved:
+                    break; % terminate loop
+                end
+            else
+                ialpha = contains(coefficients,'alpha');
+                start(ialpha) = start(ialpha)+0.2;
+                ij0 = contains(coefficients,'j0');
+                start(ij0) = start(ij0)*10;
+            end
+            
+        end
         
         % Fit 2 sigma confidence bounds [lower upper]
-        twosigma = mean(abs(confint(fittedCurve)-coeffValues)); 
+        sigma = mean(abs(confint(fittedCurve)-coeffValues))/2; 
     
         
     
@@ -182,11 +200,10 @@ switch method
                 fval_best = fval;
                 coeffValues = coeff;
                 gof = gofIter;
-                if gofIter.rsquare >0.995 % If good enough fit is achieved:
+                if gofIter.rsquare >0.998 % If good enough fit is achieved:
                     break; % terminate loop
                 end
             end
-            
         end
         
         %% Call MCMC for uncertainty estimation
@@ -197,7 +214,8 @@ switch method
         end
         
         % Fit 95% confidence bounds [lower upper]
-        twosigma = mcmc(current,voltage,coeffStruct,fitfun,gof.ssr);
+        mcmcfun = @(x) sum((modFuncHandle(x,problemVariables{:},current)-voltage).^2);
+        sigma = mcmc(current,voltage,coeffStruct,mcmcfun,gof.ssr);
 end
 
 %% Print message about the fit
@@ -206,11 +224,11 @@ fprintf('\nData fit performed using %s approach\nR^2: %f\n', methodStr,gof.rsqua
 
 %% Use map to store fitting parameters can be referenced by name
 % Example: fit_param.j0)
-fitParam = array2table([coeffValues;twosigma], 'VariableNames', coefficients);
+fitParam = array2table([coeffValues;sigma], 'VariableNames', coefficients);
 
 % Input fitted coefficients to the func object
 for i = 1:length(coefficients)
-    func.Workspace.Coefficients.(coefficients{i}) = coeffValues(i);
+    func.Workspace.Coefficients.(coefficients{i}) = [coeffValues(i) sigma(i)];
 end
 end
 
@@ -323,7 +341,7 @@ end
 
 
 %%
-function twosigma = mcmc(x,y,coeffs,ssfun,ssr)
+function sigma = mcmc(x,y,coeffs,ssfun,ssr)
 % MCMC estimates the posterior distribution for fit coefficients using
 %   Markov Chain Monte Carlo
 %
@@ -361,6 +379,6 @@ Options.verbosity = 0; % Suppress output
 
 y = chainstats(chain,results,0);
 
-twosigma = 2*y(:,2)';
+sigma = y(:,2)';
 
 end

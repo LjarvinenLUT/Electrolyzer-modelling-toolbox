@@ -2,11 +2,6 @@ clear;
 close all;
 clc;
 
-%% Global parameters
-[F,R,n_e] = getConstants();
-
-f = R/(n_e*F);
-
 
 %% Creating function handle for fit
 
@@ -21,7 +16,7 @@ Ucon = concentration();
 
 
 
-i = 2;
+i = 1;
 weights = 'none';
 switch i
 
@@ -29,7 +24,8 @@ switch i
         
         Uforfit = addFuncs(addFuncs(Uocv,Uact),addFuncs(Uohm,Ucon));
         
-        
+        [F,R,n_e] = getConstants();
+        f = R/(F*n_e);
         alpha = 0.3; %
         j0 = 1e-6; % A/cm^2, exchange current density
         r = 0.1; % Ohm, total resistance
@@ -38,57 +34,65 @@ switch i
         
         Umeas = []; % "Measured" voltage
         jmeas = []; % "Measured" current based on Buttler-Volmer equation
+        Tmeas = []; % "Measured" temperature with a drift
         
-        U1 = ((0:0.001:100)*(f*T))'; % Uact/(f*T) = 0...10, Activation overpotential sweep limits
+        T1 = T + (0:0.001:100)'*0;
+        U1 = ((0:0.001:100)*(f*T))'; % Uact/(f*T) = 0...50, Activation overpotential sweep limits
+        Uocv = nernst(T1,pH2,pO2,'type',type);
         
         UohmFuncHandle = matlabFunction(str2sym(Uohm.equation));
         UconFuncHandle = matlabFunction(str2sym(Ucon.equation));
         U0 = Uocv.calculate;
         
         for ii = 1:length(U1)
-            jmeastemp = j0*(exp(alpha/(f*T)*U1(ii))-exp((alpha-1)/(f*T)*U1(ii))); % "Measured" current based on Buttler-Volmer equation
+            jmeastemp = j0*(exp(alpha/(f*T1(ii))*U1(ii))-exp((alpha-1)/(f*T1(ii))*U1(ii))); % "Measured" current based on Buttler-Volmer equation
             if jmeastemp >= j_lim
                 break;
-            elseif jmeastemp > 1e-5
+            elseif jmeastemp > 5e-4
                 U2 = UohmFuncHandle(jmeastemp,r); % Ohmic overpotential
-                U3 = UconFuncHandle(F,R,T,jmeastemp,j_lim,n_e); % Concentration overpotential
-                Umeastemp = U0+U1(ii)+U2+U3; % "Measured" voltage
+                U3 = UconFuncHandle(F,R,T1(ii),jmeastemp,j_lim,n_e); % Concentration overpotential
+                Umeastemp = U0(ii)+U1(ii)+U2+U3; % "Measured" voltage
                 jmeas = [jmeas;jmeastemp];
                 Umeas = [Umeas;Umeastemp];
+                Tmeas = [Tmeas;T1(ii)];
             end
         end
-        Tmeas = T*ones(size(jmeas));
-        pH2meas = Uforfit.Workspace.Variables.pH2.*ones(size(jmeas));
-        pO2meas = Uforfit.Workspace.Variables.pO2.*ones(size(jmeas));
+        pH2meas = pH2*ones(size(Tmeas));
+        pO2meas = pO2*ones(size(Tmeas));
         
         % Take samples from the dense data vectors
-        N = 50; % Number of evenly taken current samples
-        jsamples = linspace(min(jmeas),max(jmeas),N)';
+        N = 20; % Number of evenly taken voltage samples
+        Usamples = linspace(min(Umeas)+0.2,max(Umeas),N)';
 %         jsamples = linspace(min(jmeas),jL-0.01,N)'; % Excluding mass transport limitations
-        jmeassamp = nan(N,1);
-        Umeassamp = nan(N,1);
+%         jmeassamp = nan(N,1);
+%         Umeassamp = nan(N,1);
+        iii = 1;
         for ii = 1:N
-            jdif = abs(jmeas-jsamples(ii));
-            [~,ind] = min(jdif);
-            jmeassamp(ii) = jmeas(ind); % Final sampled current vector
-            Umeassamp(ii) = Umeas(ind); % Final sampled voltage vector
+            Udif = abs(Umeas-Usamples(ii));
+            [~,ind] = min(Udif);
+            if iii == 1 || (iii > 1 && abs(jmeas(ind)-jmeassamp(iii-1))>0.02)
+                jmeassamp(iii,1) = jmeas(ind); % Final sampled current vector
+                Umeassamp(iii,1) = Umeas(ind); % Final sampled voltage vector
+                Tmeassamp(iii,1) = Tmeas(ind); % Final sampled temperature vector with drift
+                iii = iii+1;
+            end
         end
-        Tmeassamp = T*ones(size(jmeassamp));
-        pH2meassamp = Uforfit.Workspace.Variables.pH2.*ones(size(jmeassamp));
-        pO2meassamp = Uforfit.Workspace.Variables.pO2.*ones(size(jmeassamp));
         
         
-        % Adding p*100% error to measurements
+        % Adding sigma = 0.01*max normal error to measurements (Normal error seems to break the fit...)
         p = 0.01;
-        jmeassamper = jmeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
-        Umeassamper = Umeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
-        Tmeassamper = Tmeassamp.*(1+p*(rand(size(jmeassamp))-0.5));
-        Uforfit.Workspace.Variables.T = Tmeassamper;
-        Uforfit.Workspace.Variables.pH2 = pH2meassamp;
-        Uforfit.Workspace.Variables.pO2 = pO2meassamp;
+        jmeassamper = nan(length(jmeassamp),2);
+        Umeassamper = nan(length(jmeassamp),2);
+        for ii = 1:length(jmeassamp)
+            jm = jmeassamp(ii) + randn(200,1).*p*max(jmeassamp);
+            Um = Umeassamp(ii) + randn(200,1).*0.5*p*min(Umeassamp);
+            jmeassamper(ii,:) = [mean(jm) std(jm)];
+            Umeassamper(ii,:) = [mean(Um) std(Um)];
+        end
+        Uforfit.Workspace.Variables.T = Tmeassamp;
         
         figure
-        scatter(jmeassamp,Umeassamp)
+        errorbar(jmeassamper(:,1),Umeassamper(:,1),Umeassamper(:,2),Umeassamper(:,2),jmeassamper(:,2),jmeassamper(:,2),'o')
         hold on
         plot(jmeas,Umeas)
         title('Test "measurement" UI')
@@ -96,14 +100,18 @@ switch i
         ylabel('U')
         
         %% Create electrolyzer model objects
-        Emodel = electrolyzerModel('type',type);
-        Emodel.addPotential(Uforfit.copy);
+        Emodel = electrolyzerModel('type',type); % Electrolyzer model containing the sampled temperature
+        Emodel.setVariables('T',Tmeassamp,'pCat',pH2,'pAn',pO2);
+        Emodelfull = Emodel.copy; % Electrolyzer model containing the full dataset for temperature.
+        Emodelfull.setVariables('T',Tmeas);
+        Emodel.addPotentials('ocv','act','ohm','con');
+        Emodelfull.addPotentials('ocv','act','ohm','con');
         
         %% Fit
         
         % Non-linear least squares error
         tic;
-        [fitParam1,gof1] = Emodel.fitUI(Umeassamper,jmeassamper,'method','nllse','weights',weights);
+        [fitParam1,gof1] = Emodel.fitUI(Umeassamper(:,1),jmeassamper(:,1),'method','nllse','weights',weights);
         toc
 		
 		j0_fit1 = fitParam1.j0;
@@ -112,7 +120,8 @@ switch i
         j_lim_fit1 = fitParam1.j_lim;
 
 		% Calculate voltage with calculate-method of func-object
-		Ufit1 = Emodel.calculate('current',jmeas,'T',Tmeas,'pH2',pH2meas,'pO2',pO2meas);
+        Emodelfull.replaceParams(Emodel.potentialFunc.Workspace.Coefficients)
+		Ufit1 = Emodelfull.calculate('current',jmeas,'T',Tmeas);
         
         RMSE1 = gof1.rmse; % Root mean squares error
         
@@ -120,7 +129,7 @@ switch i
         
         figure
         hold on;
-        scatter(jmeassamper,Umeassamper)
+        errorbar(jmeassamper(:,1),Umeassamper(:,1),Umeassamper(:,2),Umeassamper(:,2),jmeassamper(:,2),jmeassamper(:,2),'o')
         plot(jmeas,Ufit1)
         xlabel("j (A)")
         ylabel("U (V)")
@@ -131,7 +140,7 @@ switch i
         
         % Particleswarm
         tic;
-        [fitParam2,gof2] = Emodel.fitUI(Umeassamper,jmeassamper,'method','ps','weights',weights);
+        [fitParam2,gof2] = Emodel.fitUI(Umeassamper(:,1),jmeassamper(:,1),'method','ps','weights',weights);
         toc
         
         
@@ -141,7 +150,8 @@ switch i
         j_lim_fit2 = fitParam2.j_lim;
         
 		% Calculate voltage with calculate-method of func-object
-		Ufit2 = Emodel.calculate('current',jmeas,'T',Tmeas,'pH2',pH2meas,'pO2',pO2meas);
+        Emodelfull.replaceParams(Emodel.potentialFunc.Workspace.Coefficients)
+		Ufit2 = Emodelfull.calculate('current',jmeas,'T',Tmeas);
         
         RMSE2 = gof2.rmse; % Root mean squares error
         
@@ -149,7 +159,7 @@ switch i
         
         figure
         hold on;
-        scatter(jmeassamper,Umeassamper)
+        errorbar(jmeassamper(:,1),Umeassamper(:,1),Umeassamper(:,2),Umeassamper(:,2),jmeassamper(:,2),jmeassamper(:,2),'o')
         plot(jmeas,Ufit2)
         xlabel("j (A)")
         ylabel("U (V)")
@@ -158,21 +168,19 @@ switch i
         hold off;
         
         %% Test with original parameters
+        Emodelfull.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
+        Emodel.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
+
         
-        Uforfit.Workspace.Coefficients.alpha = alpha ; %
-        Uforfit.Workspace.Coefficients.j0 = j0; % A/cm^2, exchange current density
-        Uforfit.Workspace.Coefficients.r = r; % Ohm, total resistance
-        Uforfit.Workspace.Coefficients.j_lim = j_lim; % A/cm^2, limiting current density
+        Ufit = Emodelfull.calculate('current',jmeas);
         
-        Ufit = Uforfit.calculate('current',jmeas,'T',Tmeas,'pH2',pH2meas,'pO2',pO2meas);
-        
-        RMSE = sqrt(mean((Uforfit.calculate('current',jmeassamp)-Umeassamper).^2)); % Root mean squares error
+        RMSE = sqrt(mean((Emodel.calculate('current',jmeassamp)-Umeassamper(:,1)).^2)); % Root mean squares error
         
         % Plotting
         
         figure
         hold on;
-        scatter(jmeassamper,Umeassamper)
+        errorbar(jmeassamper(:,1),Umeassamper(:,1),Umeassamper(:,2),Umeassamper(:,2),jmeassamper(:,2),jmeassamper(:,2),'o')
         plot(jmeas,Ufit)
         xlabel("j (A)")
         ylabel("U (V)")
@@ -198,7 +206,8 @@ switch i
         
         %% Create electrolyzer model objects
         Emodel = electrolyzerModel('type','PEM');
-        Emodel.addPotential(Uforfit.copy);
+        Emodel.setVariables('T',T,'pCat',pH2,'pAn',pO2);
+        Emodel.addPotentials('ocv','act','ohm');
         
         for j = 1:3
             
@@ -238,7 +247,7 @@ switch i
             
             % Particleswarm
             tic;
-            [fitParam2,gof2] = Emodel.fitUI(U(:,1),I(:,1),'method','ps','weights',weights);
+            [fitParam2,gof2] = Emodel.fitUI(U,I,'method','ps','weights',weights);
             toc
             
             

@@ -95,7 +95,7 @@ classdef func < handle
             
             % Create a temporary workspace that includes the user input 
             % variables in addition to the ones found from.
-            TempWorkspace = obj.Workspace;
+            TempWorkspace = func.createTempWorkspace(obj.Workspace);
             if nargin>1
                 TempWorkspace = addValuesToStruct(TempWorkspace,...
                                                   varargin(1:2:end),...
@@ -249,9 +249,53 @@ classdef func < handle
         end
         
         
-        function output = viewWorkspace(obj)
-            % VIEWWORKSPACE Outputs a human-readable raport of the contents of the Workspace structure.
-            % TODO
+        function report = viewWorkspace(obj)
+            % VIEWWORKSPACE Outputs a tabular report of the contents of the Workspace structure.
+            fieldNameConst = fieldnames(obj.Workspace.Constants);
+            fieldNameVars = fieldnames(obj.Workspace.Variables);
+            fieldNameCoeff = fieldnames(obj.Workspace.Coefficients);
+            fields = [strcat(cell(size(fieldNameConst)),'Constants'),fieldNameConst;...
+                         strcat(cell(size(fieldNameVars)),'Variables'),fieldNameVars;...
+                         strcat(cell(size(fieldNameCoeff)),'Coefficients'),fieldNameCoeff];
+            fieldName = fields(:,2);
+            description = cell(size(fieldName));
+            valueMin = nan(size(fieldName));
+            valueMean = nan(size(fieldName));
+            valueMax = nan(size(fieldName));
+            standardDeviation = nan(size(fieldName));
+            % Constants
+            for i = 1:length(fieldName)
+                value = obj.Workspace.(fields{i,1}).(fields{i,2});
+                if ~isempty(value)
+                    switch length(value(:,1))
+                        case 1
+                            valueMean(i) = value(:,1);
+                            descriptionText = ": scalar";
+                            if length(value(1,:)) == 2
+                                standardDeviation(i) = value(1,2);
+                                descriptionText = strcat(descriptionText," with confidence bounds");
+                            else
+                                descriptionText = strcat(descriptionText," without confidence bounds");
+                            end
+                        otherwise
+                            valueMin(i) = min(value(:,1));
+                            valueMax(i) = max(value(:,1));
+                            valueMean(i) = mean(value(:,1));
+                            descriptionText = strcat(": vector of length ",num2str(length(value(:,1))));
+                            if ~kstest(value(:,1)) % If data is normally distributed
+                                standardDeviation(i) = std(value(:,1));
+                                descriptionText = strcat(descriptionText,", normally distributed");
+                            elseif length(value(1,:)) == 2
+                                descriptionText = strcat(descriptionText," with individual values of standard deviation");
+                            end
+                    end
+                else
+                    descriptionText = ": no values assigned";
+                end
+                description{i} = strcat(fields{i,1}(1:end-1),descriptionText);
+            end
+            report = table(description,valueMean,valueMin,valueMax,standardDeviation);
+            report.Properties.RowNames = fieldName;
         end
         
     end
@@ -268,6 +312,26 @@ classdef func < handle
                                 'Workspace.Variables.',...
                                 'Workspace.Constants.'});
         end
-        
+    end
+    
+    methods (Access = private, Static)
+        function TempWorkspace = createTempWorkspace(Struct)
+            % CREATETEMPWORKSPACE Creates a copy of the Workspace structure
+            %   but without values for standard deviation
+            fn = fieldnames(Struct);
+            if isempty(fn)
+                TempWorkspace = struct();
+            else
+                for i = 1:length(fn)
+                    if isstruct(Struct.(fn{i}))
+                        TempWorkspace.(fn{i}) = func.createTempWorkspace(Struct.(fn{i}));
+                    elseif isempty(Struct.(fn{i})) || length(Struct.(fn{i})(1,:)) == 1
+                        TempWorkspace.(fn{i}) = Struct.(fn{i});
+                    else
+                        TempWorkspace.(fn{i}) = Struct.(fn{i})(:,1);
+                    end
+                end
+            end
+        end
     end
 end
