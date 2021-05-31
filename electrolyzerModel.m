@@ -9,6 +9,11 @@ classdef electrolyzerModel < handle
     %   ELECTROLYZERMODEL Properties:
     %       electrolyte -- Chemical composition of the used electrolyte.
     %                       Significant to alkali electrolysis only.
+    %       funcStorage -- A table that stores the separate func objects
+    %                       with their most significant information
+    %                       visible. Storage enables the removal of
+    %                       unnecessary potential components and automatic
+    %                       check for doubly included ones.
     %       potentialFunc -- A func object containing the UI curve
     %                           determining equation, values of its
     %                           variables, constants and coefficients, and
@@ -46,6 +51,7 @@ classdef electrolyzerModel < handle
        electrolyte; % Electrolyte
        potentialFunc; % A func object for combined overpotential function
        Variables; % A structure that contains the measured variables for the model
+       funcStorage; % A table that stores the separate func objects
     end
     
     %% Public methods
@@ -73,6 +79,14 @@ classdef electrolyzerModel < handle
             
             obj.potentialFunc = "Potential function not defined";
             obj.Variables = struct();
+            
+            % Create funcStorage
+            variableNamesTypes = [["name", "string"];...
+                                    ["func", "func"];...
+                                    ["equation", "string"]];
+            obj.funcStorage = table('Size',[0,size(variableNamesTypes,1)],... 
+                                    'VariableNames', variableNamesTypes(:,1),...
+                                    'VariableTypes', variableNamesTypes(:,2));
         end
         
         function setVariables(obj,varargin)
@@ -130,7 +144,8 @@ classdef electrolyzerModel < handle
 %           ADDPOTENTIALS  Adds the given potential terms to the total potential func object. 
 %               Input of a list of string uses getPotential function to get the 
 %               default func object. Alternatively the user can input a 
-%               list of func object directly.
+%               list of func object directly. Option 'rebuild' as the last
+%               parameter 
 %
 %           Examples:
 %
@@ -146,17 +161,32 @@ classdef electrolyzerModel < handle
 %               parameter using the functionality meant for each type of
 %               input.
 
-            if length(varargin) == 1 && iscell(varargin{1})
-                potentials = varargin{1};
+            if (isstring(varargin{end})||ischar(varargin{end}))&&strcmp(varargin{end},'rebuild')
+                rebuild = true;
+                inputs = varargin{1:end-1};
             else
-                potentials = varargin;
+                rebuild = false;
+                inputs = varargin;
+            end
+            if length(inputs) == 1 && iscell(inputs{1})
+                potentials = inputs{1};
+            else
+                potentials = inputs;
             end
             
             for i = 1:length(potentials)
-                if isstring(potentials{i}) || ischar(potentials{i})
-                    addedPotentialFunc = obj.getPotential(potentials{i});
-                elseif isa(potentials{i},'func')
-                    addedPotentialFunc = potentials{i};
+                if iscell(potentials)
+                    potential = potentials{i};
+                elseif isa('potentials','func') % For func array inputs
+                    potential = potentials(i);
+                end
+                
+                if isstring(potential) || ischar(potential)
+                    addedPotentialFunc = obj.getPotential(potential);
+                    name = potential;
+                elseif isa(potential,'func')
+                    addedPotentialFunc = potential;
+                    name = "unspecified";
                 else
                     error("Potential to be added has to be a func object, or you have to specify with a string which potential term you want to add")
                 end
@@ -164,9 +194,65 @@ classdef electrolyzerModel < handle
                 if ~isa(obj.potentialFunc,'func') % If no previous potential function is assigned
                     obj.potentialFunc = addedPotentialFunc;
                 else
-                    obj.potentialFunc = addFuncs(obj.potentialFunc,addedPotentialFunc);
+                    obj.potentialFunc = func.add(obj.potentialFunc,addedPotentialFunc);
+                end
+                
+                if ~rebuild
+                    StorageEntry = struct('name',name,'func',addedPotentialFunc,'equation',addedPotentialFunc.equation);
+                    obj.funcStorage = [obj.funcStorage;struct2table(StorageEntry)];
                 end
             end
+        end
+        
+        function removePotentials(obj,varargin)
+%           REMOVEPOTENTIALS  Removes the given potential terms from the total potential func object. 
+%               Input can be either in the form of string for removing
+%               potentials of certain name, or numeric for removing
+%               potentials in certain indeces. Multiple potentials can be
+%               removed by listing them separately or as a cell array.
+%
+%           Examples:
+%
+%           obj.REMOVEPOTENTIALS('nernst') removes the Nernst potential term
+%               from the potentialFunc parameter.
+%
+%           obj.REMOVEPOTENTIALS(index) removes the potential term with the
+%               given index in funcStorage.
+%
+%           obj.REMOVEPOTENTIALS('nernst','activation',ind1,ind2) removes
+%               all the given potential terms from the potentialFunc
+%               parameter using the functionality meant for each type of
+%               input.
+
+            if length(varargin) == 1 && iscell(varargin{1})
+                potentials = varargin{1};
+            else
+                potentials = varargin;
+            end
+            
+            % Remove the given potentials from the storage
+            for i = 1:length(potentials)
+                if isstring(potentials{i}) || ischar(potentials{i})
+                    ind = find(strcmp(obj.funcStorage.name,potentials{i}));
+                    obj.funcStorage(ind,:) = [];
+                elseif isnumeric(potentials{i})
+                    obj.funcStorage(potentials{i},:) = [];
+                else
+                    error("Potential to be removed not recogniced. Input either as a string for the name or number for its index in funcStorage.")
+                end
+            end
+            
+            % Recreate potentialFunc from the storage
+            obj.clearPotentials;
+            funcs = obj.funcStorage.func;
+            obj.addPotentials(funcs,'rebuild');
+            
+        end
+        
+         
+        function clearPotentials(obj)
+            % CLEARPOTENTIALS Clears the potential function
+            obj.potentialFunc = "Potential function not defined";
         end
 
         
@@ -271,12 +357,6 @@ classdef electrolyzerModel < handle
             elseif nargout > 1
                 error("Too many output arguments.")
             end
-        end
-        
-        
-        function clearPotentials(obj)
-            % CLEARPOTENTIALS Clears the potential function
-            obj.potentialFunc = "Potential function not defined";
         end
         
         function childObj = copy(obj)

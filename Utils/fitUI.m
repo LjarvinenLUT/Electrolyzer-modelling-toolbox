@@ -121,15 +121,18 @@ switch method
 
         % Retry fitting if R^2 not good enough
         ssr_best = Inf;
-        for i = 1:5
+        tolX = 1e-8;
+        maxIter = 5000;
+        for i = 1:10
             fo = fitoptions('Method','NonlinearLeastSquares',...
                 'Robust','Bisquare',...
                 'Lower',lb,...
                 'Upper',ub,...
                 'StartPoint',start,...
                 'Weights',weights,...
-                'MaxIter',5000,...
-                'Display','notify');
+                'MaxIter',maxIter,...
+                'TolX', tolX,...
+                'Display','off');
             
             fitfun = fittype(funcHandle,...
                 'dependent','voltage',...
@@ -155,11 +158,18 @@ switch method
                 if gofIter.rsquare >0.998 % If good enough fit is achieved:
                     break; % terminate loop
                 end
-            else
-                ialpha = contains(coefficients,'alpha');
-                start(ialpha) = start(ialpha)+0.2;
-                ij0 = contains(coefficients,'j0');
-                start(ij0) = start(ij0)*10;
+            end
+            switch output.exitflag
+                case 0 % Fit algorithm exited due to iteration limitation
+                    % Induce randomness into starting variables to try find
+                    % the global minimum
+                    ialpha = strcmp(coefficients,'alpha');
+                    start(ialpha) = min(max(rand*(ub(ialpha)-lb(ialpha)),lb(ialpha)),ub(ialpha));
+                    ij0 = strcmp(coefficients,'j0');
+                    js = logspace(-10,0,1000);
+                    start(ij0) = min(max(js(round(rand*1000)),lb(ij0)),ub(ij0));
+                case 2 % Fit algorithm exited due to coefficient change limitation
+                    tolX = tolX*1e-2; % Increase tolerance
             end
             
         end
@@ -187,7 +197,7 @@ switch method
         
         % Retry fitting if R^2 not good enough
         fval_best = Inf;
-        for i = 1:5
+        for i = 1:10
             [coeff,fval,exitflag,output] = particleswarm(fitfun,nvars,lb,ub,options);
             
             % Voltage values obtained from the fit

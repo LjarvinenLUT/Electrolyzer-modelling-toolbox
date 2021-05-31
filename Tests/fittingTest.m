@@ -22,7 +22,7 @@ switch i
 
     case 1 % Created test data
         
-        Uforfit = addFuncs(addFuncs(Uocv,Uact),addFuncs(Uohm,Ucon));
+        Uforfit = func.add(func.add(Uocv,Uact),func.add(Uohm,Ucon));
         
         [F,R,n_e] = getConstants();
         f = R/(F*n_e);
@@ -192,7 +192,7 @@ switch i
         
     case 2 % Data from Jülich
         
-        Uforfit = addFuncs(addFuncs(Uocv,Uact),Uohm);
+        Uforfit = func.add(func.add(Uocv,Uact),Uohm);
         
         
         

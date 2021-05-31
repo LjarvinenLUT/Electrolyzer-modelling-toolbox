@@ -70,6 +70,6 @@ function Uocv = nernst(T,p1,p2,varargin)
     
     %% Nernst equation
     
-    Uocv = addFuncs(reversible(T,model),nernstPressureCorrection(T,p1,p2,'type',type,'electrolyte',electrolyte));
+    Uocv = func.add(reversible(T,model),nernstPressureCorrection(T,p1,p2,'type',type,'electrolyte',electrolyte));
     
 end

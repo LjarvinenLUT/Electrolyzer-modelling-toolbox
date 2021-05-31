@@ -35,6 +35,8 @@ classdef func < handle
     %                           together with the property equation.
     %       viewWorkspace -- Outputs a human-readable raport of the
     %                           contents of the Workspace structure.
+    %   FUNC static methods:
+    %       add -- Use addition to combine two func objects into a new one.
     %
     %   See also FUNCTION_HANDLE, ADDFUNCS, ISCOMPLETESTRUCT
    
@@ -314,6 +316,29 @@ classdef func < handle
         end
     end
     
+    %% Static methods
+    
+    methods(Static, Access = public)
+        function newFunc = add(func1,func2)
+            % ADD Add two func objects together combining their workspaces and
+            %   using addition for combining their function handles.
+            %
+            %   See also FUNC, MERGESTRUCTS
+            
+            if ~isa(func1,'func')||~isa(func2,'func')
+                error("Functions to be added should both be of type 'func'")
+            end
+            
+            newFuncEquation = ['@(Workspace) ' func1.getEquationBody ' + ' func2.getEquationBody];
+            newFuncHandle = str2func(newFuncEquation);
+            
+            NewWorkspace = mergeStructs(func1.Workspace,func2.Workspace);
+            
+            newFunc = func(newFuncHandle,NewWorkspace);
+            
+        end
+    end
+    
     methods (Access = private, Static)
         function TempWorkspace = createTempWorkspace(Struct)
             % CREATETEMPWORKSPACE Creates a copy of the Workspace structure
@@ -334,4 +359,6 @@ classdef func < handle
             end
         end
     end
+    
+    
 end
