@@ -20,28 +20,30 @@ classdef electrolyzerModel < handle
     %                           functionality for UI fitting and
     %                           calculation.
     %       type -- Type of the electrolyzer, PEM or alkaline
-    %       Variables -- A structure containing measured variables for the
-    %                       model
     %
     %   ELECTROLYZERMODEL Methods:
     %       addPotentials -- Adds the expressions of the given potentials to
     %                       the potentialFunc object.
     %       calculate -- Calculates voltage from the UI curve for given 
 	%                       currents.
-    %       clearOverpotentials -- Clears the potentialFunc property.
+    %       clearPotentials -- Clears the potentialFunc property.
     %       copy -- Creates a copy of the object whose properties are no
     %               longer linked to the parent.
     %       fitUI -- Performs a fit for the UI curve extracting values for
     %                   its coefficients.
     %       getCoefficients -- Outputs the coefficient structure from
     %                           potentialFunc Workspace.
-    %       removeVariables -- Remove variables from the Variables
-    %                           structure.
+    %       removePotentials -- Remove given potential terms from the
+    %                           potentialFunc object and the func Storage.
+    %       removeParams -- Remove variables from the potentialFunc
+    %                           Workspace structure.
     %       replaceParams --  A method for replacing parameters in the 
     %                           potentialFunc Workspace structure.
-    %       showCoefficients -- Lists fit coefficient values.
     %       showUI -- Plots the UI curve for the model.
-    %       setVariables -- Set variables in the Variables structure
+    %       setParams -- Set parameters in the Workspace structure of the
+    %                       potentialFunc object
+    %       viewWorkspace -- Outputs the workspace of potentialFunc in a 
+    %                           human-readable table
     %
     %   See also FUNC
     
@@ -50,7 +52,6 @@ classdef electrolyzerModel < handle
        type; % PEM or alkaline
        electrolyte; % Electrolyte
        potentialFunc; % A func object for combined overpotential function
-       Variables; % A structure that contains the measured variables for the model
        funcStorage; % A table that stores the separate func objects
     end
     
@@ -77,8 +78,8 @@ classdef electrolyzerModel < handle
             setType(obj, parser.Results.type);
             setElectrolyte(obj, string(parser.Results.electrolyte));
             
-            obj.potentialFunc = "Potential function not defined";
-            obj.Variables = struct();
+            % Create an empty func object
+            obj.potentialFunc = func.createEmpty;
             
             % Create funcStorage
             variableNamesTypes = [["name", "string"];...
@@ -89,33 +90,23 @@ classdef electrolyzerModel < handle
                                     'VariableTypes', variableNamesTypes(:,2));
         end
         
-        function setVariables(obj,varargin)
-%            SETVARIABLES  A method for setting variables in the Variables structure. 
-%               Variables should be provided as a name-value pair or 
-%               directly as a structure.
-            if isempty(varargin{1})
-                return;
-            elseif length(varargin) == 1 && isstruct(varargin{1})
-                obj.Variables = varargin{1};
-            elseif mod(nargin,2)
-                for i = 1:2:length(varargin)
-                    obj.Variables.(varargin{i}) = varargin{i+1};
-                end
-            else
-                error('Variables have to be either set as a single structure or as name-value pairs')
-            end
+        function setParams(obj,SetWorkspace)
+%           SETPARAMS  A method for setting parameters in the Workspace structure of potentialFunc object. 
+%               Parameters to be set should be provided as a Workspace
+%               structure.
+           obj.potentialFunc.setParams(SetWorkspace)
         end
-        
-        function removeVariables(obj,varargin)
-%           REMOVEVARIABLES  A method for removing variables from the Variables structure. 
-%               Variables to be removed have to be provided as strings
+
+        function removeParams(obj,varargin)
+%           REMOVEPARAMS  A method for removing parameters from the Workspace structure. 
+%               Parameters to be removed have to be provided as strings
             if length(varargin) == 1 && iscell(varargin{1})
-                variablesToRemove = varargin{1};
+                paramsToRemove = varargin{1};
             else
-                variablesToRemove = varargin;
+                paramsToRemove = varargin;
             end
             
-            obj.Variables = rmfield(obj.Variables,variablesToRemove);
+            obj.potentialFunc.removeParams(paramsToRemove)
         end
         
         
@@ -123,19 +114,7 @@ classdef electrolyzerModel < handle
 %           REPLACEPARAMS  A method for replacing parameters in the potentialFunc Workspace structure.
 %               Parameters should be provided as a name-value pair or 
 %               directly as a structure.
-            if isempty(varargin{1})
-                return;
-            elseif length(varargin) == 1 && isstruct(varargin{1})
-                paramsToReplace = varargin{1};
-            elseif mod(nargin,2)
-                for i = 1:2:length(varargin)
-                    paramsToReplace.(varargin{i}) = varargin{i+1};
-                end
-            else
-                error('Parameters to be replaced have to be either set as a single structure or as name-value pairs')
-            end
-            
-            obj.potentialFunc.Workspace = addValuesToStruct(obj.potentialFunc.Workspace,paramsToReplace);
+            obj.potentialFunc.replaceParams(varargin{:});
         end
         
         
@@ -145,7 +124,8 @@ classdef electrolyzerModel < handle
 %               Input of a list of string uses getPotential function to get the 
 %               default func object. Alternatively the user can input a 
 %               list of func object directly. Option 'rebuild' as the last
-%               parameter 
+%               parameter prevents addition of the components to
+%               funcStorage.
 %
 %           Examples:
 %
@@ -160,49 +140,99 @@ classdef electrolyzerModel < handle
 %               all the given potential terms to the potentialFunc
 %               parameter using the functionality meant for each type of
 %               input.
+%
+%           obj.ADDPOTENTIALS(_,'names',nameCell) adds all the given
+%               potnetial terms to the potentialFunc parameter and replaces
+%               their names with the ones given in a cell array after 
+%               'names' call.
 
-            if (isstring(varargin{end})||ischar(varargin{end}))&&strcmp(varargin{end},'rebuild')
+            % Find entries that are of type char
+            isCharEntries = cellfun(@ischar,varargin);
+            indexOfCharEntries = find(isCharEntries);
+            charEntries = varargin(isCharEntries);
+
+            rebuildCall = ismember(charEntries,{'rebuild'});
+            namesCall = ismember(charEntries,{'names'});
+            
+            % Use further the inputs that are not 'rebuild' nor 'names'
+            otherInputs = true(size(varargin));
+            
+            % Check if rebuild mode was called 
+            if any(rebuildCall)
                 rebuild = true;
-                inputs = varargin{1:end-1};
+                otherInputs(indexOfCharEntries(rebuildCall)) = false;
             else
                 rebuild = false;
-                inputs = varargin;
             end
-            if length(inputs) == 1 && iscell(inputs{1})
+            
+            % Check if names were given for potentials
+            if any(namesCall)
+                if length(varargin) >= indexOfCharEntries(namesCall)+1 && iscell(varargin{indexOfCharEntries(namesCall)+1})
+                    names = varargin{indexOfCharEntries(namesCall)+1};
+                    otherInputs(indexOfCharEntries(namesCall)+[0 1]) = false;
+                else
+                    error("Potential names have to be listed as a cell array after the 'names' parameter in the function call")
+                end
+            end
+            
+            inputs = varargin(otherInputs);
+            
+            % If only one input was given check if it is a cell or an array
+            % and use its content if true.
+            if length(inputs) == 1 && (iscell(inputs{1}) || (~iscell(inputs{1}) && length(inputs{1}) > 1))
                 potentials = inputs{1};
             else
                 potentials = inputs;
             end
             
+            % Loop through all the potentials to be added
             for i = 1:length(potentials)
                 if iscell(potentials)
                     potential = potentials{i};
-                elseif isa('potentials','func') % For func array inputs
+                    if length(potentials(i))>1
+                        if rebuild
+                            obj.addPotentials(potential,'rebuild')
+                        else
+                            obj.addPotentials(potential)
+                        end
+                        continue;
+                    end
+                elseif isa(potentials,'func') % For func array inputs
                     potential = potentials(i);
+                else
+                    potential = potentials;
                 end
                 
-                if isstring(potential) || ischar(potential)
+                if isstring(potential) || ischar(potential) % String input
                     addedPotentialFunc = obj.getPotential(potential);
                     name = potential;
-                elseif isa(potential,'func')
+                elseif isa(potential,'func') % Func input
                     addedPotentialFunc = potential;
                     name = "unspecified";
                 else
                     error("Potential to be added has to be a func object, or you have to specify with a string which potential term you want to add")
                 end
                 
-                if ~isa(obj.potentialFunc,'func') % If no previous potential function is assigned
-                    obj.potentialFunc = addedPotentialFunc;
-                else
-                    obj.potentialFunc = func.add(obj.potentialFunc,addedPotentialFunc);
+                if any(namesCall) % If names were given in function call
+                    name = names{i};
                 end
                 
-                if ~rebuild
+                % Warn about multiply defined potential terms
+                if any(strcmp(addedPotentialFunc.equation,obj.funcStorage.equation)) && ~rebuild
+                    warning("Same potential term included multiple times! For a list of added potential terms call the funcStorage property.")
+                end
+                
+                
+                obj.potentialFunc = func.add(obj.potentialFunc,addedPotentialFunc);
+                
+                
+                if ~rebuild % Supplement the funcStorage
                     StorageEntry = struct('name',name,'func',addedPotentialFunc,'equation',addedPotentialFunc.equation);
                     obj.funcStorage = [obj.funcStorage;struct2table(StorageEntry)];
                 end
             end
         end
+        
         
         function removePotentials(obj,varargin)
 %           REMOVEPOTENTIALS  Removes the given potential terms from the total potential func object. 
@@ -243,18 +273,23 @@ classdef electrolyzerModel < handle
             end
             
             % Recreate potentialFunc from the storage
-            obj.clearPotentials;
+            obj.clearPotentials('rebuild');
             funcs = obj.funcStorage.func;
             obj.addPotentials(funcs,'rebuild');
-            
         end
         
-         
-        function clearPotentials(obj)
+        
+        function clearPotentials(obj,varargin)
             % CLEARPOTENTIALS Clears the potential function
-            obj.potentialFunc = "Potential function not defined";
+            obj.potentialFunc = obj.potentialFunc.copy('empty');
+            if nargin == 2 && strcmp(varargin{1},'rebuild')
+                return;
+            else
+                obj.funcStorage(1:height(obj.funcStorage),:) = [];
+            end
         end
 
+        
         
         function [fitCoefficients,gof] = fitUI(obj,varargin)
 %           FITUI A method for extracting the fit coefficients for the electrolyzerModel.
@@ -295,28 +330,16 @@ classdef electrolyzerModel < handle
             weightsMethod = lower(string(parser.Results.weights));
             
             if isnan(I) % Current not provided as an input
-                INameOptions = {'I','current','j','i'};
-                memberNameIndexI = ismember(INameOptions,fieldnames(obj.Variables));
-                nMemberNameIndexI = sum(memberNameIndexI);
-                switch nMemberNameIndexI
-                    case 0
-                        error("Current not defined. Defined it either in the Variables structure of the electrolyzerModel object. Alternatively, if voltage has been provided as the second parameter for fitUI, current can be provided as the third parameter.")
-                    case 1
-                        I = obj.Variables.(INameOptions{memberNameIndexI});
-                    otherwise
-                        error("Current overdefined in the Variables structure of the electrolyzerModel object.")
+                if any(ismember('current',fieldnames(obj.potentialFunc.Workspace.Variables)))
+                    I = obj.potentialFunc.Variables.current;
+                else
+                    error("Current not defined. Defined it either in the Variables structure of the electrolyzerModel object. Alternatively, if voltage has been provided as the second parameter for fitUI, current can be provided as the third parameter.")
                 end
                 if isnan(U) % Voltage not provided as an input
-                    UNameOptions = {'U','voltage','V','u'};
-                    memberNameIndexU = ismember(UNameOptions,fieldnames(obj.Variables));
-                    nMemberNameIndexU = sum(memberNameIndexU);
-                    switch nMemberNameIndexU
-                        case 0
-                            error("Voltage not defined. Defined it either in the Variables structure of the electrolyzerModel object. Alternatively, if voltage has been provided as the second parameter for fitUI, current can be provided as the third parameter.")
-                        case 1
-                            U = obj.Variables.(UNameOptions{memberNameIndexU});
-                        otherwise
-                            error("Voltage overdefined in the Variables structure of the electrolyzerModel object.")
+                    if any(ismember('voltage',fieldnames(obj.potentialFunc.Workspace.Variables)))
+                        U = obj.potentialFunc.Variables.voltage;
+                    else
+                        error("Voltage not defined. Defined it either in the Variables structure of the electrolyzerModel object. Alternatively, if voltage has been provided as the second parameter for fitUI, current can be provided as the third parameter.")
                     end
                 end
             end
@@ -359,15 +382,16 @@ classdef electrolyzerModel < handle
             end
         end
         
+        
         function childObj = copy(obj)
             % COPY  Creates a full copy of the object with its own handle.
             %   Properties of the child object are no longer related to
             %   those of the parent.
             childObj = electrolyzerModel('type',obj.type,'electrolyte',obj.electrolyte);
-            if isa(obj.potentialFunc,'func')
-                childObj.addPotentials(obj.potentialFunc.copy);
+            if ~func.isEmpty(obj.potentialFunc)
+                childObj.addPotentials(obj.funcStorage.func);
             end
-            childObj.setVariables(obj.Variables);
+            childObj.setParams(obj.potentialFunc.Workspace);
         end
     end
     
@@ -409,18 +433,18 @@ classdef electrolyzerModel < handle
 %                       potential.
 
             potentialName = strrep(string(lower(argin)), ' ', '');
-            providedVariables = fieldnames(obj.Variables);
+            providedVariables = fieldnames(obj.potentialFunc.Workspace.Variables);
             switch string(lower(potentialName))
                 case {"nernst","reversible","rev","opencircuit","ocv"}
                     if strcmpi(obj.type,'pem')
                         if all(ismember({'T','pCat','pAn'},providedVariables))
-                            potentialFunc = nernst(obj.Variables.T,obj.Variables.pCat,obj.Variables.pAn,'type',obj.type);
+                            potentialFunc = nernst(obj.potentialFunc.Workspace.Variables.T,obj.potentialFunc.Workspace.Variables.pCat,obj.potentialFunc.Workspace.Variables.pAn,'type',obj.type);
                         else
                             error("To use Nernst equation with PEM the following variables, T (temperature in kelvin), pCat (cathode pressure in bar) and pAn (anode pressure in bar) have to be included in the electrolyzerModel Variables structure")
                         end
                     elseif strcmpi(obj.type,'alkaline')
                         if all(ismember({'T','p','m'},providedVariables))
-                            potentialFunc = nernst(obj.Variables.T,obj.Variables.p,obj.Variables.m,'type',obj.type);
+                            potentialFunc = nernst(obj.potentialFunc.Workspace.Variables.T,obj.potentialFunc.Workspace.Variables.p,obj.potentialFunc.Workspace.Variables.m,'type',obj.type);
                         else
                             error("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), p (csystem pressure in bar) and m (elektrolyte molality) have to be included in the electrolyzerModel Variables structure")
                         end
@@ -437,7 +461,6 @@ classdef electrolyzerModel < handle
                     error("Potential component " + string(argin) + " not recognised.")
             end
         end
-        
     end
     
 end

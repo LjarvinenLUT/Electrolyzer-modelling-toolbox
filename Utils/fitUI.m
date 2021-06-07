@@ -1,4 +1,4 @@
-function [fitParam,gof] = fitUI(func,voltage,current,varargin)
+function [fitParam,gof] = fitUI(fitFunc,voltage,current,varargin)
 % FITUI Fits a given function for a UI curve with given voltage and
 % current data to find unknown coefficient values.
 %
@@ -56,7 +56,7 @@ addRequired(parser,'current',@(x) isnumeric(x))
 addParameter(parser,'method',defaultMethod,@(x) ischar(x)||isstring(x))
 addParameter(parser,'weights',defaultWeights,@(x) ischar(x)||isstring(x))
 
-parse(parser,func,voltage,current,varargin{:});
+parse(parser,fitFunc,voltage,current,varargin{:});
 
 method = upper(string(parser.Results.method));
 weightsMethod = lower(string(parser.Results.weights));
@@ -66,7 +66,7 @@ if length(voltage)~=length(current)
 end
 
 %% Destructurize function handle, get coefficients and their limits, problem variable names and their values
-[funcHandle,coefficients,problemVariableNames,problemVariables] = func.destructurize('current');
+[funcHandle,coefficients,problemVariableNames,problemVariables] = fitFunc.destructurize('current');
 
 [lb, ub, start] = getArgumentLimits(coefficients, current(:,1));
 
@@ -238,7 +238,7 @@ fitParam = array2table([coeffValues;sigma], 'VariableNames', coefficients);
 
 % Input fitted coefficients to the func object
 for i = 1:length(coefficients)
-    func.Workspace.Coefficients.(coefficients{i}) = [coeffValues(i) sigma(i)];
+    fitFunc.replaceParams(coefficients{i},[coeffValues(i) sigma(i)]);
 end
 end
 

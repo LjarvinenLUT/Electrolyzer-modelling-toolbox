@@ -17,7 +17,7 @@ Ucon = concentration();
 
 
 i = 1;
-weights = 'none';
+weights = 'default';
 switch i
 
     case 1 % Created test data
@@ -80,7 +80,7 @@ switch i
         
         
         % Adding sigma = 0.01*max normal error to measurements (Normal error seems to break the fit...)
-        p = 0.01;
+        p = 0.02;
         jmeassamper = nan(length(jmeassamp),2);
         Umeassamper = nan(length(jmeassamp),2);
         for ii = 1:length(jmeassamp)
@@ -89,7 +89,7 @@ switch i
             jmeassamper(ii,:) = [mean(jm) std(jm)];
             Umeassamper(ii,:) = [mean(Um) std(Um)];
         end
-        Uforfit.Workspace.Variables.T = Tmeassamp;
+        Uforfit.replaceParams('T',Tmeassamp);
         
         figure
         errorbar(jmeassamper(:,1),Umeassamper(:,1),Umeassamper(:,2),Umeassamper(:,2),jmeassamper(:,2),jmeassamper(:,2),'o')
@@ -101,9 +101,9 @@ switch i
         
         %% Create electrolyzer model objects
         Emodel = electrolyzerModel('type',type); % Electrolyzer model containing the sampled temperature
-        Emodel.setVariables('T',Tmeassamp,'pCat',pH2,'pAn',pO2);
+        Emodel.setParams(struct('Variables',struct('T',Tmeassamp,'pCat',pH2,'pAn',pO2)));
         Emodelfull = Emodel.copy; % Electrolyzer model containing the full dataset for temperature.
-        Emodelfull.setVariables('T',Tmeas);
+        Emodelfull.replaceParams('T',Tmeas);
         Emodel.addPotentials('ocv','act','ohm','con');
         Emodelfull.addPotentials('ocv','act','ohm','con');
         
@@ -168,8 +168,10 @@ switch i
         hold off;
         
         %% Test with original parameters
-        Emodelfull.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
-        Emodel.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
+        Emodelfull2 = Emodelfull.copy;
+        Emodelfull2.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
+        Emodel2 = Emodel.copy;
+        Emodel2.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
 
         
         Ufit = Emodelfull.calculate('current',jmeas);
@@ -206,7 +208,7 @@ switch i
         
         %% Create electrolyzer model objects
         Emodel = electrolyzerModel('type','PEM');
-        Emodel.setVariables('T',T,'pCat',pH2,'pAn',pO2);
+        Emodel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
         Emodel.addPotentials('ocv','act','ohm');
         
         for j = 1:3

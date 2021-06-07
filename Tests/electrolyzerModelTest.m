@@ -13,23 +13,41 @@ T = 273.15 + 50; % K
 pCat = 30; % bar
 pAn = 2; % bar
 
-e.setVariables('T',T,'pCat',pCat,'pAn',pAn);
+Workspace = struct('Variables',struct('T',T,'pCat',pCat,'pAn',pAn),'Constants',struct('Q','Oops','p','wrong variable'));
 
-e.Variables
+func.isWorkspace(Workspace)
+
+e.setParams(Workspace);
+
+e.viewWorkspace
 
 %% Removing variables
 
-e.setVariables('Q','Oops','p','wrong variable');
-e.Variables
+e.removeParams('Q','p')
+e.viewWorkspace
 
-e.removeVariables('Q','p')
-e.Variables
+%% Replacing variables
 
+e.replaceParams('T',T+30)
+e.viewWorkspace
 
 %% Defining potential function with defaults
 
-e.addAllPotentials('nernst','activation','ohmic','concentration')
+e.addPotentials('nernst','activation','ohmic','concentration')
+
+disp(e.funcStorage)
 
 %% Copying the electrolyzer model
 
 e2 = e.copy
+e2.clearPotentials
+
+%% Adding potential with 'names'
+
+e2.addPotentials('nernst','act','names',{'ocv','Cat'})
+
+e2.funcStorage
+
+
+
+

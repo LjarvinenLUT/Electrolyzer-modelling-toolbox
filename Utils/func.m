@@ -31,8 +31,11 @@ classdef func < handle
     %       getEquationBody -- Returns a string containing only the body of
     %                           the function handle by removing
     %                           @(Workspace).
+    %       replaceParams -- Replaces the values of existing parameters in
+    %                           Workspace structure
     %       setFuncHandle -- Sets the protected property of funcHandle
     %                           together with the property equation.
+    %       setParams -- Sets new parameters to Workspace structure
     %       viewWorkspace -- Outputs a human-readable raport of the
     %                           contents of the Workspace structure.
     %   FUNC static methods:
@@ -43,9 +46,6 @@ classdef func < handle
     properties (SetAccess = protected)
        equation; % Function handle in string form
        funcHandle; % Function handle of the function that uses only Workspace structure as an input
-    end
-    
-    properties
        Workspace; % Structure containing the Coefficients, Variables and Constants:
 %         Coefficients; % Structure containing the coefficients
 %         Variables; % Structure containing the variables
@@ -54,19 +54,16 @@ classdef func < handle
     
     %% Public methods
     methods
-        function obj = func(funcHandle,Workspace)
+        function obj = func(funcHandle,Workspace,varargin)
             % FUNC Constructor method for the object
             %   Inputs:
             %       funcHandle -- The structure-based function handle.
             %       Workspace -- The workspace structure.
             obj.setFuncHandle(funcHandle);
-            if any(~ismember(fieldnames(Workspace),...
-                             {'Coefficients';...
-                             'Variables';...
-                             'Constants'}))
-                error("Workspace structure of object func should contain exclusively fields 'Coefficients', 'Variables' or 'Constants'.")
-            else
+            if func.isWorkspace(Workspace)
                 obj.Workspace = Workspace;
+            else
+                error("Workspace structure of object func should contain exclusively fields 'Coefficients', 'Variables' or 'Constants'.")
             end
         end
         
@@ -77,13 +74,65 @@ classdef func < handle
             obj.equation = obj.getEquation;
         end
         
-
+        
         function equationBody = getEquationBody(obj)
             % GETEQUATIONBODY Outputs the equation body from the function handle without @(Workspace).
             equationBody = erase(func2str(obj.funcHandle),'@(Workspace)');
         end
         
-
+        function replaceParams(obj,varargin)
+            % REPLACEPARAMS  A method for replacing parameters in the Workspace structure.
+            %  Parameters should be provided as a name-value pair or
+            %  directly as a structure.
+            if isempty(varargin{1})
+                return;
+            elseif length(varargin) == 1 && isstruct(varargin{1})
+                paramsToReplace = varargin{1};
+            elseif mod(nargin,2)
+                for i = 1:2:length(varargin)
+                    paramsToReplace.(varargin{i}) = varargin{i+1};
+                end
+            else
+                error('Parameters to be replaced have to be either set as a single structure or as name-value pairs')
+            end
+            
+            obj.Workspace = addValuesToStruct(obj.Workspace,paramsToReplace);
+        end
+        
+        function removeParams(obj,varargin)
+            % REMOVEPARAMS  A method for removing parameters from the Workspace structure.
+            %  Parameter names should be provided as a list or a cell array
+            %  of strings.
+            if length(varargin) == 1 && iscell(varargin{1})
+                paramsToRemove = varargin{1};
+            else
+                paramsToRemove = varargin;
+            end
+            
+            for i = 1:length(paramsToRemove)
+                if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Constants))
+                    obj.Workspace.Constants = rmfield(obj.Workspace.Constants,paramsToRemove{i});
+                end
+                if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Coefficients))
+                    obj.Workspace.Coefficients = rmfield(obj.Workspace.Coefficients,paramsToRemove{i});
+                end
+                if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Variables))
+                    obj.Workspace.Variables = rmfield(obj.Workspace.Variables,paramsToRemove{i});
+                end
+            end
+        end
+        
+        function setParams(obj,SetStruct)
+            % SETPARAMS  A method for setting parameters in the Workspace structure.
+            %  Parameters should be provided as a structure.
+            if func.isWorkspace(SetStruct)
+                obj.Workspace = mergeStructs(obj.Workspace,SetStruct);
+            else
+                error('Parameters to be set have to be given as a single Workspace structure')
+            end
+        end
+        
+        
         function result = calculate(obj,varargin)
             % CALCULATE Calculates the voltage from the UI curve.
             %   Variables input as name-value pairs are used for the
@@ -243,11 +292,18 @@ classdef func < handle
             destructurizedFuncHandle = matlabFunction(symbolicFunction,...
                                                       'Vars',varsList);
         end
-        
 
-        function childFunc = copy(obj)
-            % COPY Creates a copy of the object with a new handle.
-            childFunc = func(obj.funcHandle,obj.Workspace);
+        function childFunc = copy(obj,varargin)
+            % COPY Creates a copy of the object with a new handle. With
+            %   parameter 'empty' create a copy that has no funcHandle but
+            %   keeps the Workspace content.
+            if nargin == 1
+                childFunc = func(obj.funcHandle,obj.Workspace);
+            elseif strcmp(varargin{1},'empty')
+                childFunc = func(@pass,obj.Workspace);
+            else
+                error('Unknown input')
+            end
         end
         
         
@@ -302,7 +358,7 @@ classdef func < handle
         
     end
     
-    %% Private methods
+    %% Private dynamic methods
     methods (Access = private)
 
         function equationStr = getEquation(obj)
@@ -328,14 +384,56 @@ classdef func < handle
             if ~isa(func1,'func')||~isa(func2,'func')
                 error("Functions to be added should both be of type 'func'")
             end
-            
-            newFuncEquation = ['@(Workspace) ' func1.getEquationBody ' + ' func2.getEquationBody];
+            funcs = {func1,func2};
+            emptyFuncs = func.isEmpty(funcs);
+            if any(emptyFuncs)
+                funcToAdd = funcs(~emptyFuncs);
+                newFuncEquation = ['@(Workspace) ' funcToAdd{:}.getEquationBody];
+            else
+                newFuncEquation = ['@(Workspace) ' func1.getEquationBody ' + ' func2.getEquationBody];
+            end
             newFuncHandle = str2func(newFuncEquation);
             
             NewWorkspace = mergeStructs(func1.Workspace,func2.Workspace);
             
             newFunc = func(newFuncHandle,NewWorkspace);
             
+        end
+        
+        function emptyFunc = createEmpty
+            % CREATEEMPTY Create an empty func object with a function
+            % handle that does nothing.
+            emptyFunc = func(@pass,...
+                struct('Constants',struct(),...
+                'Variables',struct(),...
+                'Coefficients',struct()));
+        end
+        
+        function b = isEmpty(varargin)
+            % ISEMPTY Evaluates if the given func objects are empty
+            if length(varargin) == 1 && iscell(varargin{1})
+                funcs = varargin{1};
+            else
+                funcs = varargin;
+            end
+            
+            b = false(size(funcs));
+            
+            for i = 1:length(funcs)
+                funcToEval = funcs{i};
+                if strcmp(funcToEval.equation,'pass')
+                    b(i) = true;
+                end
+            end
+        end
+        
+        function b = isWorkspace(Struct)
+            % ISWORKSPACE Evaluates if a given structure fulfills
+            %   requirements for a Workspace.
+            b = all(ismember(fieldnames(Struct),...
+                             {'Coefficients';...
+                             'Variables';...
+                             'Constants'}));
         end
     end
     

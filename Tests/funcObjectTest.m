@@ -13,7 +13,7 @@ func1 = func(funcHandle1,Workspace1);
 
 result = calculate(func1)
 
-fprintf(['\n' func1.getEquation '\n'])
+fprintf(['\n' func1.equation '\n'])
 
 %% Combine two func objects
 
@@ -23,8 +23,24 @@ Workspace2 = struct('Coefficients',Coefficients2,'Variables',Variables2);
 
 funcHandle2 = @(Workspace) Workspace.Coefficients.a^(1/2) + Workspace.Variables.T./Workspace.Variables.p*Workspace.Coefficients.c;
 
-func2 = func(funcHandle2,Workspace2);
+func2 = func.createEmpty;
 
-func3 = addFuncs(func1,func2)
+func2.setFuncHandle(funcHandle2);
 
-fprintf(['\n' func3.getEquation '\n'])
+func2.setParams(Workspace2);
+
+disp(func2.viewWorkspace);
+
+func2.removeParams('b');
+
+disp(func2.viewWorkspace);
+
+func2.replaceParams('a',15);
+
+disp(func2.viewWorkspace);
+
+func3 = func.add(func1,func2)
+
+fprintf(['\n' func3.equation '\n'])
+
+disp(func3.viewWorkspace);
