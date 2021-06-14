@@ -69,7 +69,7 @@ switch model
         end
         
         % Pure water vapor pressure
-        psv = water_vapor_pressure(T,'model',2);
+        psv = waterVaporPressure(T,'model',2);
         
         % Electrolyte vapor pressure
         psvEl = psv.^b.*10.^(a);
@@ -83,7 +83,7 @@ switch model
         molfracH2O = 1-molfracSolute; % Molar fraction of H2O
 
         % Pure water vapor pressure
-        psv = water_vapor_pressure(T,'model',2);
+        psv = waterVaporPressure(T,'model',2);
         
         % Electrolyte vapor pressure
         psvEl = psv*molfracH2O;

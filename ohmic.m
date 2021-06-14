@@ -75,9 +75,9 @@ function Uohm = ohmic(varargin)
 
     
     fprintf('\nOhmic overpotential calculation properties:\n')
-    fprintf('Electrolyzer: %s\n', type)
     fprintf('Resistance model: %d\n', resistanceModel)
     if resistanceModel ~= 1
+        fprintf('Electrolyzer type: %s\n', type)
         fprintf('Conductivity model: %d\n', conductivityModel)
     end
     

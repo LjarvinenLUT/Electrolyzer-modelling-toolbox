@@ -357,7 +357,11 @@ classdef electrolyzerModel < handle
             %   calculation and any variable required by the function that is
             %   not input to CALCULATE is looked for from the Workspace of the
             %   potentialFunc.
-            result = obj.potentialFunc.calculate(varargin{:});
+            tempResult = obj.potentialFunc.calculate(varargin{:});
+            if any(~isreal(tempResult))
+                warning("Complex voltage values detected. This may indicate that the values of the given current vector exceed the fit limitting current density 'j_lim'. Imaginary parts ignored.")
+            end
+            result = real(tempResult);
         end
         
         
@@ -446,7 +450,7 @@ classdef electrolyzerModel < handle
                         if all(ismember({'T','p','m'},providedVariables))
                             potentialFunc = nernst(obj.potentialFunc.Workspace.Variables.T,obj.potentialFunc.Workspace.Variables.p,obj.potentialFunc.Workspace.Variables.m,'type',obj.type);
                         else
-                            error("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), p (csystem pressure in bar) and m (elektrolyte molality) have to be included in the electrolyzerModel Variables structure")
+                            error("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), p (system pressure in bar) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure")
                         end
                     else
                         error("Electrolyzer type not recognised")

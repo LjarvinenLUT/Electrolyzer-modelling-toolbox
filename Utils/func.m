@@ -154,11 +154,23 @@ classdef func < handle
             end
             
             % The result is calculated if the TempWorkspace contains all
-            % necessary values in all the fields.
-            if isCompleteStruct(TempWorkspace)
+            % necessary values for the calculation.
+            try
                 result = obj.funcHandle(TempWorkspace);
-            else
-                error('Result cannot be calculated because one or more workspace entries are missing. Either add the missing entries to the workspace of the func object or input them to calculate method as name-value pairs.')
+            catch ME
+                if strcmp(ME.identifier,'MATLAB:nonExistentField')
+                    msg = "Result cannot be calculated because one or " +...
+                            "more necessary workspace entries are missing. " +...
+                            "\n\nError message: "+...
+                            string(ME.message) +...
+                            "\n\nEither add the missing entries to the " +...
+                            "workspace of the func object or input them " +...
+                            "to the calculate method as name-value pairs.";
+                    newME = MException('MATLAB:func:incompleteWorkspace',compose(msg));
+                    throw(newME)
+                else
+                    rethrow(ME)
+                end
             end
         end
         

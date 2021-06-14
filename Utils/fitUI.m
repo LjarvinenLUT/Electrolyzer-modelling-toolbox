@@ -2,13 +2,13 @@ function [fitParam,gof] = fitUI(fitFunc,voltage,current,varargin)
 % FITUI Fits a given function for a UI curve with given voltage and
 % current data to find unknown coefficient values.
 %
-%   [fitParam,gof] = FITUI(func,voltage,current) fits the
+%   [fitParam,gof] = FITUI(fitFunc,voltage,current) fits the
 %       given function to data using particle swarm optimisation and
 %       weighting beginning and end of the dataset.
 %       Inputs:
-%           func -- A func object containing a function handle for the UI
-%                   curve and all the necessary coefficients, constants and
-%                   measured values for the fit.
+%           fitFunc -- A func object containing a function handle for the
+%                   UI curve and all the necessary coefficients, constants
+%                   and measured values for the fit.
 %           voltage -- Measured voltage values to be used for fitting. Can
 %                       be a nx1 column vector containing the data or a nx2 
 %                       matrix containing the data in the first column and 
@@ -19,25 +19,24 @@ function [fitParam,gof] = fitUI(fitFunc,voltage,current,varargin)
 %                       its standard deviation in the second column.
 %
 %   [_] = FITUI(_,'method',m) uses the given method for fitting. Available
-%           methods are:
-%               - 'NLLSE' -- Non-Linear Least Squares Error regression
-%               - 'PS' -- Particleswarm optimisation for the least squares
+%       methods are:
+%           - 'NLLSE' -- Non-Linear Least Squares Error regression
+%           - 'PS' -- Particleswarm optimisation for the least squares
 %                       error.
 %
 %   [_] = FITUI(_,'weights',w) allows user to choose whether the beginning
-%           and end of the data set are weighted more than the middle. The 
-%           reason for the weights is to improve fitting of activation and
-%           concentration overpotentials, whose effects are limited to low
-%           and high current densities, respectively. Available options
-%           are:
-%               - 'default' -- Use exponentially changing weight for the 
-%                               beginning and end.
-%               - 'none' -- Do not use weights for the beginning and end
+%       and end of the data set are weighted more than the middle. The 
+%       reason for the weights is to improve fitting of activation and
+%       concentration overpotentials, whose effects are limited to low
+%       and high current densities, respectively. Available options
+%       are:
+%           - 'default' -- Use exponentially changing weight for the 
+%                           beginning and end.
+%           - 'none' -- Do not use weights for the beginning and end
 % 
 %   Output:
-%       fitParam -- Fit coefficient values in a table with their confidence
-%                   intervals (default 95%). 
-%                   (TODO: enable choosing the level)
+%       fitParam -- Fit coefficient values in a table with their standard
+%                   deviation (confidence value with 1 sigma)
 %       gof -- Goodness of fit values in a structure.
 %       
 %   Function FITUI updates the workspace of input func to include the
@@ -63,6 +62,12 @@ weightsMethod = lower(string(parser.Results.weights));
 
 if length(voltage)~=length(current)
     error('Given voltage and current vectors have incompatible sizes.')
+end
+
+if any(current < 0)
+    warning("Negative current values may result in poor fit quality if caused by random variation in the data.")
+elseif any(current < 0.005)
+    warning("Very low current values may result in poor fit quality if caused by random variation in the data.")
 end
 
 %% Destructurize function handle, get coefficients and their limits, problem variable names and their values
@@ -341,10 +346,11 @@ function gof = goodnessOfFit(yfit,y)
 %           fit values.
 
 residuals = y-yfit; % Residuals
+divFromMean = y-mean(y); % Divergence from mean
 
 ssr = sum(residuals.^2); % Sum of square residuals
 rmse = sqrt(mean(residuals.^2)); % Root mean square error
-rsquare = 1 - sum(residuals.^2)/sum((y-mean(y)).^2); % R^2 value
+rsquare = 1 - ssr/sum(divFromMean.^2); % R^2 value
 
 gof = struct('ssr',ssr,'rmse',rmse,'rsquare',rsquare); % Goodness of fit structure
 end
