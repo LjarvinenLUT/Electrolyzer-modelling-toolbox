@@ -35,11 +35,11 @@ classdef electrolyzerModel < handle
     %                           potentialFunc Workspace.
     %       removePotentials -- Remove given potential terms from the
     %                           potentialFunc object and the func Storage.
-    %       removeParams -- Remove variables from the potentialFunc
+    %       removeParams -- Remove parameters from the potentialFunc
     %                           Workspace structure.
     %       replaceParams --  A method for replacing parameters in the 
     %                           potentialFunc Workspace structure.
-    %       showUI -- Plots the UI curve for the model.
+    %       showUI -- Plots the UI curve for the model. (Not implemented)
     %       setParams -- Set parameters in the Workspace structure of the
     %                       potentialFunc object
     %       viewWorkspace -- Outputs the workspace of potentialFunc in a 
@@ -65,6 +65,10 @@ classdef electrolyzerModel < handle
 %                               Default: PEM
 %                   electrolyte -- Chemical composition of the electrolyte.
 %                                   Default: KOH
+
+            % Add all the necessary folders to the Matlab search path 
+            startup;
+            
             defaultType = "pem";
             defaultElectrolyte = "KOH";
             
@@ -291,7 +295,7 @@ classdef electrolyzerModel < handle
 
         
         
-        function [fitCoefficients,gof] = fitUI(obj,varargin)
+        function [fitParams,gof] = fitUI(obj,varargin)
 %           FITUI A method for extracting the fit coefficients for the electrolyzerModel.
 %               Calls external function fitUI.
 %               
@@ -344,7 +348,7 @@ classdef electrolyzerModel < handle
                 end
             end
             
-            [fitCoefficients,gof] = fitUI(obj.potentialFunc,U,I,'method',method,'weights',weightsMethod);
+            [fitParams,gof] = fitUI(obj.potentialFunc,U,I,'method',method,'weights',weightsMethod);
             
             
         end

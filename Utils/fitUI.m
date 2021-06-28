@@ -1,4 +1,4 @@
-function [fitParam,gof] = fitUI(fitFunc,voltage,current,varargin)
+function [fitParams,gof] = fitUI(fitFunc,voltage,current,varargin)
 % FITUI Fits a given function for a UI curve with given voltage and
 % current data to find unknown coefficient values.
 %
@@ -22,7 +22,8 @@ function [fitParam,gof] = fitUI(fitFunc,voltage,current,varargin)
 %       methods are:
 %           - 'NLLSE' -- Non-Linear Least Squares Error regression
 %           - 'PS' -- Particleswarm optimisation for the least squares
-%                       error.
+%                       error. Error estimation is performed with
+%                       Marchov Chain Monte Carlo -method (MCMC)
 %
 %   [_] = FITUI(_,'weights',w) allows user to choose whether the beginning
 %       and end of the data set are weighted more than the middle. The 
@@ -108,7 +109,7 @@ switch weightsMethod
     case "default"
         % Weigh beginning and end of the measured current spectrum
         x = current/max(current);
-        weights = (exp(log(0.1^2)*x) + exp(-log(0.1^2)*(x-x(end))) - 2*exp(log(0.1^2)))./(1-exp(log(0.1^2)));
+        weights = (0.01.^x + 0.01.^(1-x) - 0.02)./(1-0.01);
     case "none"
         % Don't apply wieghts
         weights = ones(size(current));
@@ -239,7 +240,7 @@ fprintf('\nData fit performed using %s approach\nR^2: %f\n', methodStr,gof.rsqua
 
 %% Use map to store fitting parameters can be referenced by name
 % Example: fit_param.j0)
-fitParam = array2table([coeffValues;sigma], 'VariableNames', coefficients);
+fitParams = array2table([coeffValues;sigma], 'VariableNames', coefficients);
 
 % Input fitted coefficients to the func object
 for i = 1:length(coefficients)

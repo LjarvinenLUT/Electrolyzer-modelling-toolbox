@@ -116,13 +116,13 @@ switch i
         
         % Non-linear least squares error
         tic;
-        [fitParam1,gof1] = Emodel.fitUI(SynData.voltage(:,1),SynData.current(:,1),'method','nllse','weights',weights);
+        [fitParams1,gof1] = Emodel.fitUI(SynData.voltage(:,1),SynData.current(:,1),'method','nllse','weights',weights);
         toc
 		
-		j0_fit1 = fitParam1.j0;
-        alpha_fit1 = fitParam1.alpha;
-        r_fit1 = fitParam1.r;
-        j_lim_fit1 = fitParam1.j_lim;
+		j0_fit1 = fitParams1.j0;
+        alpha_fit1 = fitParams1.alpha;
+        r_fit1 = fitParams1.r;
+        j_lim_fit1 = fitParams1.j_lim;
 
 		% Calculate voltage with calculate-method of func-object
 %         Emodelfull.replaceParams(Emodel.potentialFunc.Workspace.Coefficients)
@@ -145,14 +145,14 @@ switch i
         
         % Particleswarm
         tic;
-        [fitParam2,gof2] = EmodelPS.fitUI(SynData.voltage(:,1),SynData.current(:,1),'method','ps','weights',weights);
+        [fitParams2,gof2] = EmodelPS.fitUI(SynData.voltage(:,1),SynData.current(:,1),'method','ps','weights',weights);
         toc
         
         
-		j0_fit2 = fitParam2.j0;
-        alpha_fit2 = fitParam2.alpha;
-        r_fit2 = fitParam2.r;
-        j_lim_fit2 = fitParam2.j_lim;
+		j0_fit2 = fitParams2.j0;
+        alpha_fit2 = fitParams2.alpha;
+        r_fit2 = fitParams2.r;
+        j_lim_fit2 = fitParams2.j_lim;
         
 		% Calculate voltage with calculate-method of func-object
 %         EmodelfullPS.replaceParams(EmodelPS.potentialFunc.Workspace.Coefficients)
@@ -222,12 +222,12 @@ switch i
             
             % Non-linear least squares error
             tic;
-            [fitParam1,gof1] = Emodel.fitUI(U,I,'method','nllse','weights',weights);
+            [fitParams1,gof1] = Emodel.fitUI(U,I,'method','nllse','weights',weights);
             toc
             
-            I0fit(1:2,j) = fitParam1.j0;
-            alphafit(1:2,j) = fitParam1.alpha;
-            rfit(1:2,j) = fitParam1.r;
+            I0fit(1:2,j) = fitParams1.j0;
+            alphafit(1:2,j) = fitParams1.alpha;
+            rfit(1:2,j) = fitParams1.r;
             
             % Calculate voltage with calculate-method of func-object
             Ufit1 = Emodel.calculate('current',Imeas);
@@ -250,13 +250,13 @@ switch i
             
             % Particleswarm
             tic;
-            [fitParam2,gof2] = Emodel.fitUI(U,I,'method','ps','weights',weights);
+            [fitParams2,gof2] = Emodel.fitUI(U,I,'method','ps','weights',weights);
             toc
             
             
-            I0fit(3:4,j) = fitParam2.j0;
-            alphafit(3:4,j) = fitParam2.alpha;
-            rfit(3:4,j) = fitParam2.r;
+            I0fit(3:4,j) = fitParams2.j0;
+            alphafit(3:4,j) = fitParams2.alpha;
+            rfit(3:4,j) = fitParams2.r;
             
 			% Calculate voltage with calculate-method of func-object
             Ufit2 = Emodel.calculate('current',Imeas);
