@@ -33,7 +33,7 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
 %           pO2 -- Oxygen partial pressure (for PEM only)
 %           pH2 -- Hydrogen partial pressure (for PEM only)
 %           ps -- System pressure (for alkaline only)
-%           aH2OEl -- Water activity in electrolyte solution
+%           aH2OEl -- Water activity in electrolyte solution (for alkaline only)
 % 
 %   See also NERNST, REVERSIBLE, FUNC, WATERVAPORPRESSURE,
 %   ELECTROLYTEPARAMETERS

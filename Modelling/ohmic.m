@@ -8,7 +8,7 @@ function Uohm = ohmic(varargin)
 %   Uohm = OHMIC('resistanceModel',rm) uses resistance model defined by rm.
 %           Available models are:
 %               #1 -- Simple Ohm's law with total resistance. Output func
-%                       objects workspace contains the following fields in 
+%                       object contains the following fields in its
 %                       workspace:
 %                       Variables: current -- Current density
 %                       Coefficients: r -- Area specific resistance
@@ -30,7 +30,7 @@ function Uohm = ohmic(varargin)
 %                   - Parameters required for resistance model #2:
 %                       delta -- electrolyte/membrane thickness
 %                       lambda -- PEM membrane water content
-%                       m -- Alkaline solution molality or molarity (TODO)
+%                       m -- Alkaline solution molality or molarity (TODO: check)
 %                       w -- Alkaline solution mass concentration
 %                       T -- Temperature
 % 
@@ -126,9 +126,10 @@ function Uohm = ohmic(varargin)
             funcHandle = @(Workspace) Workspace.Coefficients.r.*Workspace.Variables.current;
         case 2
             % Conductivity equations for PEM and Alkaline
-            %   lambda -  water content
-            %   m - molar concentration
-            %   w - mass concentration wt%
+            %   lambda -  water content (for PEM)
+            %   m - molar concentration (for alkaline)
+            %   w - mass concentration wt% (for alkaline)
+            %   delta -- electrolyte thickness (TODO: in which units)
             % Output
             %   sigma - specific conductivity (S/cm)
             Workspace.Variables.T = T;

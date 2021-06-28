@@ -15,7 +15,7 @@ pAn = 2; % bar
 
 Workspace = struct('Variables',struct('T',T,'pCat',pCat,'pAn',pAn),'Constants',struct('Q','Oops','p','wrong variable'));
 
-isWorkspace(Workspace)
+func.isWorkspace(Workspace)
 
 e.setParams(Workspace);
 
