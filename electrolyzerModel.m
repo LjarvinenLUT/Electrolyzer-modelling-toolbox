@@ -146,9 +146,9 @@ classdef electrolyzerModel < handle
 %               input.
 %
 %           obj.ADDPOTENTIALS(_,'names',nameCell) adds all the given
-%               potnetial terms to the potentialFunc parameter and replaces
-%               their names with the ones given in a cell array after 
-%               'names' call.
+%               potential terms to the potentialFunc parameter and replaces
+%               their names in funcStorage with the ones given in a cell
+%               array after 'names' call.
 
             % Find entries that are of type char
             isCharEntries = cellfun(@ischar,varargin);
@@ -218,7 +218,15 @@ classdef electrolyzerModel < handle
                 end
                 
                 if any(namesCall) % If names were given in function call
-                    name = names{i};
+                    try
+                        name = names{i};
+                    catch ME 
+                        if strcmp(ME.identifier,'MATLAB:badsubscript')
+                            warning('Names were not specified for all the applied potentials. Please, check funcStorage property for the unspecified ones.')
+                        else
+                            rethrow(ME)
+                        end
+                    end
                 end
                 
                 % Warn about multiply defined potential terms
@@ -242,7 +250,7 @@ classdef electrolyzerModel < handle
 %           REMOVEPOTENTIALS  Removes the given potential terms from the total potential func object. 
 %               Input can be either in the form of string for removing
 %               potentials of certain name, or numeric for removing
-%               potentials in certain indeces. Multiple potentials can be
+%               potentials in certain indices. Multiple potentials can be
 %               removed by listing them separately or as a cell array.
 %
 %           Examples:
@@ -308,11 +316,16 @@ classdef electrolyzerModel < handle
 %               obj.FITUI(U,I) performs UI curve fit using voltage and
 %                   current data provided as input parameters.
 %
-%               obj.FITUI(_,'method',m) performs UI durve fit using the
+%               obj.FITUI(_,'method',m) performs UI curve fit using the
 %                   method defined as input m. 
 %                   Options:
-%                       PS -- Particle swarm optimisation
-%                       NLLSE -- Non linear least squares error regression
+%                       'PS' -- Particle swarm optimisation
+%                       'NLLSE' -- Non linear least squares error regression
+%               obj.FITUI(_,'weights',w) performs UI curve fit using the
+%                   weighting method defined as input w. 
+%                   Options:
+%                       'default' -- Weighs beginning and end of the curve
+%                       'none' -- Doesn't add weights on the curve
             
             defaultMethod = 'PS';
             defaultWeights = 'default';
@@ -379,15 +392,10 @@ classdef electrolyzerModel < handle
             Coefficients = obj.potentialFunc.Workspace.Coefficients;
         end
         
-        function varargout = viewWorkspace(obj)
+        function report = viewWorkspace(obj)
             % VIEWWORKSPACE Outputs the workspace of potentialFunc in a human-readable table
             report = obj.potentialFunc.viewWorkspace;
             disp(report)
-            if nargout == 1
-                varargout{1} = report;
-            elseif nargout > 1
-                error("Too many output arguments.")
-            end
         end
         
         

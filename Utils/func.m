@@ -13,7 +13,7 @@ classdef func < handle
     %   inputs.
     %
     %   FUNC Properties:
-    %       equation -- Function handle as a easily human-readable string.
+    %       equation -- Function handle as an easily human-readable string.
     %       funcHandle -- The structure based function handle that uses
     %                       only Workspace as an input.
     %       Workspace -- The workspace structure containing substructures:
@@ -28,9 +28,6 @@ classdef func < handle
     %       destructurize -- Destructurizes the structure-based function
     %                           handle to enable fitting with original
     %                           Matlab functions.
-    %       getEquationBody -- Returns a string containing only the body of
-    %                           the function handle by removing
-    %                           @(Workspace).
     %       replaceParams -- Replaces the values of existing parameters in
     %                           Workspace structure
     %       setFuncHandle -- Sets the protected property of funcHandle
@@ -40,8 +37,12 @@ classdef func < handle
     %                           contents of the Workspace structure.
     %   FUNC static methods:
     %       add -- Use addition to combine two func objects into a new one.
+    %       createEmpty -- Creates an empty func object.
+    %       isEmpty -- Checks if the func is empty.
+    %       isWorkspace -- Checks if the given structure fulfills the
+    %                       requirements for a Workspace.
     %
-    %   See also FUNCTION_HANDLE, ADDFUNCS, ISCOMPLETESTRUCT
+    %   See also FUNCTION_HANDLE, ISCOMPLETESTRUCT
    
     properties (SetAccess = protected)
        equation; % Function handle in string form
@@ -74,11 +75,6 @@ classdef func < handle
             obj.equation = obj.getEquation;
         end
         
-        
-        function equationBody = getEquationBody(obj)
-            % GETEQUATIONBODY Outputs the equation body from the function handle without @(Workspace).
-            equationBody = erase(func2str(obj.funcHandle),'@(Workspace)');
-        end
         
         function replaceParams(obj,varargin)
             % REPLACEPARAMS  A method for replacing parameters in the Workspace structure.
@@ -124,7 +120,7 @@ classdef func < handle
         
         function setParams(obj,SetStruct)
             % SETPARAMS  A method for setting parameters in the Workspace structure.
-            %  Parameters should be provided as a structure.
+            %  Parameters should be provided as a Workspace-compatible structure.
             if func.isWorkspace(SetStruct)
                 obj.Workspace = mergeStructs(obj.Workspace,SetStruct);
             else
@@ -304,7 +300,8 @@ classdef func < handle
             destructurizedFuncHandle = matlabFunction(symbolicFunction,...
                                                       'Vars',varsList);
         end
-
+        
+        
         function childFunc = copy(obj,varargin)
             % COPY Creates a copy of the object with a new handle. With
             %   parameter 'empty' create a copy that has no funcHandle but
@@ -370,26 +367,12 @@ classdef func < handle
         
     end
     
-    %% Private dynamic methods
-    methods (Access = private)
-
-        function equationStr = getEquation(obj)
-            % GETEQUATION Erases all occurences of Workspace from the
-            %   equation body leaving a string with human-readable
-            %   equation structure.
-            equationStr = erase(obj.getEquationBody,...
-                                {'Workspace.Coefficients.',...
-                                'Workspace.Variables.',...
-                                'Workspace.Constants.'});
-        end
-    end
     
-    %% Static methods
+    %% Public static methods
     
     methods(Static, Access = public)
         function newFunc = add(func1,func2)
-            % ADD Add two func objects together combining their workspaces and
-            %   using addition for combining their function handles.
+            % ADD Add two func objects together combining their workspaces and using addition for combining their function handles.
             %
             %   See also FUNC, MERGESTRUCTS
             
@@ -413,8 +396,7 @@ classdef func < handle
         end
         
         function emptyFunc = createEmpty
-            % CREATEEMPTY Create an empty func object with a function
-            % handle that does nothing.
+            % CREATEEMPTY Create an empty func object with a function handle that does nothing.
             emptyFunc = func(@pass,...
                 struct('Constants',struct(),...
                 'Variables',struct(),...
@@ -440,8 +422,7 @@ classdef func < handle
         end
         
         function b = isWorkspace(Struct)
-            % ISWORKSPACE Evaluates if a given structure fulfills
-            %   requirements for a Workspace.
+            % ISWORKSPACE Evaluates if a given structure fulfills requirements for a Workspace.
             b = all(ismember(fieldnames(Struct),...
                              {'Coefficients';...
                              'Variables';...
@@ -449,10 +430,29 @@ classdef func < handle
         end
     end
     
+    %% Private dynamic methods
+    methods (Access = private)
+
+        function equationStr = getEquation(obj)
+            % GETEQUATION Erases all occurences of Workspace from the equation body leaving a string with human-readable equation structure.
+            equationStr = erase(obj.getEquationBody,...
+                                {'Workspace.Coefficients.',...
+                                'Workspace.Variables.',...
+                                'Workspace.Constants.'});
+        end
+        
+        function equationBody = getEquationBody(obj)
+            % GETEQUATIONBODY Outputs the equation body from the function handle without @(Workspace).
+            equationBody = erase(func2str(obj.funcHandle),'@(Workspace)');
+        end
+        
+    end
+    
+    %% Private static methods
+    
     methods (Access = private, Static)
         function TempWorkspace = createTempWorkspace(Struct)
-            % CREATETEMPWORKSPACE Creates a copy of the Workspace structure
-            %   but without values for standard deviation
+            % CREATETEMPWORKSPACE Creates a copy of the Workspace structure but without values for standard deviation
             fn = fieldnames(Struct);
             if isempty(fn)
                 TempWorkspace = struct();

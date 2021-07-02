@@ -19,17 +19,17 @@ func.isWorkspace(Workspace)
 
 e.setParams(Workspace);
 
-e.viewWorkspace
+e.viewWorkspace;
 
 %% Removing variables
 
 e.removeParams('Q','p')
-e.viewWorkspace
+e.viewWorkspace;
 
 %% Replacing variables
 
 e.replaceParams('T',T+30)
-e.viewWorkspace
+e.viewWorkspace;
 
 %% Defining potential function with defaults
 
@@ -44,9 +44,9 @@ e2.clearPotentials
 
 %% Adding potential with 'names'
 
-e2.addPotentials('nernst','act','names',{'ocv','Cat'})
+e2.addPotentials('nernst','act',func.createEmpty,'names',{'ocv','Cat'})
 
-e2.funcStorage
+disp(e2.funcStorage)
 
 
 
