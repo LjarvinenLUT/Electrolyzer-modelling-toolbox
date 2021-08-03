@@ -83,7 +83,16 @@ classdef func < handle
             if isempty(varargin{1})
                 return;
             elseif length(varargin) == 1 && isstruct(varargin{1})
-                paramsToReplace = varargin{1};
+                Struct = varargin{1};
+                if func.isWorkspace(Struct)
+                    fields = fieldnames(Struct);
+                    for i = 1:length(fields)
+                        replaceParams(obj,Struct.(fields{i}))
+                    end
+                    return;
+                else
+                    paramsToReplace = Struct;
+                end
             elseif mod(nargin,2)
                 for i = 1:2:length(varargin)
                     paramsToReplace.(varargin{i}) = varargin{i+1};
@@ -130,7 +139,7 @@ classdef func < handle
         
         
         function result = calculate(obj,varargin)
-            % CALCULATE Calculates the voltage from the UI curve.
+            % CALCULATE Calculates the result from the function handle.
             %   Variables input as name-value pairs are used for the
             %   calculation and any variable required by the function that is
             %   not input to CALCULATE is looked for from the Workspace of the
@@ -140,14 +149,22 @@ classdef func < handle
                 error("Variables have to be given as name-value pairs")
             end
             
-            % Create a temporary workspace that includes the user input 
-            % variables in addition to the ones found from.
-            TempWorkspace = func.createTempWorkspace(obj.Workspace);
-            if nargin>1
-                TempWorkspace = addValuesToStruct(TempWorkspace,...
-                                                  varargin(1:2:end),...
-                                                  varargin(2:2:end));
+            % Check if Workspace was given as an input
+            workspaceCall = strcmpi(varargin,'Workspace');
+            if any(workspaceCall)
+                TempWorkspace = func.createTempWorkspace(varargin{[false workspaceCall(1:end-1)]});
+            else
+                % Create a temporary workspace that includes the user input
+                % variables in addition to the ones found from the func 
+                % Workspace.
+                TempWorkspace = func.createTempWorkspace(obj.Workspace);
+                if nargin>1
+                    TempWorkspace = addValuesToStruct(TempWorkspace,...
+                        varargin(1:2:end),...
+                        varargin(2:2:end));
+                end
             end
+            
             
             % The result is calculated if the TempWorkspace contains all
             % necessary values for the calculation.
@@ -247,7 +264,9 @@ classdef func < handle
             for i = 1:length(allVariableNames)
                 variableName = allVariableNames{i};
                 variable = obj.Workspace.Variables.(variableName);
-                if strcmp(allVariableNames{i},independentVariableName)
+                if isstring(variable)||ischar(variable)
+                    continue
+                elseif strcmp(allVariableNames{i},independentVariableName)
                     continue
                 elseif isempty(variable)
                     error('One or more variables missing. Not able to destructurize function handle for fitting.')
@@ -463,6 +482,16 @@ classdef func < handle
                     elseif isempty(Struct.(fn{i})) || length(Struct.(fn{i})(1,:)) == 1
                         TempWorkspace.(fn{i}) = Struct.(fn{i});
                     else
+                        fieldSize = size(Struct.(fn{i}));
+                        if fieldSize(2)>2
+                            warningMsg = strcat("It seems that the Workspace variable "...
+                                ,string(fn{i})," has more than two columns (",...
+                                string(fieldSize(1)),"x",string(fieldSize(2)),...
+                                "). Consider providing the data as the first column of the variable matrix. ",...
+                                "The second column should be preserved for standard deviation, if applicable. ",...
+                                "The method func.calculation takes into acount only the first column of the vector and regards that as the given dataset.");
+                            warning(warningMsg)
+                        end
                         TempWorkspace.(fn{i}) = Struct.(fn{i})(:,1);
                     end
                 end

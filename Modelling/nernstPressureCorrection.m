@@ -74,28 +74,35 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
         case "pem"
             psv = waterVaporPressure(Workspace.Variables.T); % Vapor pressure from Antoine equation
             
-            Workspace.Variables.pH2 = p1 - psv; % bar, Hydrogen partial pressure
-            Workspace.Variables.pO2 = p2 - psv; % bar, Oxygen partial pressure
+            Workspace.Variables.pCat = p1; % bar, Cathode pressure
             
-            if any(Workspace.Variables.pH2 < 0 | Workspace.Variables.pO2 < 0)
+            Workspace.Variables.pAn = p2; % bar, Anode pressure
+            
+%             Workspace.Variables.psv = psv; % bar, Saturated water vapor pressure
+            
+            if any(Workspace.Variables.pCat < psv | Workspace.Variables.pAn < psv)
                 error('Pressure too low! Anode or cathode pressure lower than saturated vapor pressure.')
             end
                       
             % Nernst equation pressure correction
-            funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log(Workspace.Variables.pH2.*Workspace.Variables.pO2.^(1/2));
+            funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log((Workspace.Variables.pCat-waterVaporPressure(Workspace.Variables.T)).*(Workspace.Variables.pAn-waterVaporPressure(Workspace.Variables.T)).^(1/2));
             
         case "alkaline"
             
-            [psvEl,Workspace.Variables.aH2OEl] = electrolyteParameters(Workspace.Variables.T,p2,electrolyte);
             
-            Workspace.Variables.ps = p1 - psvEl; % bar, Partial pressure of both hydrogen and oxygen in the system
+            Workspace.Variables.ps = p1; % bar, System pressure
             
-            if any(Workspace.Variables.ps < 0)
+            Workspace.Variables.m = p2; % mol/kg of solvent, Electrolyte molality
+            
+            
+            [Workspace.Variables.psvEl,Workspace.Variables.aH2OEl] = electrolyteParameters(Workspace.Variables.T,Workspace.Variables.m,electrolyte);
+            
+            if any(Workspace.Variables.ps < Workspace.Variables.psvEl)
                 error('Pressure too low! System pressure lower than saturated vapor pressure of the electrolyte solution.')
             end
             
             % Nernst equation pressure correction
-            funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log(Workspace.Variables.ps.^(3/2)./Workspace.Variables.aH2OEl);
+            funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log((Workspace.Variables.ps-Workspace.Variables.psvEl).^(3/2)./Workspace.Variables.aH2OEl);
     end
     
     Workspace.Coefficients = struct();

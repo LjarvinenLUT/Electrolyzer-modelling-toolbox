@@ -99,6 +99,7 @@ classdef electrolyzerModel < handle
 %               Parameters to be set should be provided as a Workspace
 %               structure.
            obj.potentialFunc.setParams(SetWorkspace)
+           obj.synchronizeFuncStorage;
         end
 
         function removeParams(obj,varargin)
@@ -111,6 +112,7 @@ classdef electrolyzerModel < handle
             end
             
             obj.potentialFunc.removeParams(paramsToRemove)
+            obj.synchronizeFuncStorage;
         end
         
         
@@ -119,6 +121,7 @@ classdef electrolyzerModel < handle
 %               Parameters should be provided as a name-value pair or 
 %               directly as a structure.
             obj.potentialFunc.replaceParams(varargin{:});
+            obj.synchronizeFuncStorage;
         end
         
         
@@ -363,6 +366,7 @@ classdef electrolyzerModel < handle
             
             [fitParams,gof] = fitUI(obj.potentialFunc,U,I,'method',method,'weights',weightsMethod);
             
+            obj.synchronizeFuncStorage;
             
         end
         
@@ -475,6 +479,16 @@ classdef electrolyzerModel < handle
                     potentialFunc = concentration();
                 otherwise
                     error("Potential component " + string(argin) + " not recognised.")
+            end
+        end
+        
+        function synchronizeFuncStorage(obj)
+%             SYNCHRONIZEFUNCSTORAGE  Synchronize Workspace structures in the funcStorage
+%                 Modifies the Workspace structure of all the func objects
+%                 in the funcStorage to match the Workspace of the
+%                 potentialFunc object
+            for i = 1:height(obj.funcStorage)
+                obj.funcStorage.func(i).replaceParams(obj.potentialFunc.Workspace)
             end
         end
     end

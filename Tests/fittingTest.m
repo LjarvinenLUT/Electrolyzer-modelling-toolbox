@@ -16,7 +16,7 @@ Ucon = concentration();
 
 
 
-i = 1;
+i = 2;
 weights = 'default';
 switch i
 
