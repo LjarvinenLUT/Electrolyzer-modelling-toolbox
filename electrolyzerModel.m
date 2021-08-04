@@ -14,6 +14,9 @@ classdef electrolyzerModel < handle
     %                       visible. Storage enables the removal of
     %                       unnecessary potential components and automatic
     %                       check for doubly included ones.
+    %       PlottingCurves -- A structure containing the measurements used
+    %                           for curve fitting as well as the calculated
+    %                           curve from the fit results
     %       potentialFunc -- A func object containing the UI curve
     %                           determining equation, values of its
     %                           variables, constants and coefficients, and
@@ -39,7 +42,7 @@ classdef electrolyzerModel < handle
     %                           Workspace structure.
     %       replaceParams --  A method for replacing parameters in the 
     %                           potentialFunc Workspace structure.
-    %       showUI -- Plots the UI curve for the model. (Not implemented)
+    %       showUI -- Plots the UI curve for the model.
     %       setParams -- Set parameters in the Workspace structure of the
     %                       potentialFunc object
     %       viewWorkspace -- Outputs the workspace of potentialFunc in a 
@@ -53,6 +56,7 @@ classdef electrolyzerModel < handle
        electrolyte; % Electrolyte
        potentialFunc; % A func object for combined overpotential function
        funcStorage; % A table that stores the separate func objects
+       PlottingCurves; % A structure with the measurements and fit curve
     end
     
     %% Public methods
@@ -93,6 +97,8 @@ classdef electrolyzerModel < handle
             obj.funcStorage = table('Size',[0,size(variableNamesTypes,1)],... 
                                     'VariableNames', variableNamesTypes(:,1),...
                                     'VariableTypes', variableNamesTypes(:,2));
+            % Create empty structure for plotting curves
+            obj.PlottingCurves = struct([]);
         end
         
         function setParams(obj,SetWorkspace)
@@ -333,6 +339,7 @@ classdef electrolyzerModel < handle
             
             defaultMethod = 'PS';
             defaultWeights = 'default';
+            defaultPlot = 'false';
             defaultU = nan;
             defaultI = nan;
             
@@ -342,6 +349,7 @@ classdef electrolyzerModel < handle
             addOptional(parser,'I',defaultI,@(x) isnumeric(x))
             addParameter(parser,'method',defaultMethod,@(x) ischar(x)||isstring(x)) % Fitting method to be used
             addParameter(parser,'weights',defaultWeights,@(x) ischar(x)||isstring(x))
+            addParameter(parser,'plot',defaultPlot,@(x) islogical(x))
 
             parse(parser,obj,varargin{:});
             
@@ -349,6 +357,7 @@ classdef electrolyzerModel < handle
             I = parser.Results.I;
             method = upper(string(parser.Results.method));
             weightsMethod = lower(string(parser.Results.weights));
+            usePlotting = parser.Results.plot;
             
             if isnan(I) % Current not provided as an input
                 if any(ismember('current',fieldnames(obj.potentialFunc.Workspace.Variables)))
@@ -365,9 +374,13 @@ classdef electrolyzerModel < handle
                 end
             end
             
-            [fitParams,gof] = fitUI(obj.potentialFunc,U,I,'method',method,'weights',weightsMethod);
+            [fitParams,gof,obj.PlottingCurves] = fitUI(obj.potentialFunc,U,I,'method',method,'weights',weightsMethod);
             
             obj.synchronizeFuncStorage;
+            
+            if usePlotting
+                obj.showUI;
+            end
             
         end
         
@@ -388,8 +401,24 @@ classdef electrolyzerModel < handle
         
         
         function showUI(obj)
-            % SHOWUI (TODO) Creates a figure and plots the UI curve on it
-            
+            % SHOWUI Creates a figure and plots the UI curve on it
+            if isempty(obj.PlottingCurves)
+                warning('No UI curve fit performed, therefore no UI curve to show.')
+            else
+                I = obj.PlottingCurves.currentMeasured;
+                U = obj.PlottingCurves.voltageMeasured;
+                Ifit = obj.PlottingCurves.currentFit;
+                Ufit = obj.PlottingCurves.voltageFit;
+                
+                figure('name','Automatic plot of the UI curve and the fit')
+                hold on;
+                errorbar(I(:,1),U(:,1),U(:,2),U(:,2),I(:,2),I(:,2),'o')
+                plot(Ifit,Ufit)
+                xlabel("I")
+                ylabel("U")
+                legend("Data", "Fit", "Location", "Best")
+                hold off;
+            end
         end
         
         function Coefficients = getCoefficients(obj)

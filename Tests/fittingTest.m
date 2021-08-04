@@ -222,7 +222,7 @@ switch i
             
             % Non-linear least squares error
             tic;
-            [fitParams1,gof1] = Emodel.fitUI(U,I,'method','nllse','weights',weights);
+            [fitParams1,gof1] = Emodel.fitUI(U,I,'method','nllse','weights',weights,'plot',true);
             toc
             
             I0fit(1:2,j) = fitParams1.j0;
@@ -250,7 +250,7 @@ switch i
             
             % Particleswarm
             tic;
-            [fitParams2,gof2] = Emodel.fitUI(U,I,'method','ps','weights',weights);
+            [fitParams2,gof2] = Emodel.fitUI(U,I,'method','ps','weights',weights,'plot',true);
             toc
             
             

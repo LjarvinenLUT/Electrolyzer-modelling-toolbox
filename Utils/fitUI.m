@@ -1,8 +1,8 @@
-function [fitParams,gof] = fitUI(fitFunc,voltage,current,varargin)
+function [fitParams,gof,PlottingCurves] = fitUI(fitFunc,voltage,current,varargin)
 % FITUI Fits a given function for a UI curve with given voltage and
 % current data to find unknown coefficient values.
 %
-%   [fitParam,gof] = FITUI(fitFunc,voltage,current) fits the
+%   [fitParam,gof,plottingCurves] = FITUI(fitFunc,voltage,current) fits the
 %       given function to data using particle swarm optimisation and
 %       weighting beginning and end of the dataset.
 %       Inputs:
@@ -39,6 +39,8 @@ function [fitParams,gof] = fitUI(fitFunc,voltage,current,varargin)
 %       fitParam -- Fit coefficient values in a table with their standard
 %                   deviation (confidence value with 1 sigma)
 %       gof -- Goodness of fit values in a structure.
+%       PlottingCurves -- A structure containing the data used for fitting
+%                           as well as curves calculated from the fit.
 %       
 %   Function FITUI updates the workspace of input func to include the
 %   coefficients
@@ -78,7 +80,7 @@ end
 
 %% Parse error vectors, if included
 if length(voltage(1,:)) == 1 % No measurement standard deviation given
-    voltageStd = 0;
+    voltageStd = zeros(size(voltage));
 elseif length(voltage(1,:)) == 2 % Measurement standard deviation given as the second column of input matrix
     voltageStd = voltage(:,2);
     voltage = voltage(:,1);
@@ -87,7 +89,7 @@ else
 end
 
 if length(current(1,:)) == 1 % No measurement standard deviation given
-    currentStd = 0;
+    currentStd = zeros(size(current));
 elseif length(current(1,:)) == 2 % Measurement standard deviation given as the second column of input matrix
     currentStd = current(:,2);
     current = current(:,1);
@@ -242,10 +244,35 @@ fprintf('\nData fit performed using %s approach\nR^2: %f\n', methodStr,gof.rsqua
 % Example: fit_param.j0)
 fitParams = array2table([coeffValues;sigma], 'VariableNames', coefficients);
 
-% Input fitted coefficients to the func object
+%% Input fitted coefficients to the func object
 for i = 1:length(coefficients)
     fitFunc.replaceParams(coefficients{i},[coeffValues(i) sigma(i)]);
 end
+
+%% Create structure for plotting vectors
+fullFitCurrent = min(current):0.001:max(current);
+fullFitVoltage = fitFunc.calculate('current',fullFitCurrent);
+
+% Take samples from the dense data vectors
+        N = 100; % Number of evenly taken voltage samples
+        voltageSamples = linspace(min(fullFitVoltage),max(fullFitVoltage),N)';
+%         jsamples = linspace(min(jmeas),jL-0.01,N)'; % Excluding mass transport limitations
+%         jmeassamp = nan(N,1);
+%         Umeassamp = nan(N,1);
+        iii = 1;
+        for ii = 1:N
+            Udif = abs(fullFitVoltage-voltageSamples(ii));
+            [~,ind] = min(Udif);
+            if iii == 1 || (iii > 1 && abs(fullFitCurrent(ind)-currentSampled(iii-1))>0.02)
+                currentSampled(iii,1) = fullFitCurrent(ind); % Final sampled current vector
+                voltageSampled(iii,1) = fullFitVoltage(ind); % Final sampled voltage vector
+                iii = iii+1;
+            end
+        end
+
+
+PlottingCurves = struct('currentMeasured',[current currentStd],'voltageMeasured',[voltage voltageStd],'currentFit',currentSampled,'voltageFit',voltageSampled);
+
 end
 
 
