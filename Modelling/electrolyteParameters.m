@@ -7,8 +7,14 @@ function [psvEl,aH2OEl] = electrolyteParameters(T,m,electrolyte,varargin)
 %       Water Activities in Potassium and Sodium Hydroxide Solutions Over 
 %       Wide Concentration and Temperature Ranges", 
 %       J. Hydrogen Energy, Vol. 10, No. 4. pp. 233--243, 1985
+%       - Inputs:   T -- Temperature in Kelvin
+%                   m -- Solution molality, mol of solute/kg of solvent
+%                   electrolyte -- Electrolyte type: 1 = KOH
+%                                                    2 = NaOH
+%       -Outputs:   psvEl -- Saturated water vapor pressure for the solution
+%                   aH2OEl -- Water activity for the solution
 %
-%   [psvEl,aH2OEl] = ELECTROLYTEPARAMETERS(_,'model',m)
+%   [psvEl,aH2OEl] = ELECTROLYTEPARAMETERS(_,'model',model)
 %       allows changing the model for one of the two contained:
 %           #1 -- Equations presented by Balej J. (default)
 %           #2 -- Ideal solution approximation
@@ -18,14 +24,13 @@ function [psvEl,aH2OEl] = electrolyteParameters(T,m,electrolyte,varargin)
 defaultModel = 1; % Default experimental parameters
 
 parser = inputParser;
-addRequired(parser,'T',@(x) isnumeric(x));
-addRequired(parser,'m',@(x) isnumeric(x));
-addRequired(parser,'electrolyte',@(x) ischar(x)||isstring(x))
+addRequired(parser,'T',@(x) isnumeric(x)); % K, Temperature
+addRequired(parser,'m',@(x) isnumeric(x)); % mol/kg of solvent, Molality
+addRequired(parser,'electrolyte',@(x) isnumeric(x)&&isscalar(x)); % Electrolyte, 1 = KOH, 2 = NaOH
 addOptional(parser,'model',defaultModel,@(x) isnumeric(x)&&isscalar(x))
 
 parse(parser,T,m,electrolyte,varargin{:});
 
-electrolyte = string(electrolyte);
 model = parser.Results.model;
 
 
@@ -33,7 +38,7 @@ model = parser.Results.model;
 
 switch model
     case 1 % Fitted model, Balej, J., "Water Vapour Partial Pressures and Water Activities in Potassium and Sodium Hydroxide Solutions Over Wide Concentration and Temperature Ranges", J. Hydrogen Energy, Vol. 10, No. 4. pp. 233--243, 1985
-        if strcmp(electrolyte,"KOH")
+        if electrolyte == 1 % KOH
             if any(m < 0|m > 18)
                 error('Molality for KOH has to be between 0 and 18 mol kg^-1.')
             end
@@ -48,7 +53,7 @@ switch model
             % Activity
             aH2OEl = 10.^(-0.02255.*m + 0.001434.*m.^2 + (1.38*m - 0.9254*m.^2)./T);
             
-        elseif strcmp(electrolyte,"NaOH")
+        elseif electrolyte == 2 % NaOH
             if any(m < 0|m > 25)
                 error('Molality for NaOH has to be between 0 and 25 mol kg^-1.')
             end

@@ -94,15 +94,21 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
             
             Workspace.Variables.m = p2; % mol/kg of solvent, Electrolyte molality
             
+            switch electrolyte
+                case 'KOH'
+                    Workspace.Variables.electrolyte = 1; % Electrolyte type
+                case 'NaOH'
+                    Workspace.Variables.electrolyte = 2; % Electrolyte type
+            end
             
-            [Workspace.Variables.psvEl,Workspace.Variables.aH2OEl] = electrolyteParameters(Workspace.Variables.T,Workspace.Variables.m,electrolyte);
+            psvEl = electrolyteWaterVaporPressure(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte);
             
-            if any(Workspace.Variables.ps < Workspace.Variables.psvEl)
+            if any(Workspace.Variables.ps < psvEl)
                 error('Pressure too low! System pressure lower than saturated vapor pressure of the electrolyte solution.')
             end
             
             % Nernst equation pressure correction
-            funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log((Workspace.Variables.ps-Workspace.Variables.psvEl).^(3/2)./Workspace.Variables.aH2OEl);
+            funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log((Workspace.Variables.ps-electrolyteWaterVaporPressure(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte)).^(3/2)./electrolyteWaterActivity(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte));
     end
     
     Workspace.Coefficients = struct();

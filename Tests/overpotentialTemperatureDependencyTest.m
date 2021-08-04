@@ -6,14 +6,14 @@ clc;
 %% Creating function handle for fit
 
 T = 273.15+50; % Temperature
-type = "PEM"; % Cell type
+type = "pem"; % Cell type
 pCat = 30; % bar
 pAn = 2; % bar
 
 load('JulichData.mat')
 
 %% Create electrolyzer model objects
-Emodel = electrolyzerModel('type','PEM');
+Emodel = electrolyzerModel('type',type);
 Emodel.setParams(struct('Variables',struct('T',T,'pCat',pCat,'pAn',pAn)));
 Emodel.addPotentials('ocv','act','ohm');
 
