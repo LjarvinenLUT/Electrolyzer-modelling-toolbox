@@ -496,7 +496,7 @@ classdef electrolyzerModel < handle
                         if all(ismember({'T','ps','m'},providedVariables))
                             potentialFunc = nernst(obj.potentialFunc.Workspace.Variables.T,obj.potentialFunc.Workspace.Variables.ps,obj.potentialFunc.Workspace.Variables.m,'type',obj.type);
                         else
-                            error("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), ps (system pressure in bar) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure")
+                            error("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), ps (system pressure in bar) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure. The variables have to have the exact same naming as shown in the previous sentence.")
                         end
                     else
                         error("Electrolyzer type not recognised")
