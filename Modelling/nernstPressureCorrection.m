@@ -9,10 +9,10 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
 %               Alkaline -- Alkaline electrolysis.
 %           Inputs: T -- Measured temperature
 %                   p1 -- Parameter 1: 
-%                       for PEM: cathode pressure, in bar
-%                       for alkaline: system pressure, in bar
+%                       for PEM: cathode pressure, in bara
+%                       for alkaline: system pressure, in bara
 %                   p2 - Parameter 2: 
-%                       for PEM: anode pressure, in bar
+%                       for PEM: anode pressure, in bara
 %                       for alkaline: electrolyte molality, in mol/kg of solvent
 % 
 %   Ucor = NERNSTPRESSURECORRECTION(_,'type','alkaline','electrolyte',e) changes the 
@@ -74,14 +74,12 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
         case "pem"
             psv = waterVaporPressure(Workspace.Variables.T); % Vapor pressure from Antoine equation
             
-            Workspace.Variables.pCat = p1; % bar, Cathode pressure
+            Workspace.Variables.pCat = p1; % bara, Cathode pressure
             
-            Workspace.Variables.pAn = p2; % bar, Anode pressure
-            
-%             Workspace.Variables.psv = psv; % bar, Saturated water vapor pressure
+            Workspace.Variables.pAn = p2; % bara, Anode pressure
             
             if any(Workspace.Variables.pCat < psv | Workspace.Variables.pAn < psv)
-                error('Pressure too low! Anode or cathode pressure lower than saturated vapor pressure.')
+                error('Pressure too low! Anode or cathode pressure lower than the saturated vapor pressure at the given temperature. ')
             end
                       
             % Nernst equation pressure correction
@@ -90,7 +88,7 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
         case "alkaline"
             
             
-            Workspace.Variables.ps = p1; % bar, System pressure
+            Workspace.Variables.ps = p1; % bara, System pressure
             
             Workspace.Variables.m = p2; % mol/kg of solvent, Electrolyte molality
             

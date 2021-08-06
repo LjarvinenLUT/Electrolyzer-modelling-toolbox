@@ -48,8 +48,8 @@ for j = 1
     %% Calculating temperature dependency of the different potentials
     
     T = (0:1:100)'+273.15;
-    pCat = 1.15; % bar
-    pAn = 1.15; % bar
+    pCat = 2.15; % bar
+    pAn = 2.15; % bar
     
     Emodel.replaceParams('T',T,'pCat',pCat,'pAn',pAn,'current',2.2);
     
@@ -62,5 +62,5 @@ for j = 1
     plot(T,[Urev Uocv Uocv+Uact Uocv+Uact+Uohm])
     xlabel('Temperature')
     ylabel('Voltage')
-    legend('Urev','Uocv','Uocv + Uact','Uocv + Uact + Uohm')
+    legend('Urev','Uocv','Uocv + Uact','Uocv + Uact + Uohm','Location','best')
 end

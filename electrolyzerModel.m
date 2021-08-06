@@ -71,7 +71,7 @@ classdef electrolyzerModel < handle
 %                                   Default: KOH
 
             % Add all the necessary folders to the Matlab search path 
-            startup;
+            startupEModel;
             
             defaultType = "pem";
             defaultElectrolyte = "KOH";

@@ -9,10 +9,10 @@ function Uocv = nernst(T,p1,p2,varargin)
 %               Alkaline -- Alkaline electrolysis.
 %           Inputs: T -- Measured temperature
 %                   p1 -- Parameter 1: 
-%                       for PEM: cathode pressure, in bar
-%                       for alkaline: system pressure, in bar
+%                       for PEM: cathode pressure, in bara
+%                       for alkaline: system pressure, in bara
 %                   p2 - Parameter 2: 
-%                       for PEM: anode pressure, in bar
+%                       for PEM: anode pressure, in bara
 %                       for alkaline: electrolyte molality, in mol/kg of solvent
 % 
 %   Uocv = NERNST(_,'type','alkaline','electrolyte',e) changes the 
