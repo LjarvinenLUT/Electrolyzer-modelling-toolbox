@@ -11,7 +11,8 @@ function [psvEl] = electrolyteWaterVaporPressure(T,m,electrolyte,varargin)
 %                   m -- Solution molality, mol of solute/kg of solvent
 %                   electrolyte -- Electrolyte type: 1 = KOH
 %                                                    2 = NaOH
-%       -Outputs:   psvEl -- Saturated water vapor pressure for the solution
+%       -Outputs:   psvEl -- Saturated water vapor pressure for the
+%       solution in absolute bar
 %
 %   psvEl = ELECTROLYTEWATERVAPORPRESSUR(_,'model',model)
 %       allows changing the model for one of the two contained:

@@ -18,7 +18,7 @@ function Uohm = ohmic(varargin)
 %
 %                     Uohm = OHMIC(_,'type',e)
 %                     
-%                     Availabel types are 'PEM' and 'alkaline'.
+%                     Available types are 'PEM' and 'alkaline'.
 %
 %                   - Conductivity model for alkali electrolysis can be
 %                     changed with name-value pair:

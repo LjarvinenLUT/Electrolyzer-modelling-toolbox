@@ -11,7 +11,8 @@ function [psvEl,aH2OEl] = electrolyteParameters(T,m,electrolyte,varargin)
 %                   m -- Solution molality, mol of solute/kg of solvent
 %                   electrolyte -- Electrolyte type: 1 = KOH
 %                                                    2 = NaOH
-%       -Outputs:   psvEl -- Saturated water vapor pressure for the solution
+%       -Outputs:   psvEl -- Saturated water vapor pressure for the
+%       solution in absolute bar
 %                   aH2OEl -- Water activity for the solution
 %
 %   [psvEl,aH2OEl] = ELECTROLYTEPARAMETERS(_,'model',model)
@@ -73,10 +74,10 @@ switch model
             error('Only KOH and NaOH defined as alkaline electrolytes.')
         end
         
-        % Pure water vapor pressure
+        % Pure water vapor pressure [bara]
         psv = waterVaporPressure(T,'model',2);
         
-        % Electrolyte vapor pressure
+        % Electrolyte vapor pressure [bara]
         psvEl = psv.^b.*10.^(a);
 
         
@@ -87,10 +88,10 @@ switch model
         molfracSolute = m*MH2O; % Molar fraction of solute
         molfracH2O = 1-molfracSolute; % Molar fraction of H2O
 
-        % Pure water vapor pressure
+        % Pure water vapor pressure [bara]
         psv = waterVaporPressure(T,'model',2);
         
-        % Electrolyte vapor pressure
+        % Electrolyte vapor pressure [bara]
         psvEl = psv*molfracH2O;
         
         % Water activity

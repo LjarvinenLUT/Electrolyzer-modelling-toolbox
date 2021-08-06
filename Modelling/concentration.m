@@ -33,7 +33,7 @@ function Ucon = concentration(varargin)
 %               questionable.
 %               Requires following parameter inputs as name-value pairs:
 %                   T -- Temperature in kelvins
-%                   p_O2 -- Oxygen partial pressure in bars
+%                   p_O2 -- Oxygen partial pressure in absolute bars
 %               Coefficients:
 %                   j_max -- Maximum current density
 %                   b2 -- Concentration overpotential constant
@@ -77,7 +77,7 @@ function Ucon = concentration(varargin)
         error('Temperature has to be given as a parameter for concentration overpotential function when model #3 is used.')
     end
     if model == 3 && isempty(p_O2)
-        error('Variable "p_O2" (oxigen partial pressure at the anode) has to be given as a parameter for concentration overpotential function when model #3 is used.')
+        error('Variable "p_O2" (oxigen partial pressure at the anode [bara]) has to be given as a parameter for concentration overpotential function when model #3 is used.')
     end
     
     %% Define the func object

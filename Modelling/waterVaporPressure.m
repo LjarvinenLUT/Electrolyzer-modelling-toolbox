@@ -10,8 +10,8 @@ function psv = waterVaporPressure(T,varargin)
 %
 %   psv = WATERVAPORPRESSURE(T,'model',m) uses one of the two available
 %       models:
-%           #1 -- Antoine equation
-%           #2 -- Equation presented by Balej, J. (default)
+%           #1 -- Antoine equation [bara]
+%           #2 -- Equation presented by Balej, J. (default) [bara]
 %
 % See also ELECTROLYTEPARAMETERS
 
