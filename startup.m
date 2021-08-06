@@ -1,8 +1,8 @@
 % STARTUP Startup script that adds all the necessary paths to the search
 % path
 
-toolPath = pwd;
-addpath(toolPath)
+toolpath = pwd;
+addpath(toolpath)
 try
 	startupEModel;
 catch ME
