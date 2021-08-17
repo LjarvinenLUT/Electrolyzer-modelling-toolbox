@@ -256,9 +256,6 @@ fullFitVoltage = fitFunc.calculate('current',fullFitCurrent);
 % Take samples from the dense data vectors
         N = 100; % Number of evenly taken voltage samples
         voltageSamples = linspace(min(fullFitVoltage),max(fullFitVoltage),N)';
-%         jsamples = linspace(min(jmeas),jL-0.01,N)'; % Excluding mass transport limitations
-%         jmeassamp = nan(N,1);
-%         Umeassamp = nan(N,1);
         iii = 1;
         for ii = 1:N
             Udif = abs(fullFitVoltage-voltageSamples(ii));
@@ -398,10 +395,7 @@ function sigma = mcmc(x,y,coeffs,ssfun,ssr)
 n = length(x); % Length of the data
 data = [x,y]; % Data matrix
 
-% Model
-% if length(coeffs)
-%     
-% end
+% Setup Model
 Model.ssfun = ssfun; % Sum of squares function
 Model.sigma2 = ssr/(n-2); % Proposal variance
 
@@ -412,7 +406,7 @@ Options.method = 'dram'; % method: DRAM
 Options.adaptint = 100; % adaptation interval
 Options.verbosity = 0; % Suppress output
 
-% calling MCMCRUN
+% Run Metropolis-Hastings MCMC simulation
 [results,chain] = mcmcrun(Model,data,coeffs,Options);
 
 % visualizing the results using MCMCPLOT
