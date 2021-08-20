@@ -73,6 +73,10 @@ elseif any(current < 0.005)
     warning("Very low current values may result in poor fit quality if caused by random variation in the data.")
 end
 
+if ~strcmpi(method, 'PS') && ~strcmpi(method, 'NLLSE')
+   error("Given fitting method: " + method + " is not available.") 
+end
+
 %% Destructurize function handle, get coefficients and their limits, problem variable names and their values
 [funcHandle,coefficients,problemVariableNames,problemVariables] = fitFunc.destructurize('current');
 

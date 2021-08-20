@@ -336,10 +336,12 @@ classdef electrolyzerModel < handle
 %                   Options:
 %                       'default' -- Weighs beginning and end of the curve
 %                       'none' -- Doesn't add weights on the curve
+%               obj.FITUI(_,'plot',true) performs UI curve fit and plots the
+%               results.
             
             defaultMethod = 'PS';
             defaultWeights = 'default';
-            defaultPlot = 'false';
+            defaultPlot = false;
             defaultU = nan;
             defaultI = nan;
             
