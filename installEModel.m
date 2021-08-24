@@ -9,6 +9,6 @@ addpath([toolPath '/Utils/mcmcstat'])
 addpath([toolPath '/Utils/legendflex'])
 addpath([toolPath '/Tests'])
 addpath([toolPath '/Modelling'])
-addpath([toolPath '/Test data'])
+addpath([toolPath '/TestData'])
 
 savepath;
