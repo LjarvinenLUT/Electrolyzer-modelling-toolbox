@@ -10,16 +10,27 @@ classdef func < handle
     %   function handle uses this Workspace as its only parameter and calls
     %   the required fields in the function handle. As there is only one
     %   input parameter, there is no requirement for the exact order of
-    %   inputs.
+    %   inputs for the function handle.
     %
     %   FUNC Properties:
     %       equation -- Function handle as an easily human-readable string.
     %       funcHandle -- The structure based function handle that uses
     %                       only Workspace as an input.
     %       Workspace -- The workspace structure containing substructures:
-    %                       - Constants for system related constants,
-    %                       - Variables for measured variable values,
-    %                       - Coefficients for system coefficients.
+    %                       - Constants for system related constants, like
+    %                           Faraday's constant or universal gas
+    %                           constant.
+    %                       - Variables for measured variable values, like
+    %                           temperature or pressure that are needed for
+    %                           the model.
+    %                       - Coefficients for system coefficients that are
+    %                           obtained from the parametrization, like
+    %                           electric resistance or limiting current
+    %                           density. Performing fit using
+    %                           fitUI.m function automatically fills the
+    %                           values for the coefficients. Alternatively
+    %                           they can be manually provided using
+    %                           replaceParams method.
     %
     %   FUNC Methods:
     %       calculate -- Calculates voltage from the UI curve based on
@@ -28,12 +39,13 @@ classdef func < handle
     %       destructurize -- Destructurizes the structure-based function
     %                           handle to enable fitting with original
     %                           Matlab functions.
+    %       removeParams -- Remove parameters from the Workspace structure.
     %       replaceParams -- Replaces the values of existing parameters in
-    %                           Workspace structure
+    %                           Workspace structure.
     %       setFuncHandle -- Sets the protected property of funcHandle
     %                           together with the property equation.
-    %       setParams -- Sets new parameters to Workspace structure
-    %       viewWorkspace -- Outputs a human-readable raport of the
+    %       setParams -- Sets new parameters to Workspace structure.
+    %       viewWorkspace -- Outputs a human-readable report of the
     %                           contents of the Workspace structure.
     %   FUNC static methods:
     %       add -- Use addition to combine two func objects into a new one.
@@ -70,16 +82,35 @@ classdef func < handle
         
 
         function setFuncHandle(obj,newFuncHandle)
-            % SETFUNCHANDLE Sets the property of funcHandle together with the property of equation.
+            % SETFUNCHANDLE Sets the funcHandle and equation properties.
             obj.funcHandle = newFuncHandle;
             obj.equation = obj.getEquation;
         end
         
         
+        function setParams(obj,SetStruct)
+            % SETPARAMS  Sets new parameters in the Workspace structure.
+            %  Parameters should be provided as a Workspace-compatible 
+            %  structure. The method prioritizes given values over the
+            %  existing ones in case of conflict.
+            %
+            %  See also FUNC.ISWORKSPACE, MERGESTRUCTS
+            if func.isWorkspace(SetStruct)
+                obj.Workspace = mergeStructs(obj.Workspace,SetStruct);
+            else
+                error('Parameters to be set have to be given as a single Workspace structure')
+            end
+        end
+        
+        
         function replaceParams(obj,varargin)
-            % REPLACEPARAMS  A method for replacing parameters in the Workspace structure.
-            %  Parameters should be provided as a name-value pair or
-            %  directly as a structure.
+            % REPLACEPARAMS  Replaces parameters in the Workspace structure.
+            %  Parameters should be provided as name-value pairs or as a
+            %  structure (either Workspace compatible or not). Replaces
+            %  values only for existing fields with the same name as given.
+            %  The method acts recursively inside Workspace.
+            %
+            % See also ADDVALUESTOSTRUCT
             if isempty(varargin{1})
                 return;
             elseif length(varargin) == 1 && isstruct(varargin{1})
@@ -105,9 +136,13 @@ classdef func < handle
         end
         
         function removeParams(obj,varargin)
-            % REMOVEPARAMS  A method for removing parameters from the Workspace structure.
-            %  Parameter names should be provided as a list or a cell array
-            %  of strings.
+            % REMOVEPARAMS  Removes parameters from the Workspace structure.
+            %  Input has to be provided either as a list of
+            %  strings/character vectors or as a cell array of
+            %  strings/character vectors containing the names of the
+            %  parameters to be removed. The method acts recursively inside
+            %  the Workspace.
+            
             if length(varargin) == 1 && iscell(varargin{1})
                 paramsToRemove = varargin{1};
             else
@@ -124,16 +159,6 @@ classdef func < handle
                 if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Variables))
                     obj.Workspace.Variables = rmfield(obj.Workspace.Variables,paramsToRemove{i});
                 end
-            end
-        end
-        
-        function setParams(obj,SetStruct)
-            % SETPARAMS  A method for setting parameters in the Workspace structure.
-            %  Parameters should be provided as a Workspace-compatible structure.
-            if func.isWorkspace(SetStruct)
-                obj.Workspace = mergeStructs(obj.Workspace,SetStruct);
-            else
-                error('Parameters to be set have to be given as a single Workspace structure')
             end
         end
         
@@ -164,8 +189,7 @@ classdef func < handle
                         varargin(2:2:end));
                 end
             end
-            
-            
+                        
             % The result is calculated if the TempWorkspace contains all
             % necessary values for the calculation.
             try
@@ -194,10 +218,16 @@ classdef func < handle
                 problemVariables] = destructurize(obj,...
                                                   independentVariableName)
             % DESTRUCTURIZE Destructurizes the structure-based function handle.
-            %   Modifies the function handle to use separate input
-            %   parameters instead of a  singleWorkspace structure.
-            %   Destructurizing enable fitting with original Matlab 
-            %   functions like fit and particleswarm. 
+            %   Modifies the structure-based function handle to a function
+            %   handle with all the constants and scalar variables
+            %   calculated in, and the vector variables (problem variables)
+            %   and all the fit coefficients used as separate input
+            %   parameters.
+            %   Destructurizing enables usage of original Matlab functions
+            %   like fit and particleswarm.
+            %
+            %   The name of the independent variable has to be provided for
+            %   the correct ordering of the variables. 
             %
             %   Inputs:
             %       independentVariableName -- Name of the independent
@@ -321,10 +351,16 @@ classdef func < handle
         end
         
         
+        
+        
         function childFunc = copy(obj,varargin)
-            % COPY Creates a copy of the object with a new handle. With
-            %   parameter 'empty' create a copy that has no funcHandle but
-            %   keeps the Workspace content.
+            % COPY Creates an independent copy of the object.
+            %   Changing properties of the copy doesn't affect the
+            %   original.
+            %
+            % With input parameter 'empty' creates a copy that has no
+            %  funcHandle but keeps the Workspace content.
+            
             if nargin == 1
                 childFunc = func(obj.funcHandle,obj.Workspace);
             elseif strcmp(varargin{1},'empty')
@@ -336,7 +372,8 @@ classdef func < handle
         
         
         function report = viewWorkspace(obj)
-            % VIEWWORKSPACE Outputs a tabular report of the contents of the Workspace structure.
+            % VIEWWORKSPACE Outputs a tabular report of the Workspace.
+            
             fieldNameConst = fieldnames(obj.Workspace.Constants);
             fieldNameVars = fieldnames(obj.Workspace.Variables);
             fieldNameCoeff = fieldnames(obj.Workspace.Coefficients);
@@ -391,7 +428,9 @@ classdef func < handle
     
     methods(Static, Access = public)
         function newFunc = add(func1,func2)
-            % ADD Add two func objects together combining their workspaces and using addition for combining their function handles.
+            % ADD Add two func objects together.
+            %   Combining the workspaces and uses addition for combining
+            %   their function handles.
             %
             %   See also FUNC, MERGESTRUCTS
             
@@ -415,7 +454,10 @@ classdef func < handle
         end
         
         function emptyFunc = createEmpty
-            % CREATEEMPTY Create an empty func object with a function handle that does nothing.
+            % CREATEEMPTY Create an empty func object.
+            %  Creates a func object with a function handle that does
+            %  nothing, and an empty, but workspace-compatible Workspace
+            %  structure.
             emptyFunc = func(@pass,...
                 struct('Constants',struct(),...
                 'Variables',struct(),...
@@ -441,7 +483,7 @@ classdef func < handle
         end
         
         function b = isWorkspace(Struct)
-            % ISWORKSPACE Evaluates if a given structure fulfills requirements for a Workspace.
+            % ISWORKSPACE Evaluates Workspace-compatibility.            
             b = all(ismember(fieldnames(Struct),...
                              {'Coefficients';...
                              'Variables';...
@@ -453,7 +495,9 @@ classdef func < handle
     methods (Access = private)
 
         function equationStr = getEquation(obj)
-            % GETEQUATION Erases all occurences of Workspace from the equation body leaving a string with human-readable equation structure.
+            % GETEQUATION Creates human-readable equation string.
+            %   Erases all occurences of Workspace from the equation body
+            %   leaving a string with human-readable equation structure.            
             equationStr = erase(obj.getEquationBody,...
                                 {'Workspace.Coefficients.',...
                                 'Workspace.Variables.',...
@@ -461,7 +505,8 @@ classdef func < handle
         end
         
         function equationBody = getEquationBody(obj)
-            % GETEQUATIONBODY Outputs the equation body from the function handle without @(Workspace).
+            % GETEQUATIONBODY Outputs only the equation body.
+            %  Removes the @(Workspace) from the function handle.            
             equationBody = erase(func2str(obj.funcHandle),'@(Workspace)');
         end
         
@@ -471,7 +516,7 @@ classdef func < handle
     
     methods (Access = private, Static)
         function TempWorkspace = createTempWorkspace(Struct)
-            % CREATETEMPWORKSPACE Creates a copy of the Workspace structure but without values for standard deviation
+            % CREATETEMPWORKSPACE Creates a copy of the Workspace structure but without values for standard deviation.            
             fn = fieldnames(Struct);
             if isempty(fn)
                 TempWorkspace = struct();

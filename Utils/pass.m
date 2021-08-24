@@ -1,5 +1,5 @@
 function output = pass(varargin)
-%PASS Do nothing
+% PASS Do nothing
 %
 % PASS( ... )
 %

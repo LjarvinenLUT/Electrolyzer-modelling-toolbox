@@ -1,5 +1,5 @@
 function m = wtfrac2mol(wtfrac,M)
-%WTFRAC2MOL Convert concentration value in 
+% WTFRAC2MOL Convert concentration value in 
 %   weight fraction (mass of solute/mass of solution) to 
 %   molality (moles of solute/mass of solvent in kg).
 %

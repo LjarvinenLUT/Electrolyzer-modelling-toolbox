@@ -1,5 +1,5 @@
-% EMODELSTARTUP Script that adds all the necessary paths to the search
-% path when called from outside the directory of the tool.
+% STARTUPEMODEL Script that adds all the necessary paths to the search
+%   path when called from outside the directory of the tool.
 
 [toolpath,~,~] = fileparts(which('electrolyzerModel'));
 
