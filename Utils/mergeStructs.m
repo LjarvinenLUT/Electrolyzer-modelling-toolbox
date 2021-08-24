@@ -22,7 +22,7 @@ addParameter(parser,'warn_duplicates',defaultWarnDuplicates,@(x) islogical(x))
 
 parse(parser,StructA,StructB,varargin{:});
 
-warn_duplicates = parser.Results.warn_duplicates;
+warnDuplicates = parser.Results.warn_duplicates;
 
 %%
 % If one of the structres is empty, use the other one
@@ -39,7 +39,8 @@ end
 MergedStruct=StructA;
 
 %%insert struct b
-overwritten_fields = false;
+overwrittenFields = false;
+overwrittenFieldNames = {};
 f_a = fieldnames(StructA);
 f_b = fieldnames(StructB);
 for i = 1:length(f_b)
@@ -50,8 +51,9 @@ for i = 1:length(f_b)
         elseif isstruct(StructB.(f_b{i})) && isstruct(StructA.(f_b{i}))
             MergedStruct.(f_b{i}) = mergeStructs(StructA.(f_b{i}),StructB.(f_b{i}));
         else
-            if StructB.(f_b{i}) ~= StructA.(f_b{i})
-                overwritten_fields = true;
+            if ~isequal(StructB.(f_b{i}),StructA.(f_b{i}))
+                overwrittenFields = true;
+                overwrittenFieldNames = [overwrittenFieldNames,f_b{i}];
             end
             MergedStruct.(f_b{i}) = StructB.(f_b{i});
         end
@@ -60,7 +62,11 @@ for i = 1:length(f_b)
     end
 end
 
-if overwritten_fields && warn_duplicates
-    warning('Merged structures contained duplicated fields. Values have been overwritten.')
+if overwrittenFields && warnDuplicates
+    fields = overwrittenFieldNames{1};
+    for i = 2:length(overwrittenFieldNames)
+        fields = [fields ', ' overwrittenFieldNames{i}];
+    end
+    warning(['Merged structures contained duplicated fields (' fields '). Their values have been overwritten by values in the second input structure.'])
 end
 end

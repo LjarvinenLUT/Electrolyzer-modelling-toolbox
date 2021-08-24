@@ -74,7 +74,7 @@ elseif any(current < 0.005)
 end
 
 if ~strcmpi(method, 'PS') && ~strcmpi(method, 'NLLSE')
-   error("Given fitting method: " + method + " is not available.") 
+   error("Given fitting method: " + method + " is not available. The available methods are PS (particle swarm) and NLLSE (non-linear least squares error).") 
 end
 
 %% Destructurize function handle, get coefficients and their limits, problem variable names and their values

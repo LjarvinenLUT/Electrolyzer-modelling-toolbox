@@ -14,6 +14,7 @@ classdef electrolyzerModel < handle
     %                       visible. Storage enables the removal of
     %                       unnecessary potential components and automatic
     %                       check for doubly included ones.
+    %       molarMassOfElectrolyte -- Molar mass of the electrolyte.
     %       PlottingCurves -- A structure containing the measurements used
     %                           for curve fitting as well as the calculated
     %                           curve from the fit results
@@ -54,10 +55,12 @@ classdef electrolyzerModel < handle
     properties (SetAccess = protected)
        type; % PEM or alkaline
        electrolyte; % Electrolyte
+       molarMassOfElectrolyte; % Molar mass of the electrolyte, kg/mol
        potentialFunc; % A func object for combined overpotential function
        funcStorage; % A table that stores the separate func objects
        PlottingCurves; % A structure with the measurements and fit curve
     end
+
     
     %% Public methods
     methods
@@ -445,6 +448,23 @@ classdef electrolyzerModel < handle
             end
             childObj.setParams(obj.potentialFunc.Workspace);
         end
+        
+        function molality = wtfrac2mol(obj,wtfrac)
+            % WTFRAC2MOL Convert concentration value in
+            %   weight fraction (mass of solute/mass of solution) to 
+            %   molality (moles of solute/mass of solvent in kg) using the
+            %   molar mass value contained in the instance.
+            molality = wtfrac2mol(wtfrac,obj.molarMassOfElectrolyte);
+        end
+        
+        function wtfrac = mol2wtfrac(obj,molality)
+            % MOL2WTFRAC Convert concentration value in
+            %   molality (moles of solute/mass of solvent in kg) to 
+            %   weight fraction (mass of solute/mass of solution) using the
+            %   molar mass value contained in the instance.
+            wtfrac = mol2wtfrac(molality,obj.molarMassOfElectrolyte);
+        end
+        
     end
     
     %% Private methods
@@ -466,11 +486,15 @@ classdef electrolyzerModel < handle
 %           SETELECTROLYTE  Function for setting electrolyte for alkali electrolyzers.
 
             if strcmp(obj.type,"alkaline")
-                if any(strcmpi(electrolyte,{'KOH','NaOH'}))
-                    obj.electrolyte = electrolyte;
-                else
-                    error('Only KOH and NaOH defined as possible alkali electrolytes.')
+                switch electrolyte
+                    case 'KOH'
+                        obj.molarMassOfElectrolyte = 39.0983 + 15.9994 + 1.0079;
+                    case 'NaOH'
+                        obj.molarMassOfElectrolyte = 22.9898 + 15.9994 + 1.0079;
+                    otherwise
+                        error('Only KOH and NaOH defined as possible alkali electrolytes.')
                 end
+                obj.electrolyte = electrolyte;
             else
                 obj.electrolyte = "Polymer membrane";
             end
