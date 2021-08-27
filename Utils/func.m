@@ -78,6 +78,8 @@ classdef func < handle
             else
                 error("Workspace structure of object func should contain exclusively fields 'Coefficients', 'Variables' or 'Constants'.")
             end
+            
+            obj.refreshWorkspace;
         end
         
 
@@ -100,6 +102,8 @@ classdef func < handle
             else
                 error('Parameters to be set have to be given as a single Workspace structure')
             end
+            
+            obj.refreshWorkspace;
         end
         
         
@@ -132,7 +136,15 @@ classdef func < handle
                 error('Parameters to be replaced have to be either set as a single structure or as name-value pairs')
             end
             
-            obj.Workspace = addValuesToStruct(obj.Workspace,paramsToReplace);
+            if ismember('Dependencies',fieldnames(obj.Workspace))
+                TempWorkspace = rmfield(obj.Workspace,'Dependencies'); % Avoid replacing dependencies if named the same as their respective variable
+            else
+                TempWorkspace = obj.Workspace;
+            end
+            
+            obj.Workspace = addValuesToStruct(TempWorkspace,paramsToReplace);
+            
+            obj.refreshWorkspace;
         end
         
         function removeParams(obj,varargin)
@@ -389,7 +401,10 @@ classdef func < handle
             % Constants
             for i = 1:length(fieldName)
                 value = obj.Workspace.(fields{i,1}).(fields{i,2});
-                if ~isempty(value)
+                if strcmpi(fields(i,2),'electrolyte')
+                    descriptionText = ": numeric helper variable for alkaline";
+                    valueMean(i) = value(:,1);
+                elseif ~isempty(value)
                     switch length(value(:,1))
                         case 1
                             valueMean(i) = value(:,1);
@@ -451,6 +466,8 @@ classdef func < handle
             
             newFunc = func(newFuncHandle,NewWorkspace);
             
+            newFunc.refreshWorkspace;
+            
         end
         
         function emptyFunc = createEmpty
@@ -487,7 +504,8 @@ classdef func < handle
             b = all(ismember(fieldnames(Struct),...
                              {'Coefficients';...
                              'Variables';...
-                             'Constants'}));
+                             'Constants';...
+                             'Dependencies'}));
         end
     end
     
@@ -510,6 +528,28 @@ classdef func < handle
             equationBody = erase(func2str(obj.funcHandle),'@(Workspace)');
         end
         
+        function refreshWorkspace(obj)
+            % REFRESHWORKSPACE Recalculates dependent Workspace parameters.
+            Workspace = obj.Workspace;
+            if ismember('Dependencies',fieldnames(Workspace))
+                fn = fieldnames(Workspace.Dependencies);
+                for i = 1:numel(fn)
+                    try
+                        eval(Workspace.Dependencies.(fn{i}))
+                    catch ME
+                        if strcmp(ME.identifier,'MATLAB:InputParser:ArgumentFailedValidation')
+                            continue;
+                        else
+                            rethrow(ME)
+                        end                           
+                    end
+                end
+                obj.Workspace = Workspace;
+            else
+                return;
+            end
+        end
+        
     end
     
     %% Private static methods
@@ -522,7 +562,9 @@ classdef func < handle
                 TempWorkspace = struct();
             else
                 for i = 1:length(fn)
-                    if isstruct(Struct.(fn{i}))
+                    if strcmp(fn{i},'Dependencies')
+                        continue;
+                    elseif isstruct(Struct.(fn{i}))
                         TempWorkspace.(fn{i}) = func.createTempWorkspace(Struct.(fn{i}));
                     elseif isempty(Struct.(fn{i})) || length(Struct.(fn{i})(1,:)) == 1
                         TempWorkspace.(fn{i}) = Struct.(fn{i});

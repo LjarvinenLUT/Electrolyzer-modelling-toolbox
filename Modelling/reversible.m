@@ -1,10 +1,9 @@
-function Urev = reversible(T,model)
+function Urev = reversible(model)
 % REVERSIBLE  Create a func object for calculation of reversible potential
 % of the water splitting reaction for Nernst equation.
-%
-%   Urev = REVERSIBLE(T) uses default model, #6 
 % 
-%   Urev = REVERSIBLE(_,'model',n) uses a model defined by parameter n
+%   Urev = REVERSIBLE(model) uses a model defined by parameter model,
+%       provided as an integer
 % 
 %   REVERSIBLE has six (6) models available. Their more in detail
 %   description can be found in the mathematical documentation of this
@@ -25,7 +24,7 @@ function Urev = reversible(T,model)
 
 [Workspace.Constants.F,~,Workspace.Constants.n_e] = getConstants;
 
-Workspace.Variables = struct('T',T);
+Workspace.Variables = struct('T',[]);
     
     switch model
         case 1 % Le Roy et al. "The thermodynamics of aqueous water electrolysis." Journal of the Electrochemical Society, 127:1954–1962, 1980. http://dx.doi.org/10.1149/1.2130044

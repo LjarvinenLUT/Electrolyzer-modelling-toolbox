@@ -44,7 +44,7 @@ switch model
                 error('Molality for KOH has to be between 0 and 18 mol kg^-1.')
             end
             if any(T<273.15|T>474)
-                error('Electrolyte data defined for temperatures between 273 K and 474 K.')
+                error('Electrolyte data defined only for temperatures between 273 K and 474 K.')
             end
             
             % Parameters for partial pressure
@@ -59,7 +59,7 @@ switch model
                 error('Molality for NaOH has to be between 0 and 25 mol kg^-1.')
             end
             if any(T<273|T>474)
-                error('Electrolyte data defined for temperatures between 273 K and 474 K.')
+                error('Electrolyte data defined only for temperatures between 273 K and 474 K.')
             end
             
             % Parameters for partial pressure

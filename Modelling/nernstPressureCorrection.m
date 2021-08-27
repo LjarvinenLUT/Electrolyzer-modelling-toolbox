@@ -1,25 +1,12 @@
-function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
+function Ucor = nernstPressureCorrection(type)
 % NERNSTPRESSURECORRECTION  Create a func object for pressure correction 
 % term of Nernst equation in modelling of water electrolysis.
 %
-%   Ucor = NERNSTPRESSURECORRECTION(T,p1,p2,'type',t) creates func object
-%           for electrolyzer type defined by variable t. 
+%   Ucor = NERNSTPRESSURECORRECTION(type) creates func object
+%           for electrolyzer type defined. 
 %           Electrolyzer types availabel are:
 %               PEM -- Polymer electrolyte membrane electrolysis
 %               Alkaline -- Alkaline electrolysis.
-%           Inputs: T -- Measured temperature
-%                   p1 -- Parameter 1: 
-%                       for PEM: cathode pressure, in bara
-%                       for alkaline: system pressure, in bara
-%                   p2 - Parameter 2: 
-%                       for PEM: anode pressure, in bara
-%                       for alkaline: electrolyte molality, in mol/kg of solvent
-% 
-%   Ucor = NERNSTPRESSURECORRECTION(_,'type','alkaline','electrolyte',e) changes the 
-%           electrolyte when alkaline electrolysis is considered.
-%           Available electrolytes are:
-%               KOH -- Potassium hydroxide (default)
-%               NaOH -- Sodium hydroxide
 %   
 %   The output func object has the following fields in workspace
 %   structures, depending on the type of electrolyzer:
@@ -32,37 +19,29 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
 %           T -- Temperature in kelvins
 %           pO2 -- Oxygen partial pressure (for PEM only)
 %           pH2 -- Hydrogen partial pressure (for PEM only)
+%           psv -- Saturated water vapor pressure (for PEM only; dependency
+%               on temperature)
 %           ps -- System pressure (for alkaline only)
-%           aH2OEl -- Water activity in electrolyte solution (for alkaline only)
+%           m -- Electrolyte molality (for alkaline only)
+%           aH2OEl -- Water activity in electrolyte solution (for alkaline
+%               only; dependency on temperature, molality and the
+%               electrolyte)
+%           psvEl -- Saturated water vapor pressure for electrolyte
+%               solution (for alkaline only; dependency on temperature,
+%               molality and the electrolyte)
 % 
 %   See also NERNST, REVERSIBLE, FUNC, WATERVAPORPRESSURE,
 %   ELECTROLYTEPARAMETERS
     
 %% Parse input
-    defaultElectrolyte = 'KOH';
 
-    parser = inputParser;
-    addRequired(parser,'T',@(x) isnumeric(x));
-    addRequired(parser,'p1',@(x) isnumeric(x));
-    addRequired(parser,'p2',@(x) isnumeric(x));
-    addParameter(parser,'type',@(x) ischar(x)||isstring(x));
-    addParameter(parser,'electrolyte',defaultElectrolyte,@(x) ischar(x)||isstring(x))
-    
-    parse(parser,T,p1,p2,varargin{:});
-    
-    Workspace.Variables = struct('T',T);
-    type = string(lower(parser.Results.type));
+    type = string(lower(type));
     if strcmp(type,"alkali")
         type = "alkaline";
     end
-    electrolyte = string(parser.Results.electrolyte);
     
     %% Errors
-    if strcmp(type,"alkaline")
-        if ~strcmp(electrolyte,"KOH")&&~strcmp(electrolyte,"NaOH")
-            error('Only KOH and NaOH defined as alkaline electrolytes')
-        end
-    elseif ~strcmp(type,"pem")
+    if ~strcmp(type,"alkaline")&&~strcmp(type,"pem")
         error('Only PEM and alkaline electrolysis defined for Nernst equation.')
     end
     %% Constants
@@ -70,43 +49,44 @@ function Ucor = nernstPressureCorrection(T,p1,p2,varargin)
 
     %% Define the func object
 
+    Workspace.Variables.T = [];
+    
     switch type
         case "pem"
-            psv = waterVaporPressure(Workspace.Variables.T); % Vapor pressure from Antoine equation
+            % Vapor pressure from Antoine equation
+            Workspace.Dependencies.psv = 'Workspace.Variables.psv = waterVaporPressure(Workspace.Variables.T);'; % Dependency format
+%             eval(Workspace.Dependencies.psv);
             
-            Workspace.Variables.pCat = p1; % bara, Cathode pressure
+            Workspace.Variables.pCat = []; % bara, Cathode pressure
             
-            Workspace.Variables.pAn = p2; % bara, Anode pressure
+            Workspace.Variables.pAn = []; % bara, Anode pressure
             
-            if any(Workspace.Variables.pCat < psv | Workspace.Variables.pAn < psv)
-                error('Pressure too low! Anode or cathode pressure lower than the saturated vapor pressure at the given temperature. ')
-            end
+%             if any(Workspace.Variables.pCat < Workspace.Variables.psv | Workspace.Variables.pAn < Workspace.Variables.psv)
+%                 error('Pressure too low! Anode or cathode pressure lower than the saturated vapor pressure at the given temperature. ')
+%             end
                       
             % Nernst equation pressure correction
-            funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log((Workspace.Variables.pCat-waterVaporPressure(Workspace.Variables.T)).*(Workspace.Variables.pAn-waterVaporPressure(Workspace.Variables.T)).^(1/2));
+            funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log((Workspace.Variables.pCat-Workspace.Variables.psv).*(Workspace.Variables.pAn-Workspace.Variables.psv).^(1/2));
             
         case "alkaline"
             
             
-            Workspace.Variables.ps = p1; % bara, System pressure
+            Workspace.Variables.ps = []; % bara, System pressure
             
-            Workspace.Variables.m = p2; % mol/kg of solvent, Electrolyte molality
+            Workspace.Variables.m = []; % mol/kg of solvent, Electrolyte molality
+
+            Workspace.Variables.electrolyte = []; % 1 = KOH, 2 = NaOH, helper variable for determining the electrolyte related parameters
             
-            switch electrolyte
-                case 'KOH'
-                    Workspace.Variables.electrolyte = 1; % Electrolyte type
-                case 'NaOH'
-                    Workspace.Variables.electrolyte = 2; % Electrolyte type
-            end
+            % Electrolyte parameters
+            Workspace.Dependencies.electrolyteParameters = '[Workspace.Variables.psvEl,Workspace.Variables.aH2OEl] = electrolyteParameters(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte);'; % Dependency format
+%             eval(Workspace.Dependencies.electrolyteParameters);
             
-            psvEl = electrolyteWaterVaporPressure(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte);
-            
-            if any(Workspace.Variables.ps < psvEl)
-                error('Pressure too low! System pressure lower than saturated vapor pressure of the electrolyte solution.')
-            end
+%             if any(Workspace.Variables.ps < Workspace.Variables.psvEl)
+%                 error('Pressure too low! System pressure lower than saturated vapor pressure of the electrolyte solution.')
+%             end
             
             % Nernst equation pressure correction
-            funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log((Workspace.Variables.ps-electrolyteWaterVaporPressure(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte)).^(3/2)./electrolyteWaterActivity(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte));
+            funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log((Workspace.Variables.ps-Workspace.Variables.psvEl).^(3/2)./Workspace.Variables.aH2OEl);
     end
     
     Workspace.Coefficients = struct();

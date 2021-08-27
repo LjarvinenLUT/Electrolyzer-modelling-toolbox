@@ -93,11 +93,14 @@ classdef electrolyzerModel < handle
             parse(parser,varargin{:});
             
             parser.Results.type;
-            setType(obj, parser.Results.type);
-            setElectrolyte(obj, string(parser.Results.electrolyte));
             
             % Create an empty func object
             obj.potentialFunc = func.createEmpty;
+            
+            setType(obj, parser.Results.type);
+            setElectrolyte(obj, string(parser.Results.electrolyte));
+            
+            
             
             
             % Create funcStorage
@@ -262,8 +265,7 @@ classdef electrolyzerModel < handle
                 end
                 
                 
-                obj.potentialFunc = func.add(obj.potentialFunc,addedPotentialFunc);
-                
+                obj.potentialFunc = func.add(obj.potentialFunc,addedPotentialFunc);                
                 
                 if ~rebuild % Supplement the funcStorage
                     StorageEntry = struct('name',name,'func',addedPotentialFunc,'equation',addedPotentialFunc.equation);
@@ -552,7 +554,6 @@ classdef electrolyzerModel < handle
         
         function setType(obj,type)
             % SETTYPE  Sets the electrolyzer type.
-            
             if strcmpi(type,'alkali')
                 type = 'alkaline';
             elseif ~any(strcmpi(type,{'pem','alkaline'}))
@@ -564,13 +565,14 @@ classdef electrolyzerModel < handle
         
         function setElectrolyte(obj,electrolyte)
             % SETELECTROLYTE Sets the electrolyte for alkali electrolyzers.
-            
             if strcmp(obj.type,"alkaline")
                 switch electrolyte
                     case 'KOH'
                         obj.molarMassOfElectrolyte = 39.0983 + 15.9994 + 1.0079;
+                        obj.setParams(struct('Variables',struct('electrolyte',1)));
                     case 'NaOH'
                         obj.molarMassOfElectrolyte = 22.9898 + 15.9994 + 1.0079;
+                        obj.setParams(struct('Variables',struct('electrolyte',2)));
                     otherwise
                         error('Only KOH and NaOH defined as possible alkali electrolytes.')
                 end
@@ -586,22 +588,21 @@ classdef electrolyzerModel < handle
             %  Input: argin -- Name of the potential as a string.
             %  Output: potentialFunc -- default func object for the given
             %                           potential.
-            
             potentialName = strrep(string(lower(argin)), ' ', '');
             providedVariables = fieldnames(obj.potentialFunc.Workspace.Variables);
             switch string(lower(potentialName))
                 case {"nernst","reversible","rev","opencircuit","ocv"}
                     if strcmpi(obj.type,'pem')
                         if all(ismember({'T','pCat','pAn'},providedVariables))
-                            potentialFunc = nernst(obj.potentialFunc.Workspace.Variables.T,obj.potentialFunc.Workspace.Variables.pCat,obj.potentialFunc.Workspace.Variables.pAn,'type',obj.type);
+                            potentialFunc = nernst(obj.type);
                         else
-                            error("To use Nernst equation with PEM the following variables, T (temperature in kelvin), pCat (cathode pressure in bara) and pAn (anode pressure in bara) have to be included in the electrolyzerModel Variables structure")
+                            warning("To use Nernst equation with PEM the following variables, T (temperature in kelvin), pCat (cathode pressure in bara) and pAn (anode pressure in bara) have to be included in the electrolyzerModel Variables structure")
                         end
                     elseif strcmpi(obj.type,'alkaline')
                         if all(ismember({'T','ps','m'},providedVariables))
-                            potentialFunc = nernst(obj.potentialFunc.Workspace.Variables.T,obj.potentialFunc.Workspace.Variables.ps,obj.potentialFunc.Workspace.Variables.m,'type',obj.type);
+                            potentialFunc = nernst(obj.type);
                         else
-                            error("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), ps (system pressure in bara) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure. The variables have to have the exact same naming as shown in the previous sentence.")
+                            warning("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), ps (system pressure in bara) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure. The variables have to have the exact same naming as shown in the previous sentence.")
                         end
                     else
                         error("Electrolyzer type not recognised")

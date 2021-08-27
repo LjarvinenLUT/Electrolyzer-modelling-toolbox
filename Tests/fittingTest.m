@@ -9,12 +9,13 @@ T = 273.15+50; % Temperature
 type = "PEM"; % Cell type
 pH2 = 30; % bar
 pO2 = 2; % bar
-Uocv = nernst(T,pH2,pO2,'type',type);
+Uocv = nernst(type);
 Uact = activation('model',2);
 Uohm = ohmic();
 Ucon = concentration();
 
-
+Emodel = electrolyzerModel('type',type); % Electrolyzer model containing the sampled temperature
+Emodel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
 
 i = 2;
 weights = 'default';
@@ -31,9 +32,10 @@ switch i
         r = 0.1; % Ohm, total resistance
         j_lim = 1.5; % A/cm^2, limiting current density
         
-        Workspace = struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2),'Coefficients',struct('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim));
+        synModel = Emodel.copy;
+        synModel.setParams(struct('Coefficients',struct('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)))
         
-        [SynData,FullData] = createSyntheticUI('workspace',Workspace,'jLims',[0.005 Inf],'jSigma',0.2,'uSigma',0.06);
+        [SynData,FullData] = createSyntheticUI('eModel',synModel,'jLims',[0.005 Inf],'jSigma',0.2,'uSigma',0.06);
         
 %         Umeas = []; % "Measured" voltage
 %         jmeas = []; % "Measured" current based on Buttler-Volmer equation

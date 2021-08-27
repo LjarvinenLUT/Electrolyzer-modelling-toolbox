@@ -255,7 +255,7 @@ end
 
 %% Create structure for plotting vectors
 fullFitCurrent = min(current):0.001:max(current);
-fullFitVoltage = fitFunc.calculate('current',fullFitCurrent);
+fullFitVoltage = mean(fitFunc.calculate('current',fullFitCurrent),1);
 
 % Take samples from the dense data vectors
         N = 100; % Number of evenly taken voltage samples
