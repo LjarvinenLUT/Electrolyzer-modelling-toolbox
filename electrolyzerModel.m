@@ -478,6 +478,41 @@ classdef electrolyzerModel < handle
             disp(report)
         end
         
+        function report(obj)
+            % REPORT Displays a report of all the properties of the object
+            %
+            % See also ELECTROLYZERMODEL.VIEWWORKSPACE
+            msg1 = ['\nElectrolyzer model properties:\n'...
+                    '\n type: %s\n' ...
+                    '\n electrolyte: %s\n' ...
+                    '\n molarMassOfElectrolyte: %6.4f kg/mol\n'];
+            fprintf(msg1,obj.type,obj.electrolyte,obj.molarMassOfElectrolyte)
+            msg2 = ['\n potentialFunc:\n' ...
+                    '\n   equation: %s\n' ...
+                    '\n   Workspace:\n'];
+            fprintf(msg2,obj.potentialFunc.equation)
+            workspaceReport = obj.potentialFunc.viewWorkspace;
+            if ~isempty(workspaceReport)
+                disp(workspaceReport)
+            else
+                fprintf('      Empty Workspace\n')
+            end
+            fprintf('\n funcStorage:\n')
+            funcStorage = obj.funcStorage;
+            if ~isempty(funcStorage)
+                disp(funcStorage)
+            else
+                fprintf('   Empty funcStorage\n')
+            end
+            fprintf('\n PlottingCurves:')
+            PlottingCurves = obj.PlottingCurves;
+            if ~isempty(PlottingCurves)
+                fprintf(' [%dx%d struct] \n',size(obj.PlottingCurves,1),size(obj.PlottingCurves,2))
+            else
+                fprintf(' No curves available. Perform model fit to get plotting curves.\n\n')
+            end
+        end
+        
         
         function childObj = copy(obj)
             % COPY  Creates a full copy of the object with its own handle.
