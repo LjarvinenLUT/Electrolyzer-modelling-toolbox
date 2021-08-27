@@ -17,11 +17,8 @@ function [SynData,FullData,Workspace] = createSyntheticUI(varargin)
 %   [_] = CREATESYNTHETICUI(_,name,value) creates synthetic UI curve using
 %       the user defined parameters inputed as name--value pairs. The
 %       parameters that are recognised by the function are listed below:
-%           - 'func', enables user-defined func object to be used for
-%               creation of the synthetic UI curve.
-%           - 'workspace', enables user to define all the variable and
-%               coefficient values required for the creation of the
-%               synthetic UI curve.
+%           - 'eModel', enables user defined model and variables to be used
+%               for creating the synthetic data.
 %           - 'jLims', enables defining of current limits for the synthetic
 %               UI data. Input should be in a form of 1x2 vector 
 %               [iLow iHigh].
@@ -32,10 +29,6 @@ function [SynData,FullData,Workspace] = createSyntheticUI(varargin)
 %               [uLow uHigh].
 %           - 'uSigma', enables defining of standard deviation for voltage
 %               measurements.
-%           - 'type', electrolyzer type. Possible options: "PEM" and
-%               "alkaline". Default: "PEM"
-%           - 'electrolyte', electrolyte type for alkaline electrolyzers.
-%               Possible options: "KOH" and "NaOH". Default: "KOH"
 %
 %   Output:
 %       - SynData -- Structure containing sampled data in fields 'current' 
@@ -57,33 +50,14 @@ indexOfCharEntries = find(isCharEntries);
 charEntries = varargin(isCharEntries);
 
 % Find locations of different parameter calls
-funcCall = ismember(charEntries,{'func'});
-workspaceCall = ismember(charEntries,{'workspace'});
+modelCall = ismember(charEntries,{'model'});
 jLimsCall  = ismember(charEntries,{'jLims'});
 uLimsCall  = ismember(charEntries,{'uLims'});
 jSigmaCall  = ismember(charEntries,{'jSigma'});
 uSigmaCall  = ismember(charEntries,{'uSigma'});
-typeCall = ismember(charEntries,{'type'});
-electrolyteCall = ismember(charEntries,{'electrolyte'});
 
 %% Parse parameter calls
 try
-    if any(typeCall) % Electrolyzer type
-        type = varargin{indexOfCharEntries(typeCall)+1};
-    else
-        type = "pem";
-        disp("No electrolyzer type provided; Synthetic UI created for PEM.")
-    end
-    
-    if any(electrolyteCall) % Electrolyte for alkaline electrolysis
-        electrolyte = varargin{indexOfCharEntries(electrolyteCall)+1};
-    else
-        electrolyte = "KOH";
-        if strcmp(type,'alkaline')
-            disp("Electrolyte not specified for alkaline electrolyzer; KOH used as a default.")
-        end
-    end
-    
     if any(jLimsCall) % Current limits
         jLims = varargin{indexOfCharEntries(jLimsCall)+1};
     else
@@ -117,31 +91,54 @@ catch ME
 end
 
 %% Create electrolyzer model object
-eModel = electrolyzerModel('type',type,'electrolyte',electrolyte);
 
 try
-    if any(funcCall) 
-        funcGiven = true;
-        eModel.addPotentials(varargin{indexOfCharEntries(funcCall)+1});
-        if any(workspaceCall)
-            eModel.setParams(varargin{indexOfCharEntries(workspaceCall)+1});
+    if any(modelCall) 
+        eModel = copy(varargin{indexOfCharEntries(modelCall)+1});
+        
+        try % Are variables defined with the model?
+            eModel.potentialFunc.Workspace.Variables;
+        catch ME
+            if strcmp(ME.identifier,'MATLAB:nonExistentField')
+                fprintf("\nNo variables provided with the model.\nDefault values used.\n")
+                if strcmpi(eModel.type,'pem')
+                    Workspace = struct('Variables',struct('T',273.15+50,'pAn',2,'pCat',30));
+                else % alkaline
+                    Workspace = struct('Variables',struct('T',273.15+50,'ps',2,'m',0.05));
+                end
+                eModel.setParams(Workspace);
+            else
+                rethrow(ME)
+            end
         end
-    elseif any(workspaceCall)
-        funcGiven = false;
-        Workspace = varargin{indexOfCharEntries(workspaceCall)+1};
-        eModel.setParams(Workspace);
-        coeffNames = fieldnames(Workspace.Coefficients);
-        potentialNames = {'ocv','ohm','con'};
-        includedPotentials = [true ismember({'r','j_lim'},coeffNames)];
-        eModel.addPotentials(potentialNames{includedPotentials});
+        
+        try % Are coefficients defined with the model?
+            eModel.potentialFunc.Workspace.Coefficients;
+        catch ME
+            if strcmp(ME.identifier,'MATLAB:nonExistentField')
+                fprintf("\nNo fit coefficients provided with the model. \nDefault values used.\n")
+                Workspace = struct('Coefficients',struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5));
+                eModel.setParams(Workspace);
+            else
+                rethrow(ME)
+            end
+        end
+        
+        if func.isEmpty(eModel.potentialFunc) % Are potential terms defined with the model?
+            funcGiven = false;
+            fprintf("\nModel provided but it did not have potential \nfunction defined. Default potentials used.\n")
+            eModel.addPotentials('ocv','ohm','con');
+        else
+            funcGiven = true;
+        end
+        
     else
+        fprintf("\nNo model provided. PEM electrolyzer and default values used for needed variables and coefficients.\n")
         funcGiven = false;
-        if strcmp(type,"pem") % PEM
-            Variables = struct('T',273.15+50,'pAn',2,'pCat',30);
-        else % Alkaline
-            Variables = struct('T',273.15+50,'p',2,'m',7.64);
-        end
-        Workspace = struct('Variables',Variables,'Coefficients',struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5));
+        eModel = electrolyzerModel();
+        Variables = struct('T',273.15+50,'pAn',2,'pCat',30);
+        Coefficients = struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5);
+        Workspace = struct('Variables',Variables,'Coefficients',Coefficients);
         eModel.setParams(Workspace);
         eModel.addPotentials('ocv','ohm','con');
     end
