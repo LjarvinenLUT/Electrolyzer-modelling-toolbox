@@ -13,7 +13,7 @@
 % To construct the modelling object one must specify the electrolysis type
 % and, in the case of alkaline electrolysis, the chemical formula of the
 % electrolyte. Both of these are given as name-value pairs.
-eModel = electrolyzerModel('type','alkaline','electrolyte','KOH');
+eModel = electrolyzerModel('type','alkaline','electrolyte','NaOH');
 
 %%
 % Input options for |electrolyzerModel| constructor are:
@@ -103,7 +103,7 @@ eModel.viewWorkspace;
 % Once the modeling object has been created and variables set, it is
 % possible to use helper method |addPotentials| to construct the full
 % overpotential function.
-eModel.addPotentials('nernst','ohmic','activation','concentration')
+eModel.addPotentials('nernst','ohmic','activation')
 
 %%
 % The input above provides the default versions of each potential term
@@ -136,12 +136,19 @@ eModel.report;
 % all the information from its parent but breaks the link between the child
 % and the parent objects.
 eModel2 = eModel;
-isequal(eModel,eModel2) 
+if isequal(eModel,eModel2)
+    disp("Copy (eModel2) is the same object as the original (eModel)")
+else
+    disp("Copy (eModel2) is separate from the original (eModel)")
+end
 
-eModelCopy = eModel.copy;
-isequal(eModel,eModelCopy)
-
-
+%%
+eModel2 = eModel.copy;
+if isequal(eModel,eModel2)
+    disp("Copy (eModel2) is the same object as the original (eModel)")
+else
+    disp("Copy (eModel2) is separate from the original (eModel)")
+end
 
 
 %% Fitting
@@ -153,19 +160,48 @@ load('AlkaliData.mat')
 voltageData = AlkaliUI.U;
 currentData = AlkaliUI.j;
 temperatureData = AlkaliUI.T(:,1);
+pressureData = AlkaliUI.P(:,1);
 
 %%
 % Let's replace the preset temperature from the electrolyzer model with the
-% measured vector
-eModel.replaceParams('T',temperatureData);
+% measured temperature vector
+eModel.replaceParams('T',temperatureData,'ps',pressureData);
 
 %%
 % Let's choose particle swarm as our fitting method and enable weighting of
-% the beginning and the end of the dataset. More in-detail description of
-% the options can be found from the documentation of the function |fitUI|.
+% the low current values.
 method = "PS";
-weights = "default";
-[fitParams,gof] = eModel.fitUI(voltageData,currentData,'method',method,'weights',weights)
+weights = "l";
+%%
+% The weights are added to improve parametrization of the activation
+% overpotential, whose effect is post prominent in the lower current
+% densities. Now that mass transfer effects are not present in the data to
+% be fitted, we do not weigh the higher current densities, which could be
+% done by adding letter "h" to the weights call. More in-detail description
+% of the options can be found from the documentation of the function
+% |fitUI|.
+
+[fitParams,gof] = eModel.fitUI(voltageData,currentData,'method',method,'weights',weights);
 
 %%
+% To see the results, one can use the |showUI| method to perform a quick
+% automated plot.
 eModel.showUI
+
+%% 
+% The parameter values and their uncertainty (standard deviation) can be
+% seen from the output of |fitUI|
+disp(fitParams)
+%%
+% or by calling |electrolyzerModel.getCoefficients| method.
+disp(eModel.getCoefficients)
+
+
+%%
+% Some goodness of fit values are stored in |fitUI| output |gof|: 
+%
+% * ssr: Square Sum Residuals
+% * rmse: Root Mean Square Error
+% * rsquare: the R^2 value of the fit
+%
+disp(gof)

@@ -18,7 +18,6 @@ Emodel = electrolyzerModel('type',type); % Electrolyzer model containing the sam
 Emodel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
 
 i = 2;
-weights = 'default';
 switch i
 
     case 1 % Created test data
@@ -116,6 +115,8 @@ switch i
         
         %% Fit
         
+        weights = 'hl';
+        
         % Non-linear least squares error
         tic;
         [fitParams1,gof1] = Emodel.fitUI(SynData.voltage(:,1),SynData.current(:,1),'method','nllse','weights',weights);
@@ -200,6 +201,8 @@ switch i
 
         
     case 2 % Data from Jülich
+        
+        weights = 'l';
         
         I0fit = nan(4,3);
         alphafit = nan(4,3);

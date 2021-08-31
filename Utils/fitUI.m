@@ -26,22 +26,29 @@ function [fitParams,gof] = fitUI(fitFunc,voltage,current,varargin)
 %                       Marchov Chain Monte Carlo -method (MCMC)
 %
 %   [_] = FITUI(_,'weights',w) allows user to choose whether the beginning
-%       and end of the data set are weighted more than the middle. The 
+%       and end of the data set are weighted more than the middle. The
 %       reason for the weights is to improve fitting of activation and
 %       concentration overpotentials, whose effects are limited to low
-%       and high current densities, respectively. Available options
-%       are:
-%           - 'default' -- Use exponentially changing weight for the 
-%                           beginning and end.
-%           - 'none' -- Do not use weights for the beginning and end
-% 
+%       and high current densities, respectively. Equation used for
+%       weighting is:
+%           weight = tan(y).^2 + 0.1,
+%       where y is determined differently based on the user choise.
+%       
+%       Available options are:
+%           - 'hl' or 'lh' -- For weighting both low and high current
+%                               values. y is the current normalized to
+%                               interval [-pi/4 pi/4]
+%           - 'h' -- For weighting high current values. y is the curent
+%                       normalized to interval [0 pi/4]
+%           - 'l' -- For weighting low current values. y is the curent
+%                       normalized to interval [-pi/4 0]
+%           - 'none' -- No additional weights applied (default)
+%
 %   Output:
 %       fitParam -- Fit coefficient values in a table with their standard
 %                   deviation (confidence value with 1 sigma)
 %       gof -- Goodness of fit values in a structure.
-%       PlottingCurves -- A structure containing the data used for fitting
-%                           as well as curves calculated from the fit.
-%       
+%
 %   Function FITUI updates the workspace of input func to include the
 %   coefficients
 %
@@ -49,7 +56,7 @@ function [fitParams,gof] = fitUI(fitFunc,voltage,current,varargin)
 
 
 defaultMethod = 'PS';
-defaultWeights = 'default';
+defaultWeights = 'none';
 
 parser = inputParser;
 addRequired(parser,'func',@(x) isa(x,'func'))
@@ -112,25 +119,35 @@ end
 
 %% Weighting
 switch weightsMethod
-    case "default"
-        % Weigh beginning and end of the measured current spectrum
-        x = current/max(current);
-        weights = (0.01.^x + 0.01.^(1-x) - 0.02)./(1-0.01);
+    case {"hl","lh"}
+        % Weigh beginning and end of the measured current spectrum.
+        % y = current normalized to the interval [-pi/4 pi/4]
+        x = current-(max(current)+min(current))/2;
+    case "h"
+        % Weigh the beginning of the measured current spectrum
+        % y = current normalized to the interval [0 pi/4]
+        x = current-min(current);
+    case "l"
+        % Weigh the end of the measured current spectrum
+        % y = current normalized to the interval [-pi/4 0]
+        x = current-max(current);
     case "none"
-        % Don't apply wieghts
-        weights = ones(size(current));
+        % Don't apply weights
+        x = ones(size(current));
 end
+y = x/max(abs(x))*pi/4;
+addedWeights = tan(y).^2 + 0.1;
 
 % Additinal weights due to measurement accuracy
-weights = weights.*errorWeights;
+weights = addedWeights.*errorWeights;
 
-%% Perform fit according to the chosen method	
+%% Perform fit according to the chosen method
 switch method
-
+    
     case "NLLSE" % Non-Linear Least Squares Error regression approach
-
-        methodStr = "Non-Linear Least Squares Error Regression";        
-
+        
+        methodStr = "Non-Linear Least Squares Error Regression";
+        
         % Retry fitting if R^2 not good enough
         ssr_best = Inf;
         tolX = 1e-8;
