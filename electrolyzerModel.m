@@ -415,7 +415,9 @@ classdef electrolyzerModel < handle
                 end
             end
             
-            [fitParams,gof,obj.PlottingCurves] = fitUI(obj.potentialFunc,U,I,'method',method,'weights',weightsMethod);
+            [fitParams,gof] = fitUI(obj.potentialFunc,U,I,'method',method,'weights',weightsMethod);
+            
+            obj.PlottingCurves = struct('currentMeasured',I,'voltageMeasured',U);
             
             obj.synchronizeFuncStorage;
             
@@ -451,15 +453,34 @@ classdef electrolyzerModel < handle
             if isempty(obj.PlottingCurves)
                 warning('No UI curve fit performed, therefore no UI curve to show.')
             else
-                I = obj.PlottingCurves.currentMeasured;
-                U = obj.PlottingCurves.voltageMeasured;
-                Ifit = obj.PlottingCurves.currentFit;
-                Ufit = obj.PlottingCurves.voltageFit;
+                current = obj.PlottingCurves.currentMeasured;
+                voltage = obj.PlottingCurves.voltageMeasured;
+                
+                % Calculate dense data vectors for the fitted UI curve
+                fullFitCurrent = min(current):0.001:max(current);
+                fullFitVoltage = mean(obj.calculate('current',fullFitCurrent),1);
+                
+                % Take samples from the dense data vectors
+                N = 100; % Number of evenly taken voltage samples
+                voltageSamples = linspace(min(fullFitVoltage),max(fullFitVoltage),N)';
+                iii = 1;
+                for ii = 1:N
+                    Udif = abs(fullFitVoltage-voltageSamples(ii));
+                    [~,ind] = min(Udif);
+                    if iii == 1 || (iii > 1 && abs(fullFitCurrent(ind)-fitCurrent(iii-1))>0.02)
+                        fitCurrent(iii,1) = fullFitCurrent(ind); % Final sampled current vector
+                        fitVoltage(iii,1) = fullFitVoltage(ind); % Final sampled voltage vector
+                        iii = iii+1;
+                    end
+                end
+                
+                obj.PlottingCurves.currentFit = fitCurrent;
+                obj.PlottingCurves.voltageFit = fitVoltage;
                 
                 figure('name','Automatic plot of the UI curve and the fit')
                 hold on;
-                errorbar(I(:,1),U(:,1),U(:,2),U(:,2),I(:,2),I(:,2),'o')
-                plot(Ifit,Ufit)
+                errorbar(current(:,1),voltage(:,1),voltage(:,2),voltage(:,2),current(:,2),current(:,2),'o')
+                plot(fitCurrent,fitVoltage)
                 xlabel("I")
                 ylabel("U")
                 legend("Data", "Fit", "Location", "Best")

@@ -1,8 +1,8 @@
-function [fitParams,gof,PlottingCurves] = fitUI(fitFunc,voltage,current,varargin)
+function [fitParams,gof] = fitUI(fitFunc,voltage,current,varargin)
 % FITUI Fits a given function for a UI curve with given voltage and
 % current data to find unknown coefficient values.
 %
-%   [fitParam,gof,plottingCurves] = FITUI(fitFunc,voltage,current) fits the
+%   [fitParam,gof] = FITUI(fitFunc,voltage,current) fits the
 %       given function to data using particle swarm optimisation and
 %       weighting beginning and end of the dataset.
 %       Inputs:
@@ -10,12 +10,12 @@ function [fitParams,gof,PlottingCurves] = fitUI(fitFunc,voltage,current,varargin
 %                   UI curve and all the necessary coefficients, constants
 %                   and measured values for the fit.
 %           voltage -- Measured voltage values to be used for fitting. Can
-%                       be a nx1 column vector containing the data or a nx2 
-%                       matrix containing the data in the first column and 
+%                       be a nx1 column vector containing the data or a nx2
+%                       matrix containing the data in the first column and
 %                       its standard deviation in the second column.
 %           current -- Measured current values to be used for fitting. Can
-%                       be a nx1 column vector containing the data or a nx2 
-%                       matrix containing the data in the first column and 
+%                       be a nx1 column vector containing the data or a nx2
+%                       matrix containing the data in the first column and
 %                       its standard deviation in the second column.
 %
 %   [_] = FITUI(_,'method',m) uses the given method for fitting. Available
@@ -74,7 +74,7 @@ elseif any(current < 0.005)
 end
 
 if ~strcmpi(method, 'PS') && ~strcmpi(method, 'NLLSE')
-   error("Given fitting method: " + method + " is not available. The available methods are PS (particle swarm) and NLLSE (non-linear least squares error).") 
+    error("Given fitting method: " + method + " is not available. The available methods are PS (particle swarm) and NLLSE (non-linear least squares error).")
 end
 
 %% Destructurize function handle, get coefficients and their limits, problem variable names and their values
@@ -187,14 +187,14 @@ switch method
         end
         
         % Fit 2 sigma confidence bounds [lower upper]
-        sigma = mean(abs(confint(fittedCurve)-coeffValues))/2; 
-    
+        sigma = mean(abs(confint(fittedCurve)-coeffValues))/2;
         
-    
+        
+        
     case "PS" % Particle swarm approach
         
         methodStr = "Particle Swarm Optimisation";
-		
+        
         nvars = length(coefficients); % Amount of fit parameters
         
         % Modify function handle to use vector input for fit parameters
@@ -253,33 +253,14 @@ for i = 1:length(coefficients)
     fitFunc.replaceParams(coefficients{i},[coeffValues(i) sigma(i)]);
 end
 
-%% Create structure for plotting vectors
-fullFitCurrent = min(current):0.001:max(current);
-fullFitVoltage = mean(fitFunc.calculate('current',fullFitCurrent),1);
 
-% Take samples from the dense data vectors
-        N = 100; % Number of evenly taken voltage samples
-        voltageSamples = linspace(min(fullFitVoltage),max(fullFitVoltage),N)';
-        iii = 1;
-        for ii = 1:N
-            Udif = abs(fullFitVoltage-voltageSamples(ii));
-            [~,ind] = min(Udif);
-            if iii == 1 || (iii > 1 && abs(fullFitCurrent(ind)-currentSampled(iii-1))>0.02)
-                currentSampled(iii,1) = fullFitCurrent(ind); % Final sampled current vector
-                voltageSampled(iii,1) = fullFitVoltage(ind); % Final sampled voltage vector
-                iii = iii+1;
-            end
-        end
-
-
-PlottingCurves = struct('currentMeasured',[current currentStd],'voltageMeasured',[voltage voltageStd],'currentFit',currentSampled,'voltageFit',voltageSampled);
 
 end
 
 
 %%
 function [lower, upper, start] = getArgumentLimits(argumentList, I)
-% GETARGUMENTLIMITS gets lower and upper limits and also startpoint of each 
+% GETARGUMENTLIMITS gets lower and upper limits and also startpoint of each
 %	fitting coefficient.
 %       Inputs:
 %           argumentList -- List of coefficient names in a cell array.
@@ -288,7 +269,7 @@ function [lower, upper, start] = getArgumentLimits(argumentList, I)
 %       Outputs:
 %           lower -- Array of the lower limits for the coefficients in the
 %                       same order as listed in argumentList.
-%           higher -- Array of the higher limits for the coefficients in 
+%           higher -- Array of the higher limits for the coefficients in
 %                       the same order as listed in argumentList.
 %           start -- Array of starting points for non-linear least squares
 %                       error estimation listed in the same order as in
@@ -331,11 +312,11 @@ end
 
 
 
-%% 
+%%
 function modFuncHandle = vectorifyFuncHandle(funcHandle,nCoeffs,nProbVars)
-% VECTORIFYFUNCHANDLE returns a function handle with one vector for the 
-%   coefficients transformed from input function handle with separate 
-%   coefficients that are organized in order 
+% VECTORIFYFUNCHANDLE returns a function handle with one vector for the
+%   coefficients transformed from input function handle with separate
+%   coefficients that are organized in order
 %   (coefficients, problem variables, independent variable).
 %       Inputs:
 %           funcHandle -- The function handle to modify
@@ -343,20 +324,20 @@ function modFuncHandle = vectorifyFuncHandle(funcHandle,nCoeffs,nProbVars)
 %           nProbVars -- Number of problem variables
 %       Output:
 %           modFuncHandle -- Function handle modified to take cell array
-%                               inputs for coefficients instead of listing 
+%                               inputs for coefficients instead of listing
 %                               them separately.
-       
-    % Creating symbolic variables for the function handle
-    x = num2cell(sym('x', [1 nCoeffs])); % fit parameters
-    y = num2cell(sym('y', [1 nProbVars])); % problem variables
-    syms current; % Current input
-    
-    % Calculating the symbolic result
-    z = funcHandle(x{:},y{:},current);
-    
-    % Creating a modified function handle from the symbolic result
-    modFuncHandle = matlabFunction(z,'Vars',[{cell2sym(x)},y(:)',{current}]); 
-    
+
+% Creating symbolic variables for the function handle
+x = num2cell(sym('x', [1 nCoeffs])); % fit parameters
+y = num2cell(sym('y', [1 nProbVars])); % problem variables
+syms current; % Current input
+
+% Calculating the symbolic result
+z = funcHandle(x{:},y{:},current);
+
+% Creating a modified function handle from the symbolic result
+modFuncHandle = matlabFunction(z,'Vars',[{cell2sym(x)},y(:)',{current}]);
+
 end
 
 
