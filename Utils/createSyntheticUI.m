@@ -2,7 +2,7 @@ function [SynData,FullData,Workspace] = createSyntheticUI(varargin)
 % CREATESYNTHETICUI Creates synthetic Voltage-Current pairs from an
 %   electrolyzer UI curve.
 %
-%   [synData,Workspace] = CREATESYNTHETICUI() creates synthetic UI curve
+%   [SynData,FullData,Workspace] = CREATESYNTHETICUI() creates synthetic UI curve
 %       with N = 20 samples using default coefficients. Buttler-Volmer
 %       equation is used for activation overpotential. The synthetic data
 %       is outputed in SynData structure containing fields 'current' and
@@ -34,8 +34,8 @@ function [SynData,FullData,Workspace] = createSyntheticUI(varargin)
 %       - SynData -- Structure containing sampled data in fields 'current' 
 %           and 'voltage', both of them being Nx2 matrices:
 %           (first column = data, second column = standard deviation).
-%       - FullData -- Structure containing full data in fields 'current' 
-%           and 'voltage', both of them being Nx2 matrices:
+%       - FullData -- Structure containing non-sampled data in fields
+%           'current' and 'voltage', both of them being Nx2 matrices:
 %           (first column = data, second column = standard deviation).
 %       - Workspace -- Structure including the variables, constants and
 %           coefficients used for creating the synthetic data.

@@ -127,7 +127,7 @@ eModel.addPotentials('nernst','ohmic','activation')
 % constants and coefficients to the Workspace structure
 eModel.report;
 
-%% Copying
+%% Copying the modelling object
 % If one wants to copy the created electrolyzer model before further
 % operations, direct reassigning is not going to do the trick. As the class
 % |electrolyzerModel| inherits class |handle|, changes to a reassigned
@@ -135,14 +135,6 @@ eModel.report;
 % has a method |copy| included that creates a separate object that includes
 % all the information from its parent but breaks the link between the child
 % and the parent objects.
-eModel2 = eModel;
-if isequal(eModel,eModel2)
-    disp("Copy (eModel2) is the same object as the original (eModel)")
-else
-    disp("Copy (eModel2) is separate from the original (eModel)")
-end
-
-%%
 eModel2 = eModel.copy;
 if isequal(eModel,eModel2)
     disp("Copy (eModel2) is the same object as the original (eModel)")
@@ -163,14 +155,29 @@ temperatureData = AlkaliUI.T(:,1);
 pressureData = AlkaliUI.P(:,1);
 
 %%
+% Alternatively one can create synthetic UI curve for testing purpose using
+% special function |createSyntheticUI|:
+[SynData,~,SynWorkspace] = createSyntheticUI();
+
+%%
+% Here the structure |SynData| contains the voltage and current vectors,
+% with their respective standard deviations, in fields that are named
+% accordingly. |SynWorkspace| contains the variables and parameters used
+% for the data synthetisation.
+
+%%
 % Let's replace the preset temperature from the electrolyzer model with the
 % measured temperature vector
 eModel.replaceParams('T',temperatureData,'ps',pressureData);
 
 %%
-% Let's choose particle swarm as our fitting method and enable weighting of
-% the low current values.
+% Let's choose particle swarm as our fitting method.
 method = "PS";
+%%
+% Alternatively one could use the Non-Linear Least Squares Error regression
+% by calling for |"NLLSE"|.
+%
+% Weighting of the low current values is enabled with the following option:
 weights = "l";
 %%
 % The weights are added to improve parametrization of the activation
@@ -184,6 +191,12 @@ weights = "l";
 [fitParams,gof] = eModel.fitUI(voltageData,currentData,'method',method,'weights',weights);
 
 %%
+% *NOTE:* The fitting tool doesn't consider the units of the measured data
+% but the user has to keep in mind the used units. Some fitting
+% coefficients are sensitive to units, for example resistance |r| and
+% exchange current density |j0|.
+
+%% Viewing the results
 % To see the results, one can use the |showUI| method to perform a quick
 % automated plot.
 eModel.showUI
@@ -205,3 +218,17 @@ disp(eModel.getCoefficients)
 % * rsquare: the R^2 value of the fit
 %
 disp(gof)
+
+%% Using fit parameters
+% To calculate the voltage values based on the just fitted UI curve, one
+% can use the |calculate| method of |electrolyzerModel|.
+Ufit = eModel.calculate('current',currentData);
+
+%%
+% The variables still missing from the Workspace have to be provided as
+% name value pairs. The variables given as input to the |calculate| method
+% are preferred over the values with the same name already contained in the
+% Workspace. This way the model can be used to calculate cell voltage based
+% on the UI curve in different conditions than where the curve used for
+% parametrization was measured.
+

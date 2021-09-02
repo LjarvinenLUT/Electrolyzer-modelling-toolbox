@@ -47,6 +47,8 @@ classdef electrolyzerModel < handle
     %                           Workspace structure.
     %       replaceParams --  A method for replacing parameters in the
     %                           potentialFunc Workspace structure.
+    %       report -- Print a report of all the properties of the modelling
+    %                   object.
     %       showUI -- Plots the UI curve for the model.
     %       setParams -- Set parameters in the Workspace structure of the
     %                       potentialFunc object
@@ -521,15 +523,13 @@ classdef electrolyzerModel < handle
                 fprintf('      Empty Workspace\n')
             end
             fprintf('\n funcStorage:\n')
-            funcStorage = obj.funcStorage;
-            if ~isempty(funcStorage)
-                disp(funcStorage)
+            if ~isempty(obj.funcStorage)
+                disp(obj.funcStorage)
             else
                 fprintf('   Empty funcStorage\n')
             end
             fprintf('\n PlottingCurves:')
-            PlottingCurves = obj.PlottingCurves;
-            if ~isempty(PlottingCurves)
+            if ~isempty(obj.PlottingCurves)
                 fprintf(' [%dx%d struct] \n',size(obj.PlottingCurves,1),size(obj.PlottingCurves,2))
             else
                 fprintf(' No curves available. Perform model fit to get plotting curves.\n\n')

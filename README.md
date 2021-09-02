@@ -1,4 +1,5 @@
 # Electrolysis modelling toolbox
+09/2021
 
 
 VERSION
@@ -53,4 +54,13 @@ Email: Pietari.Puranen@lut.fi
 Lauri Järvinen
 Junior researcher at the Lappeenranta-Lahti University of Technology LUT
 Email: Lauri.Jarvinen@lut.fi
+
+
+
+AKNOWLEDGEMENTS
+
+Marchov Chain Monte Carlo (MCMC) tools provided by Marko Laine have been 
+used for the determination of uncertainty in curve fitting when using the 
+particleswarm optimization method. The licensing for the tools can be found
+under ./Utils/mcmcstat/LICENSE.txt
 

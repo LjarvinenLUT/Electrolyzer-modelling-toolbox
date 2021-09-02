@@ -3,9 +3,9 @@
 
 [toolpath,~,~] = fileparts(which('electrolyzerModel'));
 
-addpath([toolpath '/Utils'])
-addpath([toolpath '/Utils/mcmcstat'])
-addpath([toolpath '/Utils/legendflex'])
+addpath(genpath([toolpath '/Utils']))
 addpath([toolpath '/Tests'])
 addpath([toolpath '/Modelling'])
 addpath([toolpath '/TestData'])
+addpath(genpath([toolpath '/Examples']))
+addpath([toolpath '/doc'])

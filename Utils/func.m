@@ -31,6 +31,13 @@ classdef func < handle
     %                           values for the coefficients. Alternatively
     %                           they can be manually provided using
     %                           replaceParams method.
+    %                       - Dependencies between any two variables. Every
+    %                           time any Workspace variables are modified,
+    %                           the dependencies are run to refresh the
+    %                           dependent variables. Dependencies are
+    %                           stored as strings of the commands and
+    %                           function calls that are used to calculate
+    %                           the dependent variables.
     %
     %   FUNC Methods:
     %       calculate -- Calculates voltage from the UI curve based on
@@ -54,15 +61,16 @@ classdef func < handle
     %       isWorkspace -- Checks if the given structure fulfills the
     %                       requirements for a Workspace.
     %
-    %   See also FUNCTION_HANDLE, ISCOMPLETESTRUCT
+    %   See also FUNCTION_HANDLE, ELECTROLYZERMODEL
    
     properties (SetAccess = protected)
        equation; % Function handle in string form
        funcHandle; % Function handle of the function that uses only Workspace structure as an input
-       Workspace; % Structure containing the Coefficients, Variables and Constants:
+       Workspace; % Structure containing the Coefficients, Variables, Constants and Dependencies between them:
 %         Coefficients; % Structure containing the coefficients
 %         Variables; % Structure containing the variables
 %         Constants; % Structure containing the constants
+%         Dependencies; % Structure containing the dependencies as strings
     end
     
     %% Public methods
@@ -138,11 +146,13 @@ classdef func < handle
             
             if ismember('Dependencies',fieldnames(obj.Workspace))
                 TempWorkspace = rmfield(obj.Workspace,'Dependencies'); % Avoid replacing dependencies if named the same as their respective variable
+                Dependencies = obj.Workspace.Dependencies;
+                TempWorkspace = addValuesToStruct(TempWorkspace,paramsToReplace);
+                TempWorkspace.Dependencies = Dependencies;
+                obj.Workspace = TempWorkspace;
             else
-                TempWorkspace = obj.Workspace;
+                obj.Workspace = addValuesToStruct(obj.Workspace,paramsToReplace);
             end
-            
-            obj.Workspace = addValuesToStruct(TempWorkspace,paramsToReplace);
             
             obj.refreshWorkspace;
         end
@@ -537,7 +547,7 @@ classdef func < handle
                     try
                         eval(Workspace.Dependencies.(fn{i}))
                     catch ME
-                        if strcmp(ME.identifier,'MATLAB:InputParser:ArgumentFailedValidation')
+                        if strcmp(ME.identifier,'MATLAB:InputParser:ArgumentFailedValidation')||strcmp(ME.identifier,'MATLAB:undefinedVarOrClass')
                             continue;
                         else
                             rethrow(ME)
