@@ -45,6 +45,6 @@ function Uocv = nernst(type,varargin)
     
     %% Nernst equation
     
-    Uocv = func.add(reversible(model),nernstPressureCorrection(type));
+    Uocv = func.add(nernstReversible(model),nernstPressureCorrection(type));
     
 end

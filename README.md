@@ -26,14 +26,16 @@ values and their margins of uncertainty.
 
 INSTALLATION
 
-There are two options for preparing this toolbox ready for usage in any 
+There are three options for preparing this toolbox ready for usage in any 
 Matlab project:
 
-1. If you are allowed to modify the Matlab search path defined in pathdef.m
+1. If you have admin rights and the file electrolyzerModellingToolbox.mltbx
+    - Double click on the .mltbx file to initiate installation.
+2. If you are allowed to modify the Matlab search path defined in pathdef.m
 	- Open the directory of the toolbox in Matlab
     - Run script installEModel.m to add all the necessary folders to the
         search path and save it in pathdef.m.
-2. If you are not allowed to modify permanently the Matlab search path
+3. If you are not allowed to modify permanently the Matlab search path
     - Copy the script startup.m from the toolbox to any project you want to
         use it.
     - Replace the value of the variable toolpath to include the full path

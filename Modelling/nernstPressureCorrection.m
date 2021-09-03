@@ -78,7 +78,8 @@ function Ucor = nernstPressureCorrection(type)
             Workspace.Variables.electrolyte = []; % 1 = KOH, 2 = NaOH, helper variable for determining the electrolyte related parameters
             
             % Electrolyte parameters
-            Workspace.Dependencies.electrolyteParameters = '[Workspace.Variables.psvEl,Workspace.Variables.aH2OEl] = electrolyteParameters(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte);'; % Dependency format
+            Workspace.Dependencies.psvEl = 'Workspace.Variables.psvEl = electrolyteWaterVaporPressure(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte);'; % Dependency format
+            Workspace.Dependencies.aH2OEl = 'Workspace.Variables.aH2OEl = electrolyteWaterActivity(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte);'; % Dependency format
 %             eval(Workspace.Dependencies.electrolyteParameters);
             
 %             if any(Workspace.Variables.ps < Workspace.Variables.psvEl)

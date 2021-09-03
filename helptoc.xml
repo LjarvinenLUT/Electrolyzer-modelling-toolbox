@@ -3,7 +3,7 @@
 <toc version="2.0">
 <!-- First tocitem specifies top level in Help browser Contents pane -->
 <!-- This can be a roadmap page, as shown below, or a content page -->
-    <tocitem target="mytoolbox_product_page.html">MyToolbox Toolbox
+    <tocitem target="FrontPage.html">Electrolyzer Modelling Toolbox
         <!-- Nest tocitems to create hierarchical entries in  Contents-->
         <!-- To include icons, use the following syntax for tocitems: -->
         <!-- <tocitem target="foo.html" image="HelpIcon.NAME"> -->
@@ -14,8 +14,8 @@
         <!-- Icon images used for these entries are also stored in -->
         <!-- matlabroot/toolbox/matlab/icons -->
         <!-- A Getting Started Guide usually comes first -->
-        <tocitem target="mytbx_gs_top.html" image="HelpIcon.GETTING_STARTED">
-            Getting Started with the MyToolbox Toolbox
+        <tocitem target="GettingStarted.html" image="HelpIcon.GETTING_STARTED">
+            Getting Started with the Electrolyzer Modelling Toolbox
             <tocitem target="mytbx_reqts_example.html">System Requirements
             </tocitem>
             <tocitem target="mytbx_features_example.html">Features

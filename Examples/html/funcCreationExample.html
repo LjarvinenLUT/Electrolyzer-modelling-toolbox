@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>funcCreationExample</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-09-02"><meta name="DC.source" content="funcCreationExample.m"><style type="text/css">
+      --><title>funcCreationExample</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-09-03"><meta name="DC.source" content="funcCreationExample.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -84,7 +84,7 @@ disp(theFunc.viewWorkspace)
 
     a    {["Constant: scalar without confidence bounds"]}           2       NaN         NaN              NaN       
     x    {["Variable: vector of length 101"            ]}         0.5         0           1              NaN       
-    t    {["Variable: vector of length 101"            ]}     0.49802       0.2           1              NaN       
+    t    {["Variable: dependent vector of length 101"  ]}     0.49802       0.2           1              NaN       
     b    {["Coefficient: no values assigned"           ]}         NaN       NaN         NaN              NaN       
 
 </pre><p>Alternatively the the <tt>func</tt> object could now be included to an <tt>electrolyzerModel</tt> object with <tt>electrolyzerModel.addPotentials</tt> method. Parameters can be replaced also with the help of <tt>electrolyzerModel.replaceParams</tt> method.</p><p>For determining the value for parameter <img src="funcCreationExample_eq02044268985122151499.png" alt="$b$"> through curve fitting, its value has to be left empty. For this example, we assume the fit has been performed and the result has been:</p><pre class="codeinput">b = 3.25;

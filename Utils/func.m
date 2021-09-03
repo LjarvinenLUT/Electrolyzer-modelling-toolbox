@@ -408,34 +408,43 @@ classdef func < handle
             valueMean = nan(size(fieldName));
             valueMax = nan(size(fieldName));
             standardDeviation = nan(size(fieldName));
-            % Constants
             for i = 1:length(fieldName)
                 value = obj.Workspace.(fields{i,1}).(fields{i,2});
                 if strcmpi(fields(i,2),'electrolyte')
                     descriptionText = ": numeric helper variable for alkaline";
                     valueMean(i) = value(:,1);
+                elseif ismember('Dependencies',fieldnames(obj.Workspace)) && any(ismember(fieldName(i),fieldnames(obj.Workspace.Dependencies)))
+                    descriptionText = ": dependent";
+                    if length(value(:,1)) == 1
+                        valueMean(i) = value(:,1);
+                        descriptionText = strcat(descriptionText," scalar");
+                    else
+                        valueMin(i) = min(value(:,1));
+                        valueMax(i) = max(value(:,1));
+                        valueMean(i) = mean(value(:,1));
+                        descriptionText = strcat(descriptionText,strcat(" vector of length ",num2str(length(value(:,1)))));
+                    end
                 elseif ~isempty(value)
-                    switch length(value(:,1))
-                        case 1
-                            valueMean(i) = value(:,1);
-                            descriptionText = ": scalar";
-                            if length(value(1,:)) == 2
-                                standardDeviation(i) = value(1,2);
-                                descriptionText = strcat(descriptionText," with confidence bounds");
-                            else
-                                descriptionText = strcat(descriptionText," without confidence bounds");
-                            end
-                        otherwise
-                            valueMin(i) = min(value(:,1));
-                            valueMax(i) = max(value(:,1));
-                            valueMean(i) = mean(value(:,1));
-                            descriptionText = strcat(": vector of length ",num2str(length(value(:,1))));
-                            if ~kstest(value(:,1)) % If data is normally distributed
-                                standardDeviation(i) = std(value(:,1));
-                                descriptionText = strcat(descriptionText,", normally distributed");
-                            elseif length(value(1,:)) == 2
-                                descriptionText = strcat(descriptionText," with individual values of standard deviation");
-                            end
+                    if length(value(:,1)) == 1
+                        valueMean(i) = value(:,1);
+                        descriptionText = ": scalar";
+                        if length(value(1,:)) == 2
+                            standardDeviation(i) = value(1,2);
+                            descriptionText = strcat(descriptionText," with confidence bounds");
+                        else
+                            descriptionText = strcat(descriptionText," without confidence bounds");
+                        end
+                    else
+                        valueMin(i) = min(value(:,1));
+                        valueMax(i) = max(value(:,1));
+                        valueMean(i) = mean(value(:,1));
+                        descriptionText = strcat(": vector of length ",num2str(length(value(:,1))));
+                        if ~kstest(value(:,1)) % If data is normally distributed
+                            standardDeviation(i) = std(value(:,1));
+                            descriptionText = strcat(descriptionText,", normally distributed");
+                        elseif length(value(1,:)) == 2
+                            descriptionText = strcat(descriptionText," with individual values of standard deviation");
+                        end
                     end
                 else
                     descriptionText = ": no values assigned";
@@ -476,7 +485,7 @@ classdef func < handle
             
             newFunc = func(newFuncHandle,NewWorkspace);
             
-            newFunc.refreshWorkspace;
+%             newFunc.refreshWorkspace;
             
         end
         

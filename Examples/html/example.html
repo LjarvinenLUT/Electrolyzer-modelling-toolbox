@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>Electrolyzer modelling tool: Step-by-step usage example of the UI curve fitting functionality</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-09-02"><meta name="DC.source" content="example.m"><style type="text/css">
+      --><title>Electrolyzer modelling tool: Step-by-step usage example of the UI curve fitting functionality</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-09-03"><meta name="DC.source" content="example.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -183,8 +183,8 @@ Electrolyzer model properties:
     T              {["Variable: scalar without confidence bounds"    ]}      353.15       NaN         NaN              NaN       
     ps             {["Variable: scalar without confidence bounds"    ]}           3       NaN         NaN              NaN       
     m              {["Variable: scalar without confidence bounds"    ]}    0.010715       NaN         NaN              NaN       
-    psvEl          {["Variable: scalar without confidence bounds"    ]}     0.47332       NaN         NaN              NaN       
-    aH2OEl         {["Variable: scalar without confidence bounds"    ]}     0.99978       NaN         NaN              NaN       
+    psvEl          {["Variable: dependent scalar"                    ]}     0.47332       NaN         NaN              NaN       
+    aH2OEl         {["Variable: dependent scalar"                    ]}     0.99978       NaN         NaN              NaN       
     current        {["Variable: no values assigned"                  ]}         NaN       NaN         NaN              NaN       
     r              {["Coefficient: no values assigned"               ]}         NaN       NaN         NaN              NaN       
     alpha          {["Coefficient: no values assigned"               ]}         NaN       NaN         NaN              NaN       
@@ -244,16 +244,16 @@ R^2: 0.997256
 </pre><pre class="codeoutput">       r         alpha          j0    
     ________    ________    __________
 
-     0.67629     0.11497    0.00050342
-    0.085287    0.011359    0.00041369
+     0.67635     0.11498    0.00050322
+    0.089273    0.012143    0.00044188
 
 </pre><p>or by calling <tt>electrolyzerModel.getCoefficients</tt> method.</p><pre class="codeinput">disp(eModel.getCoefficients)
-</pre><pre class="codeoutput">        r: [0.6763 0.0853]
-    alpha: [0.1150 0.0114]
-       j0: [5.0342e-04 4.1369e-04]
+</pre><pre class="codeoutput">        r: [0.6764 0.0893]
+    alpha: [0.1150 0.0121]
+       j0: [5.0322e-04 4.4188e-04]
 
 </pre><p>Some goodness of fit values are stored in <tt>fitUI</tt> output <tt>gof</tt>:</p><div><ul><li>ssr: Square Sum Residuals</li><li>rmse: Root Mean Square Error</li><li>rsquare: the R^2 value of the fit</li></ul></div><pre class="codeinput">disp(gof)
-</pre><pre class="codeoutput">        ssr: 6.0372e-04
+</pre><pre class="codeoutput">        ssr: 6.0377e-04
        rmse: 0.0074
     rsquare: 0.9973
 

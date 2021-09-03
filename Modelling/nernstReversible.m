@@ -1,11 +1,11 @@
-function Urev = reversible(model)
-% REVERSIBLE  Create a func object for calculation of reversible potential
+function Urev = nernstReversible(model)
+% NERNSTREVERSIBLE  Create a func object for calculation of reversible potential
 % of the water splitting reaction for Nernst equation.
 % 
-%   Urev = REVERSIBLE(model) uses a model defined by parameter model,
+%   Urev = NERNSTREVERSIBLE(model) uses a model defined by parameter model,
 %       provided as an integer
 % 
-%   REVERSIBLE has six (6) models available. Their more in detail
+%   NERNSTREVERSIBLE has six (6) models available. Their more in detail
 %   description can be found in the mathematical documentation of this
 %   tool.
 %
