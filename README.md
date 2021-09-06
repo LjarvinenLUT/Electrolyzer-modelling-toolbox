@@ -4,7 +4,7 @@
 
 VERSION
 
-Beta 0.2
+Beta 0.3
 
 
 COPYRIGHT AND LICENSING
