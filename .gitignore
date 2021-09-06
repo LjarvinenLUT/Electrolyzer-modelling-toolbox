@@ -4,4 +4,5 @@
 *.pdf
 FigureParameters.mat
 pathdef.m
-/.thrash
+*.thrash
+.thrash

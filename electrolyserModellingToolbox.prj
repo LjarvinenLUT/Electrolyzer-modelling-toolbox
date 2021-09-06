@@ -1,13 +1,13 @@
 <deployment-project plugin="plugin.toolbox" plugin-version="1.0">
-  <configuration file="C:\Data\Git Repositories\Electrolysis modelling tool\electrolyserModellingToolbox.prj" location="C:\Data\Git Repositories\Electrolysis modelling tool" name="electrolyserModellingToolbox" target="target.toolbox" target-name="Package Toolbox">
+  <configuration build-checksum="647886309" file="C:\Data\Git_Repositories\Electrolysis_Modelling_Tool\electrolyserModellingToolbox.prj" location="C:\Data\Git_Repositories\Electrolysis_Modelling_Tool" name="electrolyserModellingToolbox" target="target.toolbox" target-name="Package Toolbox">
     <param.appname>electrolyserModellingToolbox</param.appname>
     <param.authnamewatermark>Pietari Puranen</param.authnamewatermark>
     <param.email>Pietari.Puranen@lut.fi</param.email>
     <param.company>LUT University</param.company>
     <param.summary>Water electrolysis modelling toolbox for UI curve parametrization</param.summary>
-    <param.description />
+    <param.description>Beta version of the toolbox</param.description>
     <param.screenshot />
-    <param.version>0.2</param.version>
+    <param.version>0.3.0.7</param.version>
     <param.output>${PROJECT_ROOT}\electrolyserModellingToolbox.mltbx</param.output>
     <param.products.name />
     <param.products.id />
@@ -37,20 +37,66 @@
 Figures
 Tests
 .gitignore
+Utils/legendflex
 TestData/*.xlsx
 TestData/*.m
-TestData/JulichData.mat</param.exclude.filters>
+TestData/JulichData.mat
+.thrash
+startup.m
+startupEModel.m
+installEModel.m</param.exclude.filters>
     <param.exclude.pcodedmfiles>true</param.exclude.pcodedmfiles>
-    <param.examples />
+    <param.examples>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;examples&gt;
+   &lt;exampleCategory name="doc"&gt;
+      &lt;example name="funcCreationExample" type="html"&gt;
+         &lt;file type="source"&gt;/doc/html/funcCreationExample.html&lt;/file&gt;
+         &lt;file type="main"&gt;/doc/funcCreationExample.m&lt;/file&gt;
+         &lt;file type="thumbnail"&gt;/doc/html/funcCreationExample.png&lt;/file&gt;
+         &lt;file type="image"&gt;/doc/html/funcCreationExample_01.png&lt;/file&gt;
+      &lt;/example&gt;
+      &lt;example name="usageExample" type="html"&gt;
+         &lt;file type="source"&gt;/doc/html/usageExample.html&lt;/file&gt;
+         &lt;file type="main"&gt;/doc/usageExample.m&lt;/file&gt;
+         &lt;file type="thumbnail"&gt;/doc/html/usageExample.png&lt;/file&gt;
+         &lt;file type="image"&gt;/doc/html/usageExample_01.png&lt;/file&gt;
+      &lt;/example&gt;
+      &lt;example name="ClassesAndFunctions" type="html"&gt;
+         &lt;file type="source"&gt;/doc/html/ClassesAndFunctions.html&lt;/file&gt;
+         &lt;file type="main"&gt;/doc/ClassesAndFunctions.mlx&lt;/file&gt;
+         &lt;file type="thumbnail"/&gt;
+      &lt;/example&gt;
+      &lt;example name="FrontPage" type="html"&gt;
+         &lt;file type="source"&gt;/doc/html/FrontPage.html&lt;/file&gt;
+         &lt;file type="main"&gt;/doc/FrontPage.mlx&lt;/file&gt;
+         &lt;file type="thumbnail"/&gt;
+      &lt;/example&gt;
+      &lt;example name="GettingStarted" type="html"&gt;
+         &lt;file type="source"&gt;/doc/html/GettingStarted.html&lt;/file&gt;
+         &lt;file type="main"&gt;/doc/GettingStarted.mlx&lt;/file&gt;
+         &lt;file type="thumbnail"/&gt;
+      &lt;/example&gt;
+   &lt;/exampleCategory&gt;
+&lt;/examples&gt;</param.examples>
     <param.demosxml />
     <param.apps />
     <param.registered.apps />
     <param.docs>${PROJECT_ROOT}\info.xml</param.docs>
     <param.getting.started.guide>${PROJECT_ROOT}\doc\GettingStarted.mlx</param.getting.started.guide>
-    <param.matlabpath.excludes />
+    <param.matlabpath.excludes>
+      <item>/doc/doc/html</item>
+      <item>/electrolyzerModellingToolbox/.thrash</item>
+      <item>/electrolyzerModellingToolbox/Figures</item>
+      <item>/electrolyzerModellingToolbox/Tests</item>
+      <item>/electrolyzerModellingToolbox/Utils/legendflex</item>
+    </param.matlabpath.excludes>
     <param.javaclasspath.excludes />
-    <param.exported.on.package>false</param.exported.on.package>
-    <param.required.addons />
+    <param.exported.on.package>true</param.exported.on.package>
+    <param.required.addons>
+      <requiredaddons>
+        <requiredAddOn downloadURL="" earliest="earliest" fromRepository="false" id="68ecc242-7b1d-4fac-8b73-ec7095d4bc50" include="false" latest="latest">electrolyserModellingToolbox</requiredAddOn>
+      </requiredaddons>
+    </param.required.addons>
     <param.matlab.project.id />
     <param.matlab.project.name />
     <param.release.start />
@@ -70,7 +116,6 @@ TestData/JulichData.mat</param.exclude.filters>
       <param.authnamewatermark />
       <param.email />
       <param.company />
-      <param.description />
       <param.screenshot />
       <param.output />
       <param.products.name />
@@ -78,14 +123,10 @@ TestData/JulichData.mat</param.exclude.filters>
       <param.products.version />
       <param.platforms />
       <param.exclude.pcodedmfiles />
-      <param.examples />
       <param.demosxml />
       <param.apps />
       <param.registered.apps />
-      <param.matlabpath.excludes />
       <param.javaclasspath.excludes />
-      <param.exported.on.package />
-      <param.required.addons />
       <param.matlab.project.id />
       <param.matlab.project.name />
       <param.release.start />
@@ -106,23 +147,17 @@ TestData/JulichData.mat</param.exclude.filters>
       <file>${PROJECT_ROOT}</file>
     </fileset.rootdir>
     <fileset.rootfiles>
+      <file>${PROJECT_ROOT}\demos.xml</file>
       <file>${PROJECT_ROOT}\doc</file>
-      <file>${PROJECT_ROOT}\electrolyzerModel.m</file>
-      <file>${PROJECT_ROOT}\helptoc.xml</file>
+      <file>${PROJECT_ROOT}\electrolyzerModellingToolbox</file>
       <file>${PROJECT_ROOT}\info.xml</file>
-      <file>${PROJECT_ROOT}\installEModel.m</file>
-      <file>${PROJECT_ROOT}\Modelling</file>
       <file>${PROJECT_ROOT}\README.md</file>
-      <file>${PROJECT_ROOT}\startup.m</file>
-      <file>${PROJECT_ROOT}\startupEModel.m</file>
-      <file>${PROJECT_ROOT}\TestData</file>
-      <file>${PROJECT_ROOT}\Utils</file>
     </fileset.rootfiles>
     <fileset.depfun.included />
     <fileset.depfun.excluded />
     <fileset.package />
     <build-deliverables>
-      <file location="${PROJECT_ROOT}" name="electrolyserModellingToolbox.mltbx" optional="false">C:\Data\Git Repositories\Electrolysis modelling tool\electrolyserModellingToolbox.mltbx</file>
+      <file location="${PROJECT_ROOT}" name="electrolyserModellingToolbox.mltbx" optional="false">C:\Data\Git_Repositories\Electrolysis_Modelling_Tool\electrolyserModellingToolbox.mltbx</file>
     </build-deliverables>
     <workflow />
     <matlab>

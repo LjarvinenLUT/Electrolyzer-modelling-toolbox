@@ -1,0 +1,201 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>funcCreationExample</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-09-06"><meta name="DC.source" content="funcCreationExample.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Creating custom potential term as a <tt>func</tt> object</a></li><li><a href="#8">Reason for using <tt>func</tt> objects</a></li></ul></div><h2 id="1">Creating custom potential term as a <tt>func</tt> object</h2><p>If the user cannot find the desired models from the modelling functions provided with the toolbox, they can define their own potential terms by creating custom <tt>func</tt> objects. To create a <tt>func</tt> object one needs a <tt>Workspace</tt> structure and the function handle that uses <b>only</b> the <tt>Workspace</tt> as its input. The <tt>Workspace</tt> structure should contain all the required variables, constants and coefficients (at least empty fields) in the <tt>Variables</tt>, <tt>Constants</tt> and <tt>Coefficients</tt> substructures, respectively. If there are any dependencies between any of the abovementioned parameters, these should be stored as strings in the <tt>Dependencies</tt> substructure. The values of the parameters can be left empty for later addition (recommended when there are multiple potential terms using the same parameters) or they can be preset in the creation process.</p><p>Let's create a simple custom <tt>func</tt> object as an example. The easiest way is to build the function handle first to see which parameters are required for the <tt>Workspace</tt></p><pre class="codeinput">funcHandle = @(Workspace) Workspace.Constants.a*Workspace.Variables.x.^Workspace.Coefficients.b - Workspace.Variables.t;
+</pre><p>The function handle above represents function</p><p><img src="funcCreationExample_eq08560754093089252866.png" alt="$$a x^b - t.$$"></p><p>For this potential term the <tt>Workspace</tt> contains one constant <img src="funcCreationExample_eq05508344529756732484.png" alt="$a$">, two variables <img src="funcCreationExample_eq12428413953531653171.png" alt="$x$"> and <img src="funcCreationExample_eq12656067504604335951.png" alt="$t$">, and one coefficient <img src="funcCreationExample_eq02044268985122151499.png" alt="$b$">.</p><p>The substructures needed for the <tt>Workspace</tt> can now be created:</p><pre class="codeinput">Constants = struct(<span class="string">'a'</span>,2);
+Variables = struct(<span class="string">'x'</span>,[],<span class="string">'t'</span>,[]);
+Coefficients = struct(<span class="string">'b'</span>,[]);
+Dependencies = struct(<span class="string">'t'</span>,<span class="string">'Workspace.Variables.t = sin(5*pi.*Workspace.Variables.x);'</span>);
+</pre><p>Here theconstant <img src="funcCreationExample_eq05508344529756732484.png" alt="$a$"> has been assigned value 2 in the creation process but the other parameters are left empty for now. Also the variable <img src="funcCreationExample_eq12656067504604335951.png" alt="$t$"> is defined to be dependent on the value of variable <img src="funcCreationExample_eq12428413953531653171.png" alt="$x$"> through function <img src="funcCreationExample_eq13862916669797514391.png" alt="$t = \sin(5\pi x)$">.</p><p>After the substructures have been defined, the <tt>Workspace</tt> structure can be built:</p><pre class="codeinput">Workspace = struct(<span class="string">'Variables'</span>,Variables,<span class="keyword">...</span>
+                   <span class="string">'Constants'</span>,Constants,<span class="keyword">...</span>
+                   <span class="string">'Coefficients'</span>,Coefficients,<span class="keyword">...</span>
+                   <span class="string">'Dependencies'</span>,Dependencies);
+</pre><p>The <tt>func</tt> object itself can now be created by calling the constructor method:</p><pre class="codeinput">theFunc = func(funcHandle,Workspace);
+</pre><p>To add missing parameters to the object, the method <tt>func.replaceParams</tt> has to be used.</p><pre class="codeinput">theFunc.replaceParams(<span class="string">'x'</span>,(0:0.01:1)');
+disp(theFunc.viewWorkspace)
+</pre><pre class="codeoutput">                           description                       valueMean    valueMin    valueMax    standardDeviation
+         ________________________________________________    _________    ________    ________    _________________
+
+    a    {["Constant: scalar without confidence bounds"]}          2        NaN         NaN              NaN       
+    x    {["Variable: vector of length 101"            ]}        0.5          0           1              NaN       
+    t    {["Variable: dependent vector of length 101"  ]}     0.1258         -1           1              NaN       
+    b    {["Coefficient: no values assigned"           ]}        NaN        NaN         NaN              NaN       
+
+</pre><p>Alternatively the the <tt>func</tt> object could now be included to an <tt>electrolyzerModel</tt> object with <tt>electrolyzerModel.addPotentials</tt> method. Parameters can be replaced also with the help of <tt>electrolyzerModel.replaceParams</tt> method.</p><p>For determining the value for parameter <img src="funcCreationExample_eq02044268985122151499.png" alt="$b$"> through curve fitting, its value has to be left empty. For this example, we assume the fit has been performed and the result has been:</p><pre class="codeinput">b = 3.25;
+theFunc.replaceParams(<span class="string">'b'</span>,b);
+</pre><p>With all the parameters defined, the value of the function can be calculated using method <tt>calculate</tt>:</p><pre class="codeinput">y = theFunc.calculate();
+
+figure
+plot(theFunc.Workspace.Variables.x,y)
+xlabel(<span class="string">'x'</span>)
+ylabel(<span class="string">'y'</span>)
+</pre><img vspace="5" hspace="5" src="funcCreationExample_01.png" alt=""> <h2 id="8">Reason for using <tt>func</tt> objects</h2><p>This example doesn't demonstrate the reason behind the usage <tt>func</tt> objects instead of directly using the function handles for fitting. The special features of <tt>func</tt> class enable three main aspects:</p><div><ol><li>It enables the addition of two <tt>func</tt> objects with a static method <tt>func.add</tt> so that the function handle is maintained in readable form.</li><li>Adding two func objects unites the Workspaces of these two enabling later modifications of the parameters.</li><li>Using only one structure as the parameter for the function handle removes the need for correct input order for the function handle, as the function handle calls only the parameters it needs and uses them only in the intended way.</li></ol></div><p>The flexibility of the Electrolyzer Modelling Toolbox is mainly due to the ability of combining multiple potential functions in desired way still maintaining the ability to perform parametrization through curve fitting. At the same time, the function stays fully readable and can be modified as needed.</p><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Creating custom potential term as a |func| object
+% If the user cannot find the desired models from the modelling functions
+% provided with the toolbox, they can define their own potential terms by
+% creating custom |func| objects. To create a |func| object one needs a
+% |Workspace| structure and the function handle that uses *only* the
+% |Workspace| as its input. The |Workspace| structure should contain all
+% the required variables, constants and coefficients (at least empty
+% fields) in the |Variables|, |Constants| and |Coefficients| substructures,
+% respectively. If there are any dependencies between any of the
+% abovementioned parameters, these should be stored as strings in the
+% |Dependencies| substructure. The values of the parameters can be left
+% empty for later addition (recommended when there are multiple potential
+% terms using the same parameters) or they can be preset in the creation
+% process.
+%
+% Let's create a simple custom |func| object as an example. The easiest way
+% is to build the function handle first to see which parameters are
+% required for the |Workspace|
+funcHandle = @(Workspace) Workspace.Constants.a*Workspace.Variables.x.^Workspace.Coefficients.b - Workspace.Variables.t;
+
+%%
+% The function handle above represents function
+%
+% $$a x^b - t.$$
+%
+% For this potential term the |Workspace| contains one constant $a$, two
+% variables $x$ and $t$, and one coefficient $b$.
+%
+% The substructures needed for the |Workspace| can now be created:
+Constants = struct('a',2);
+Variables = struct('x',[],'t',[]);
+Coefficients = struct('b',[]);
+Dependencies = struct('t','Workspace.Variables.t = sin(5*pi.*Workspace.Variables.x);');
+
+%%
+% Here theconstant $a$ has been assigned value 2 in the creation process
+% but the other parameters are left empty for now. Also the variable $t$ is
+% defined to be dependent on the value of variable $x$ through function
+% $t = \sin(5\pi x)$.
+%
+% After the substructures have been defined, the |Workspace| structure can
+% be built:
+Workspace = struct('Variables',Variables,...
+                   'Constants',Constants,...
+                   'Coefficients',Coefficients,...
+                   'Dependencies',Dependencies);
+
+%%
+% The |func| object itself can now be created by calling the constructor
+% method:
+theFunc = func(funcHandle,Workspace);
+
+%%
+% To add missing parameters to the object, the method |func.replaceParams|
+% has to be used.
+theFunc.replaceParams('x',(0:0.01:1)');
+disp(theFunc.viewWorkspace)
+
+%%
+% Alternatively the the |func| object could now be included to an
+% |electrolyzerModel| object with |electrolyzerModel.addPotentials| method.
+% Parameters can be replaced also with the help of
+% |electrolyzerModel.replaceParams| method. 
+%
+% For determining the value for parameter $b$ through curve fitting, its
+% value has to be left empty. For this example, we assume the fit has been
+% performed and the result has been:
+b = 3.25;
+theFunc.replaceParams('b',b);
+
+%%
+% With all the parameters defined, the value of the function can be
+% calculated using method |calculate|:
+y = theFunc.calculate();
+
+figure
+plot(theFunc.Workspace.Variables.x,y)
+xlabel('x')
+ylabel('y')
+
+%% Reason for using |func| objects
+% This example doesn't demonstrate the reason behind the usage |func|
+% objects instead of directly using the function handles for fitting.
+% The special features of |func| class enable three main aspects:
+%
+% # It enables the addition of two |func| objects with a static method
+% |func.add| so that the function handle is maintained in readable form.
+% # Adding two func objects unites the Workspaces of these two enabling
+% later modifications of the parameters.
+% # Using only one structure as the parameter for the function handle
+% removes the need for correct input order for the function handle, as the
+% function handle calls only the parameters it needs and uses them only in
+% the intended way.
+%
+% The flexibility of the Electrolyzer Modelling Toolbox is mainly due to
+% the ability of combining multiple potential functions in desired way
+% still maintaining the ability to perform parametrization through curve
+% fitting. At the same time, the function stays fully readable and can be
+% modified as needed.
+
+##### SOURCE END #####
+--></body></html>

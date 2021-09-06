@@ -11,9 +11,9 @@ toolpath = pwd;
          %  |       or a string pointing to the directory where the
          %  |       fiels of the electrolyzer model tool have been
          %  |       saved.
-addpath(toolpath) 
 try
-	startupEModel;
+	addpath(genpath([toolpath '/electrolyzerModellingToolbox']))
+    addpath(genpath([toolpath '/doc']))
 catch ME
     warningMsg = ['Path to the electrolyzer modelling toolbox not defined.'...
         'Please replace the toolpath variable with the path to the correct'...
