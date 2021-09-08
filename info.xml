@@ -3,7 +3,7 @@
              xsi:noNamespaceSchemaLocation="optional">
     <?xml-stylesheet type="text/xsl"href="optional"?>
     <!-- info.xml file for the mytoolbox toolbox -->
-    <!-- Version 0.3 -->
+    <!-- Version beta 0.3 -->
     <!-- Copyright 2021, Pietari Puranen and Lauri Järvinen.-->
     
     <!-- Supply the following six elements in the order specified -->
@@ -11,7 +11,7 @@
     <!-- to parse the file -->
     <matlabrelease>2021a</matlabrelease>
     <!-- (Required) Title of toolbox. Appears in the Contents pane -->
-    <name>electrolyserModellingToolbox</name>
+    <name>Electrolyser Modelling</name>
     <!-- (Required) Label for the toolbox. pick one: -->
     <!-- matlab, toolbox, simulink, blockset, links_targets  -->
     <type>toolbox</type>
