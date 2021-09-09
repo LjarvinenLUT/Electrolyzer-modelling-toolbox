@@ -54,6 +54,9 @@ classdef func < handle
     %       setParams -- Sets new parameters to Workspace structure.
     %       viewWorkspace -- Outputs a human-readable report of the
     %                           contents of the Workspace structure.
+    %       vectorify -- Destructurizes the structure-based function
+    %                       handle to a form with vector inputs to enable
+    %                       fitting with original Matlab functions.
     %   FUNC static methods:
     %       add -- Use addition to combine two func objects into a new one.
     %       createEmpty -- Creates an empty func object.
@@ -369,7 +372,64 @@ classdef func < handle
                         problemVariableNames;...
                         independentVariableName];
             destructurizedFuncHandle = matlabFunction(symbolicFunction,...
-                                                      'Vars',varsList);
+                'Vars',varsList);
+        end
+        
+        
+        
+        
+        function [vectorifiedFuncHandle,...
+                coefficientsNamesForFit,...
+                problemVariableNames,...
+                problemVariables] = vectorify(obj,...
+                                              independentVariableName)
+            % VECTORIFY returns a function handle with one vector for the
+            %   coefficients transformed from input function handle with separate
+            %   coefficients that are organized in order
+            %   (coefficients, problem variables, independent variable).
+            %   Inputs:
+            %       independentVariableName -- Name of the independent
+            %                                   variable that is kept as
+            %                                   the last parameter to the
+            %                                   destructurized funtion
+            %                                   handle.
+            %   Outputs:
+            %       vectorifiedFuncHandle -- Function handle modified to
+            %                                   take cell array inputs for
+            %                                   coefficients instead of
+            %                                   listing them separately.
+            %       coefficientNamesForFit -- Lists of the undefined 
+            %                                   coefficient names as a cell 
+            %                                   array.
+            %       problemVariableNames -- List of the names of variables
+            %                               with vector data as a cell 
+            %                               array.
+            %       problemVariables -- Cell array of the data of the
+            %                           variables listed in method
+            %                           problemVariableNames.
+            %
+            %   See also FUNC.DESTRUCTURIZE
+            
+            [destructurizedFuncHandle,...
+                coefficientsNamesForFit,...
+                problemVariableNames,...
+                problemVariables] = destructurize(obj,...
+                                                  independentVariableName);
+            
+            nCoeffs = numel(coefficientsNamesForFit);
+            nProbVars = numel(problemVariableNames);
+                                              
+            % Creating symbolic variables for the function handle
+            x = num2cell(sym('x', [1 nCoeffs])); % fit parameters
+            y = num2cell(sym('y', [1 nProbVars])); % problem variables
+            syms independentVariable; % Independent variable input
+            
+            % Calculating the symbolic result
+            z = destructurizedFuncHandle(x{:},y{:},independentVariable);
+            
+            % Creating a modified function handle from the symbolic result
+            vectorifiedFuncHandle = matlabFunction(z,'Vars',[{cell2sym(x)},y(:)',{independentVariable}]);
+            
         end
         
         

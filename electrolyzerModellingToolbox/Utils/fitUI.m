@@ -84,10 +84,7 @@ if ~strcmpi(method, 'PS') && ~strcmpi(method, 'NLLSE')
     error("Given fitting method: " + method + " is not available. The available methods are PS (particle swarm) and NLLSE (non-linear least squares error).")
 end
 
-%% Destructurize function handle, get coefficients and their limits, problem variable names and their values
-[funcHandle,coefficients,problemVariableNames,problemVariables] = fitFunc.destructurize('current');
 
-[lb, ub, start] = getArgumentLimits(coefficients, current(:,1));
 
 %% Parse error vectors, if included
 if length(voltage(1,:)) == 1 % No measurement standard deviation given
@@ -147,6 +144,11 @@ switch method
     case "NLLSE" % Non-Linear Least Squares Error regression approach
         
         methodStr = "Non-Linear Least Squares Error Regression";
+        
+        %Destructurize function handle, get coefficients and their limits, problem variable names and their values
+        [funcHandle,coefficients,problemVariableNames,problemVariables] = fitFunc.destructurize('current');
+        
+        [lb, ub, start] = getArgumentLimits(coefficients, current);
         
         % Retry fitting if R^2 not good enough
         ssr_best = Inf;
@@ -212,14 +214,16 @@ switch method
         
         methodStr = "Particle Swarm Optimisation";
         
-        nvars = length(coefficients); % Amount of fit parameters
+        %% Vectorify function handle, get coefficients and their limits, problem variable names and their values
+        [funcHandle,coefficients,~,problemVariables] = fitFunc.vectorify('current');
         
-        % Modify function handle to use vector input for fit parameters
-        modFuncHandle = vectorifyFuncHandle(funcHandle,length(coefficients),length(problemVariableNames));
+        [lb, ub, ~] = getArgumentLimits(coefficients, current);
+        
+        nvars = length(coefficients); % Amount of fit parameters
         
         % Creating objective function for particle swarm: sum of square
         % residuals
-        fitfun = @(x) sum((modFuncHandle(x,problemVariables{:},current)-voltage).^2.*weights);
+        fitfun = @(x) sum((funcHandle(x,problemVariables{:},current)-voltage).^2.*weights);
         
         % Particle swarm options
         options = optimoptions('particleswarm','SwarmSize',600,'HybridFcn',@fmincon,'Display','off');%,'HybridFcn',@fmincon
@@ -230,7 +234,7 @@ switch method
             [coeff,fval,exitflag,output] = particleswarm(fitfun,nvars,lb,ub,options);
             
             % Voltage values obtained from the fit
-            fitVoltage = modFuncHandle(coeff,problemVariables{:},current);
+            fitVoltage = funcHandle(coeff,problemVariables{:},current);
             
             % Unweighted goodness of fit values
             gofIter = goodnessOfFit(fitVoltage,voltage);
@@ -253,7 +257,7 @@ switch method
         end
         
         % Fit 95% confidence bounds [lower upper]
-        mcmcfun = @(x) sum((modFuncHandle(x,problemVariables{:},current)-voltage).^2);
+        mcmcfun = @(x) sum((funcHandle(x,problemVariables{:},current)-voltage).^2);
         sigma = mcmc(current,voltage,coeffStruct,mcmcfun,gof.ssr);
 end
 
@@ -326,36 +330,6 @@ for i = 1:length(argumentList)
 end
 end
 
-
-
-
-%%
-function modFuncHandle = vectorifyFuncHandle(funcHandle,nCoeffs,nProbVars)
-% VECTORIFYFUNCHANDLE returns a function handle with one vector for the
-%   coefficients transformed from input function handle with separate
-%   coefficients that are organized in order
-%   (coefficients, problem variables, independent variable).
-%       Inputs:
-%           funcHandle -- The function handle to modify
-%           nCoeffs -- Number of coefficients for the fit function
-%           nProbVars -- Number of problem variables
-%       Output:
-%           modFuncHandle -- Function handle modified to take cell array
-%                               inputs for coefficients instead of listing
-%                               them separately.
-
-% Creating symbolic variables for the function handle
-x = num2cell(sym('x', [1 nCoeffs])); % fit parameters
-y = num2cell(sym('y', [1 nProbVars])); % problem variables
-syms current; % Current input
-
-% Calculating the symbolic result
-z = funcHandle(x{:},y{:},current);
-
-% Creating a modified function handle from the symbolic result
-modFuncHandle = matlabFunction(z,'Vars',[{cell2sym(x)},y(:)',{current}]);
-
-end
 
 
 %%
