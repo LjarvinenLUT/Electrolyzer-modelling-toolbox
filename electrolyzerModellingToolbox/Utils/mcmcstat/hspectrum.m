@@ -1,11 +1,13 @@
-function [y,f]=spectrum(x,nfft,nw)
-%SPECTRUM Power spectral density using Hanning window
-%  [y,f]=spectrum(x,nfft,nw) 
-
-% See also: psd.m in Signal Processing Toolbox 
+function [y,f]=hspectrum(x,nfft,nw)
+%HSPECTRUM Power spectral density using Hanning window
+%  [y,f]=hspectrum(x,nfft,nw) 
 
 % Marko Laine <marko.laine@fmi.fi>
 % $Revision: 1.4 $  $Date: 2012/09/27 11:47:40 $
+%
+% Pietari Puranen <pietari.puranen@lut.fi>
+% $Renamed to avoid clash with Signal Processing Toolbox $
+% $Date: 2021/09/10 $
 
 if nargin < 2 | isempty(nfft)
   nfft = min(length(x),256);

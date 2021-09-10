@@ -476,9 +476,36 @@ classdef electrolyzerModel < handle
                 obj.PlottingCurves.currentFit = fitCurrent;
                 obj.PlottingCurves.voltageFit = fitVoltage;
                 
+                % Build a cell array for errorbar input
+                if length(voltage(1,:)) == 1 % No voltage error given
+                    voltageplot = {voltage,[],[]};
+                elseif length(voltage(1,:)) == 2 
+                    voltageplot = {voltage(:,1),voltage(:,2),voltage(:,2)};
+                elseif length(voltage(1,:)) > 2
+                    msg = ['Too wide voltage data matrix! Provide the data'...
+                        ' either as a column vector or as a nx2 matrix'...
+                        ' with standard deviation in the second column'];
+                    error(msg)
+                else 
+                    error('No voltage to plot!')
+                end
+                
+                if length(current(1,:)) == 1 % No current error given
+                    cvplot = [current,voltageplot,{[],[]}];
+                elseif length(current(1,:)) >= 2
+                    cvplot = [current(:,1),voltageplot,current(:,2),current(:,2)];
+                elseif length(current(1,:)) > 2
+                    msg = ['Too wide current data matrix! Provide the data'...
+                        ' either as a column vector or as a nx2 matrix'...
+                        ' with standard deviation in the second column'];
+                    error(msg)
+                else
+                    error('No current to plot!')
+                end
+                
                 figure('name','Automatic plot of the UI curve and the fit')
                 hold on;
-                errorbar(current(:,1),voltage(:,1),voltage(:,2),voltage(:,2),current(:,2),current(:,2),'o')
+                errorbar(cvplot{:},'o')
                 plot(fitCurrent,fitVoltage)
                 xlabel("I")
                 ylabel("U")
