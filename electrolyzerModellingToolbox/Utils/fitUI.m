@@ -132,6 +132,12 @@ switch weightsMethod
         % Don't apply weights
         x = ones(size(current));
 end
+
+% Check if x exists if not return error
+if ~exist("x", "var")
+    error("Set valid weighting method (hl, lh, h, l, or none)")
+end
+
 y = x/max(abs(x))*pi/4;
 addedWeights = tan(y).^2 + 0.1;
 
