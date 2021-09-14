@@ -641,13 +641,13 @@ classdef electrolyzerModel < handle
                         if all(ismember({'T','pCat','pAn'},providedVariables))
                             potentialFunc = nernst(obj.type);
                         else
-                            warning("To use Nernst equation with PEM the following variables, T (temperature in kelvin), pCat (cathode pressure in bara) and pAn (anode pressure in bara) have to be included in the electrolyzerModel Variables structure")
+                            error("To use Nernst equation with PEM the following variables, T (temperature in kelvin), pCat (cathode pressure in bara) and pAn (anode pressure in bara) have to be included in the electrolyzerModel Variables structure")
                         end
                     elseif strcmpi(obj.type,'alkaline')
                         if all(ismember({'T','ps','m'},providedVariables))
                             potentialFunc = nernst(obj.type);
                         else
-                            warning("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), ps (system pressure in bara) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure. The variables have to have the exact same naming as shown in the previous sentence.")
+                            error("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), ps (system pressure in bara) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure. The variables have to have the exact same naming as shown in the previous sentence.")
                         end
                     else
                         error("Electrolyzer type not recognised")
