@@ -504,22 +504,26 @@ classdef electrolyzerModel < handle
                 end
 %                 
 %                 f = figure('name','Automatic plot of the UI curve and the fit');
-                f = uifigure('Position',[500 500 760 360]);
+                f = uifigure('Name','Automatically created plot of the UI curve and its parameters');
+                f.Position(3:4) = [400 450];
                 
                 % https://se.mathworks.com/matlabcentral/answers/466705-how-can-i-add-a-table-independent-of-fig-data-under-figure
                 % https://se.mathworks.com/help/matlab/ref/uitable.html?searchHighlight=uitable&s_tid=srchtitle#namevaluepairarguments
                 
-%                 hold on;
-%                 errorbar(cvplot{:},'o')
-%                 plot(fitCurrent,fitVoltage)
-%                 hold off;
-%                 xlabel("I")
-%                 ylabel("U")
-%                 legend("Data", "Fit", "Location", "Best")
+                ax = uiaxes(f);
+                ax.Position = [10 160 380 280];
+                errorbar(ax,cvplot{:},'o')
+                hold(ax,'on');
+                plot(ax,fitCurrent,fitVoltage)
+                hold(ax,'off');
+                ax.XLabel.String = "Current density";
+                ax.YLabel.String = "Voltage";
+                legend(ax,"Data", "Fit", "Location", "Best")
                 
                 % Add fit coefficients to the plot
                 coeffTable = obj.getCoefficients;
                 uit = uitable(f);
+                uit.Position = [10 10 380 130];
                 uit.Data = coeffTable;
             end
         end
