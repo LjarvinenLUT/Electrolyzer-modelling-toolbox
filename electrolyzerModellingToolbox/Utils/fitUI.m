@@ -131,6 +131,8 @@ switch weightsMethod
     case "none"
         % Don't apply weights
         x = ones(size(current));
+    otherwise
+        error("Nonvalid weight method! Set the method as one of the following: 'l' (low), 'h' (high), 'hl'/'lh' (high and low) or 'none'")
 end
 y = x/max(abs(x))*pi/4;
 addedWeights = tan(y).^2 + 0.1;

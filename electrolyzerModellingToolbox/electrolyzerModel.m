@@ -37,8 +37,8 @@ classdef electrolyzerModel < handle
     %               longer linked to the parent.
     %       fitUI -- Performs a fit for the UI curve extracting values for
     %                   its coefficients.
-    %       getCoefficients -- Outputs the coefficient structure from
-    %                           potentialFunc Workspace.
+    %       getCoefficients -- Outputs the coefficients from
+    %                           potentialFunc Workspace in a table.
     %       mol2wtfrac -- Convert concentration from molality to weight
     %                       fractions
     %       removePotentials -- Remove given potential terms from the
@@ -502,21 +502,37 @@ classdef electrolyzerModel < handle
                 else
                     error('No current to plot!')
                 end
+%                 
+%                 f = figure('name','Automatic plot of the UI curve and the fit');
+                f = uifigure('Position',[500 500 760 360]);
                 
-                figure('name','Automatic plot of the UI curve and the fit')
-                hold on;
-                errorbar(cvplot{:},'o')
-                plot(fitCurrent,fitVoltage)
-                xlabel("I")
-                ylabel("U")
-                legend("Data", "Fit", "Location", "Best")
-                hold off;
+                % https://se.mathworks.com/matlabcentral/answers/466705-how-can-i-add-a-table-independent-of-fig-data-under-figure
+                % https://se.mathworks.com/help/matlab/ref/uitable.html?searchHighlight=uitable&s_tid=srchtitle#namevaluepairarguments
+                
+%                 hold on;
+%                 errorbar(cvplot{:},'o')
+%                 plot(fitCurrent,fitVoltage)
+%                 hold off;
+%                 xlabel("I")
+%                 ylabel("U")
+%                 legend("Data", "Fit", "Location", "Best")
+                
+                % Add fit coefficients to the plot
+                coeffTable = obj.getCoefficients;
+                uit = uitable(f);
+                uit.Data = coeffTable;
             end
         end
         
-        function Coefficients = getCoefficients(obj)
-            % GETCOEFFICIENTS Outputs a structure containing fit coefficients.
+        function coeffTable = getCoefficients(obj)
+            % GETCOEFFICIENTS Outputs a table containing fit coefficients.
             Coefficients = obj.potentialFunc.Workspace.Coefficients;
+            fnames = fieldnames(Coefficients);
+            for i = 1:numel(fnames)
+                value(i,1) = Coefficients.(fnames{i})(1);
+                stdev(i,1) = Coefficients.(fnames{i})(2);
+            end
+            coeffTable = table(value,stdev,'RowNames',fnames,'VariableNames',{'Value','Std'});
         end
         
         function report = viewWorkspace(obj)
@@ -641,13 +657,13 @@ classdef electrolyzerModel < handle
                         if all(ismember({'T','pCat','pAn'},providedVariables))
                             potentialFunc = nernst(obj.type);
                         else
-                            warning("To use Nernst equation with PEM the following variables, T (temperature in kelvin), pCat (cathode pressure in bara) and pAn (anode pressure in bara) have to be included in the electrolyzerModel Variables structure")
+                            error("To use Nernst equation with PEM the following variables, T (temperature in kelvin), pCat (cathode pressure in bara) and pAn (anode pressure in bara) have to be included in the electrolyzerModel Variables structure")
                         end
                     elseif strcmpi(obj.type,'alkaline')
                         if all(ismember({'T','ps','m'},providedVariables))
                             potentialFunc = nernst(obj.type);
                         else
-                            warning("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), ps (system pressure in bara) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure. The variables have to have the exact same naming as shown in the previous sentence.")
+                            error("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), ps (system pressure in bara) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure. The variables have to have the exact same naming as shown in the previous sentence.")
                         end
                     else
                         error("Electrolyzer type not recognised")

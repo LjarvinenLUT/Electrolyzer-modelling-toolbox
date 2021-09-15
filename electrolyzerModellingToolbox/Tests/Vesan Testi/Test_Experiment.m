@@ -131,7 +131,7 @@ eModel.viewWorkspace;
 eModel.addPotentials('nernst','ohmic','activation')
 
 method = "PS";
-weights = "none";
+weights = "l";
 voltageData = e(1).data_avg.Voltage/10;
 currentData = e(1).data_avg.Current/(pi*2.5^2);
 [fitParams,gof] = eModel.fitUI(voltageData,currentData,'method',method,'weights',weights);
