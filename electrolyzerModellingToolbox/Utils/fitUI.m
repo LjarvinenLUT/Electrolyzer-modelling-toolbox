@@ -134,6 +134,12 @@ switch weightsMethod
     otherwise
         error("Nonvalid weight method! Set the method as one of the following: 'l' (low), 'h' (high), 'hl'/'lh' (high and low) or 'none'")
 end
+
+% Check if x exists if not return error
+if ~exist("x", "var")
+    error("Set valid weighting method (hl, lh, h, l, or none)")
+end
+
 y = x/max(abs(x))*pi/4;
 addedWeights = tan(y).^2 + 0.1;
 
