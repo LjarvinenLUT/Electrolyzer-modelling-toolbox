@@ -503,15 +503,14 @@ classdef electrolyzerModel < handle
                     error('No current to plot!')
                 end
 %                 
-%                 f = figure('name','Automatic plot of the UI curve and the fit');
                 f = uifigure('Name','Automatically created plot of the UI curve and its parameters');
-                f.Position(3:4) = [400 450];
+                f.Position([2 4]) = [f.Position(2)-150 f.Position(4)+150];
+                figMeas = f.Position;
                 
-                % https://se.mathworks.com/matlabcentral/answers/466705-how-can-i-add-a-table-independent-of-fig-data-under-figure
-                % https://se.mathworks.com/help/matlab/ref/uitable.html?searchHighlight=uitable&s_tid=srchtitle#namevaluepairarguments
+                format shortG % Format the table to show small numbers as the powers of ten
                 
                 ax = uiaxes(f);
-                ax.Position = [10 160 380 280];
+                ax.Position = [10 160 figMeas(3)-20 figMeas(4)-170];
                 errorbar(ax,cvplot{:},'o')
                 hold(ax,'on');
                 plot(ax,fitCurrent,fitVoltage)
@@ -522,9 +521,13 @@ classdef electrolyzerModel < handle
                 
                 % Add fit coefficients to the plot
                 coeffTable = obj.getCoefficients;
+                data = table2cell(coeffTable);
                 uit = uitable(f);
-                uit.Position = [10 10 380 130];
-                uit.Data = coeffTable;
+                uit.Position = [10 10 figMeas(3)-20 130];
+                uit.Data = data;
+                uit.ColumnName = {'Value','STD'};
+                uit.RowName = coeffTable.Properties.RowNames;
+                uit.ColumnFormat = {'shortG','shortG'}; % Format to scientific notation if better
             end
         end
         
