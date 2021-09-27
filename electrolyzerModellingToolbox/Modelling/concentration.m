@@ -91,11 +91,13 @@ function Ucon = concentration(varargin)
             funcHandle = @(Workspace) ((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log((Workspace.Variables.Cx11/Workspace.Variables.Cx10)*(Workspace.Variables.Cx21/Workspace.Variables.Cx20)^(1/2)); % Both concentrations are functions of current
             Workspace.Variables = struct('T',[],'Cx11',[],'Cx10',[],'Cx21',[],'Cx20',[]);
             Workspace.Coefficients = struct();
+            Fitlims = struct([]);
             warning("Concentration overpotential model #" + num2str(model) + " cannot be used for fitting! Concentration on electrode surface is an unknown function of current. The function handle combines effects of hydrogen and oxygen side. Refer to manual for more information")
         case 2 % ???
             funcHandle = @(Workspace) -((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(1 - Workspace.Variables.current/Workspace.Coefficients.j_lim);
             Workspace.Coefficients = struct('j_lim',[]);
             Workspace.Variables = struct('current',[],'T',[]);
+            Fitlims.j_lim = {'max(x)','max(x)*1.01','max(x)*3'};
         case 3 % J. Pukrushpan "Modeling and control for PEM fuel cell stack system" https://doi.org/10.1109/ACC.2002.1025268
             % p_O2 - oxygen partial pressure (bar)
             % p_sat - vapor saturation pressure (bar)
@@ -112,12 +114,13 @@ function Ucon = concentration(varargin)
             funcHandle = @(Workspace) Workspace.Variables.current*(b1*Workspace.Variables.current/Workspace.Coefficients.j_max)^Workspace.Coefficients.b2;
             Workspace.Coefficients = struct('j_max',[],'b2',[]);
             Workspace.Variables = struct('T',T,'current',[]);
+            Fitlims = struct('j_max',{'max(x)','max(x)*1.01','max(x)*3'});
             
             warning("Concentration overpotential model #" + num2str(model) + " is based on fuel cell research where the amount of oxygen supplied to the cathode is limiting. Includes experimental numeric parameters that probably cannot be extended for electrolyzers!")
         otherwise
             error("Concentration overpotential model #" + num2str(model) + " not defined.")
     end
     
-    Ucon = func(funcHandle,Workspace);
+    Ucon = func(funcHandle,Workspace,Fitlims);
     
 end

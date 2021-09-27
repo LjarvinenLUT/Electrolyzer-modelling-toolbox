@@ -48,21 +48,24 @@ function Uact = activation(varargin)
         case 1 % Hyperbolic sine approximation with alpha assumed to be 1/2
             modelStr = "Hyperbolic sine approximation with alpha assumed to be 1/2";
             Workspace.Coefficients = struct('alpha',1/2,'j0',[]);
+            Fitlims = struct('j0',{{1e-15,1e-5,1}});
             funcHandle = @(Workspace) 2*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
         case 2 % Hyperbolic sine approximation with variable alpha
             modelStr = "Hyperbolic sine approximation with variable alpha";
             Workspace.Coefficients = struct('alpha',[],'j0',[]);
+            Fitlims = struct('alpha',{{0,0.1,1}},'j0',{{1e-15,1e-5,1}});
             funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
         case 3 % Tafel equation (valid when j/j0 > 4 https://doi.org/10.1016/j.jpowsour.2005.03.174)
             modelStr = "Tafel equation";
             Workspace.Coefficients = struct('alpha',[],'j0',[]);
+            Fitlims = struct('alpha',{{0,0.1,1}},'j0',{{1e-15,1e-5,1}});
             funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(Workspace.Variables.current./Workspace.Coefficients.j0);
         otherwise
             error("Activation overpotential model #" + num2str(model) + " not defined.")
     end
     
 
-    Uact = func(funcHandle,Workspace);
+    Uact = func(funcHandle,Workspace,Fitlims);
     
     %% Print information to command window
     

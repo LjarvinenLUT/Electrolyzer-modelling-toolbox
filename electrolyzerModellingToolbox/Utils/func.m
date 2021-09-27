@@ -38,6 +38,14 @@ classdef func < handle
     %                           stored as strings of the commands and
     %                           function calls that are used to calculate
     %                           the dependent variables.
+    %       Fitlims -- The structure for model coefficient limits in
+    %                       fitting. 1x3 cell array containing values
+    %                       {low,start,high}
+    %                       for each of the coefficients. Any of the values
+    %                       can be either numeric constants or MATLAB
+    %                       equations in string form that output a numeric
+    %                       constant using the independent variable of the
+    %                       desired fit (marked with x).
     %
     %   FUNC Methods:
     %       calculate -- Calculates voltage from the UI curve based on
@@ -49,6 +57,7 @@ classdef func < handle
     %       removeParams -- Remove parameters from the Workspace structure.
     %       replaceParams -- Replaces the values of existing parameters in
     %                           Workspace structure.
+    %       setFitlims -- Sets the values of Fitlims structure.
     %       setFuncHandle -- Sets the protected property of funcHandle
     %                           together with the property equation.
     %       setParams -- Sets new parameters to Workspace structure.
@@ -65,7 +74,7 @@ classdef func < handle
     %                       requirements for a Workspace.
     %
     %   See also FUNCTION_HANDLE, ELECTROLYZERMODEL
-   
+    
     properties (SetAccess = protected)
        equation; % Function handle in string form
        funcHandle; % Function handle of the function that uses only Workspace structure as an input
@@ -74,6 +83,7 @@ classdef func < handle
 %         Variables; % Structure containing the variables
 %         Constants; % Structure containing the constants
 %         Dependencies; % Structure containing the dependencies as strings
+       Fitlims; % Limits for fitting the coefficients in a structure containing fields [low start high]
     end
     
     %% Public methods
@@ -83,12 +93,18 @@ classdef func < handle
             %   Inputs:
             %       funcHandle -- The structure-based function handle.
             %       Workspace -- The workspace structure.
+            %       Fitlims (optional) -- The fit limit structure
             obj.setFuncHandle(funcHandle);
             if func.isWorkspace(Workspace)
                 obj.Workspace = Workspace;
             else
                 error("Workspace structure of object func should contain exclusively fields 'Coefficients', 'Variables' or 'Constants'.")
             end
+            
+            obj.Fitlims = struct();
+            if ~isempty(varargin)&&isstruct(varargin{1}) % Fit limits provided
+                obj.setFitlims(varargin{1});
+            end            
             
             obj.refreshWorkspace;
         end
@@ -185,6 +201,50 @@ classdef func < handle
                     obj.Workspace.Variables = rmfield(obj.Workspace.Variables,paramsToRemove{i});
                 end
             end
+        end
+        
+        function setFitlims(obj,varargin)
+            % SETFITLIMS Sets the property fitLims.
+            %   Set fitting limit values for the model coefficients.
+            %   Fitlims structure contains one field for each coefficient,
+            %   named identical to the coefficient. Each field contains a
+            %   1x3 cell array with values {low,start,high} for lower
+            %   limit, starting point and higher limit, respectively.
+            %
+            %   Recognized input is a Structure with the right format or
+            %   name value pairs with the coefficient name followed by the
+            %   limit matrix.
+            %
+            %   Limits can be either as:
+            %       - numeric scalars or
+            %       - MATLAB equations in string form each outputing a
+            %       numeric scalar based on the dependent variable values.
+            %       Dependent variable has to be signed with 'x' in the
+            %       equations.
+            %
+            %   Example of the Fitlim structure:
+            %       struct('a',{{1,2,3}},... % Numeric scalars
+            %              'b',{{'min(x)','avg(x)','max(x)'}}) % Equations
+            
+            if isempty(varargin{1})
+                return;
+            elseif length(varargin) == 1 && isstruct(varargin{1})
+                Struct = varargin{1};
+            elseif mod(nargin,2)
+                for i = 1:2:length(varargin)
+                    Struct.(varargin{i}) = varargin{i+1};
+                end
+            else
+                error('Fit limits have to be set either as a single structure or as name-value pairs')
+            end
+            
+            fn = fieldnames(Struct);
+            for i = 1:numel(fn)
+                if ~isequal(size(Struct.(fn{i})),[1 3])||~iscell(Struct.(fn{i}))
+                    error("Given Fitlimit structure has invalid values. Provide the limits as a 1x3 cell array {low,start,high}")
+                end
+            end
+            obj.Fitlims = mergeStructs(obj.Fitlims,Struct,'warn_duplicates',false);
         end
         
         
@@ -543,7 +603,9 @@ classdef func < handle
             
             NewWorkspace = mergeStructs(func1.Workspace,func2.Workspace);
             
-            newFunc = func(newFuncHandle,NewWorkspace);
+            NewFitlims = mergeStructs(func1.Fitlims,func2.Fitlims);
+            
+            newFunc = func(newFuncHandle,NewWorkspace,NewFitlims);
             
 %             newFunc.refreshWorkspace;
             
@@ -557,7 +619,8 @@ classdef func < handle
             emptyFunc = func(@pass,...
                 struct('Constants',struct(),...
                 'Variables',struct(),...
-                'Coefficients',struct()));
+                'Coefficients',struct(),...
+                'Dependencies',struct()));
         end
         
         function b = isEmpty(varargin)
@@ -627,6 +690,15 @@ classdef func < handle
             else
                 return;
             end
+            
+            if ~all(ismember(fieldnames(obj.Workspace.Coefficients),fieldnames(obj.Fitlims)))
+                warningmsg = "Workspace contains coefficients with no"...
+                    + " set fit limits. Consider setting the limits with"...
+                    + " the setFitlims method before using this func"...
+                    + " object for fitting.";
+                warning(warningmsg)
+            end
+            
         end
         
     end

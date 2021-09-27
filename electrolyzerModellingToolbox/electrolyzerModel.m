@@ -50,6 +50,7 @@ classdef electrolyzerModel < handle
     %       report -- Print a report of all the properties of the modelling
     %                   object.
     %       showUI -- Plots the UI curve for the model.
+    %       setFitlims -- Set fit limits for the model coefficients.
     %       setParams -- Set parameters in the Workspace structure of the
     %                       potentialFunc object
     %       viewWorkspace -- Outputs the workspace of potentialFunc in a
@@ -337,6 +338,31 @@ classdef electrolyzerModel < handle
             end
         end
         
+        
+        
+        function setFitlims(obj,varargin)
+            % SETFITLIMS Sets the potentialFunc property fitLims.
+            %   Set fitting limit values for the model coefficients.
+            %   Fitlims structure contains one field for each coefficient,
+            %   named identical to the coefficient. Each field contains a
+            %   1x3 cell array with values {low,start,high} for lower
+            %   limit, starting point and higher limit, respectively.
+            %
+            %   Recognized input is a Structure with the right format or
+            %   name value pairs with the coefficient name followed by the
+            %   limit matrix.
+            %
+            %   Limits can be either as:
+            %       - numeric scalars or
+            %       - MATLAB equations in string form each outputing a
+            %       numeric scalar based on the dependent variable values.
+            %       Dependent variable has to be signed with 'x' in the
+            %       equations.
+            %
+            %   See also FUNC.SETFITLIMS
+            
+            obj.potentialFunc.setFitlims(varargin{:});
+        end
         
         
         function [fitParams,gof] = fitUI(obj,varargin)

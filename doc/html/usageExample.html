@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>Electrolyzer modelling tool: Step-by-step usage example of the UI curve fitting functionality</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-09-16"><meta name="DC.source" content="usageExample.m"><style type="text/css">
+      --><title>Electrolyzer modelling tool: Step-by-step usage example of the UI curve fitting functionality</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-09-27"><meta name="DC.source" content="usageExample.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -219,16 +219,28 @@ pressureData = AlkaliUI.P(:,1);
 Creating synthetic UI data
 
 No model provided. PEM electrolyzer and default values used for needed variables and coefficients.
+Warning: Workspace contains coefficients with no set fit limits. Consider
+setting the limits with the setFitlims method before using this func object for
+fitting. 
 
 Open circuit voltage calculation properties:
 Reversible voltage model: 6
 Electrolyzer type: pem
+Warning: Workspace contains coefficients with no set fit limits. Consider
+setting the limits with the setFitlims method before using this func object for
+fitting. 
 
 Ohmic overpotential calculation properties:
 Resistance model: 1
+Warning: Workspace contains coefficients with no set fit limits. Consider
+setting the limits with the setFitlims method before using this func object for
+fitting. 
 
 Concentration overpotential calculation properties:
 Model: 2
+Warning: Workspace contains coefficients with no set fit limits. Consider
+setting the limits with the setFitlims method before using this func object for
+fitting. 
 
 Activation overpotential calculation properties:
 Activation voltage model: Buttler-Volmer equation
@@ -238,26 +250,26 @@ Activation voltage model: Buttler-Volmer equation
 </pre><p>The weights are added to improve parametrization of the activation overpotential, whose effect is post prominent in the lower current densities. Now that mass transfer effects are not present in the data to be fitted, we do not weigh the higher current densities, which could be done by adding letter "h" to the weights call. More in-detail description of the options can be found from the documentation of the function <tt>fitUI</tt>.</p><pre class="codeinput">[fitParams,gof] = eModel.fitUI(voltageData,currentData,<span class="string">'method'</span>,method,<span class="string">'weights'</span>,weights);
 </pre><pre class="codeoutput">
 Data fit performed using Particle Swarm Optimisation approach
-R^2: 0.997256
-</pre><img vspace="5" hspace="5" src="usageExample_01.png" alt=""> <p><b>NOTE:</b> The fitting tool doesn't consider the units of the measured data but the user has to keep in mind the used units. Some fitting coefficients are sensitive to units, for example resistance <tt>r</tt> and exchange current density <tt>j0</tt>.</p><h2 id="20">Viewing the results</h2><p>To see the results, one can use the <tt>showUI</tt> method to perform a quick automated plot.</p><pre class="codeinput">eModel.showUI
-</pre><img vspace="5" hspace="5" src="usageExample_02.png" alt=""> <p>The parameter values and their uncertainty (standard deviation) can be seen from the output of <tt>fitUI</tt></p><pre class="codeinput">disp(fitParams)
-</pre><pre class="codeoutput">       r        alpha          j0    
-    _______    ________    __________
+R^2: 0.997257
+</pre><p><b>NOTE:</b> The fitting tool doesn't consider the units of the measured data but the user has to keep in mind the used units. Some fitting coefficients are sensitive to units, for example resistance <tt>r</tt> and exchange current density <tt>j0</tt>.</p><h2 id="20">Viewing the results</h2><p>To see the results, one can use the <tt>showUI</tt> method to perform a quick automated plot.</p><pre class="codeinput">eModel.showUI
+</pre><img vspace="5" hspace="5" src="usageExample_01.png" alt=""> <p>The parameter values and their uncertainty (standard deviation) can be seen from the output of <tt>fitUI</tt></p><pre class="codeinput">disp(fitParams)
+</pre><pre class="codeoutput">       r         alpha          j0    
+    ________    ________    __________
 
-    0.67632     0.11497    0.00050332
-    0.09892    0.012671    0.00050563
+     0.67624     0.11496     0.0005037
+    0.092302    0.010953    0.00050481
 
-</pre><img vspace="5" hspace="5" src="usageExample_03.png" alt=""> <p>or by calling <tt>electrolyzerModel.getCoefficients</tt> method.</p><pre class="codeinput">disp(eModel.getCoefficients)
-</pre><pre class="codeoutput">               Value          Std    
-             __________    __________
+</pre><p>or by calling <tt>electrolyzerModel.getCoefficients</tt> method.</p><pre class="codeinput">disp(eModel.getCoefficients)
+</pre><pre class="codeoutput">               Value         Std    
+             _________    __________
 
-    r           0.67632       0.09892
-    alpha       0.11497      0.012671
-    j0       0.00050332    0.00050563
+    r          0.67624      0.092302
+    alpha      0.11496      0.010953
+    j0       0.0005037    0.00050481
 
 </pre><p>Some goodness of fit values are stored in <tt>fitUI</tt> output <tt>gof</tt>:</p><div><ul><li>ssr: Square Sum Residuals</li><li>rmse: Root Mean Square Error</li><li>rsquare: the R^2 value of the fit</li></ul></div><pre class="codeinput">disp(gof)
-</pre><pre class="codeoutput">        ssr: 0.00060373
-       rmse: 0.0074084
+</pre><pre class="codeoutput">        ssr: 0.00060346
+       rmse: 0.0074068
     rsquare: 0.99726
 
 </pre><h2 id="24">Using fit parameters</h2><p>To calculate the voltage values based on the just fitted UI curve, one can use the <tt>calculate</tt> method of <tt>electrolyzerModel</tt>.</p><pre class="codeinput">Ufit = eModel.calculate(<span class="string">'current'</span>,currentData);

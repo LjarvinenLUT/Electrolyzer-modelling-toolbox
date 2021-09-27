@@ -123,6 +123,7 @@ function Uohm = ohmic(varargin)
     switch resistanceModel
         case 1 % https://doi.org/10.1016/j.ijhydene.2015.03.164 "Electrochemical performance modeling of a proton exchange membrane electrolyzer cell for hydrogen energy"
             Workspace.Coefficients.r = [];
+            Fitlims.r = {0,1,inf};
             funcHandle = @(Workspace) Workspace.Coefficients.r.*Workspace.Variables.current;
         case 2
             % Conductivity equations for PEM and Alkaline
@@ -155,11 +156,12 @@ function Uohm = ohmic(varargin)
             
             Workspace.Variables.R_ionic = delta./sigma;
             Workspace.Coefficients.r_electronics = [];
+            Fitlims.r_electronics = {0,1,inf};
             funcHandle = @(Workspace) (Workspace.Coefficients.r_electronics + Workspace.Variables.R_ionic).*Workspace.Variables.current;
     end
     
     Workspace.Constants = struct();
     
-    Uohm = func(funcHandle,Workspace);
+    Uohm = func(funcHandle,Workspace,Fitlims);
     
 end

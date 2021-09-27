@@ -151,7 +151,7 @@ switch method
         %Destructurize function handle, get coefficients and their limits, problem variable names and their values
         [funcHandle,coefficients,problemVariableNames,problemVariables] = fitFunc.destructurize('current');
         
-        [lb, ub, start] = getArgumentLimits(coefficients, current);
+        [lb, ub, start] = getArgumentLimits(coefficients, fitFunc.Fitlims, current);
         
         % Retry fitting if R^2 not good enough
         ssr_best = Inf;
@@ -220,7 +220,7 @@ switch method
         %% Vectorify function handle, get coefficients and their limits, problem variable names and their values
         [funcHandle,coefficients,~,problemVariables] = fitFunc.vectorify('current');
         
-        [lb, ub, ~] = getArgumentLimits(coefficients, current);
+        [lb, ub, ~] = getArgumentLimits(coefficients, fitFunc.Fitlims, current);
         
         nvars = length(coefficients); % Amount of fit parameters
         
@@ -283,13 +283,15 @@ end
 
 
 %%
-function [lower, upper, start] = getArgumentLimits(argumentList, I)
+function [lower, upper, start] = getArgumentLimits(argumentList,LimsStruct, x)
 % GETARGUMENTLIMITS gets lower and upper limits and also startpoint of each
 %	fitting coefficient.
 %       Inputs:
 %           argumentList -- List of coefficient names in a cell array.
-%           I -- Current density for determining the limits for limiting
-%                   current density, 'j_lim'.
+%           LimsStruct -- The structure for the limits in the func object
+%           x -- Current density for determining the limits for
+%                   coefficients with limits depending on the independent
+%                   variable.
 %       Outputs:
 %           lower -- Array of the lower limits for the coefficients in the
 %                       same order as listed in argumentList.
@@ -304,32 +306,51 @@ lower = zeros(1, length(argumentList));
 upper = zeros(1, length(argumentList));
 start = zeros(1, length(argumentList));
 
+
 % Get limits for each function argument if none is found give an error
 for i = 1:length(argumentList)
-    switch argumentList{i}
-        case 'j0'
-            lower(i) = 1e-10;
-            upper(i) = 1;
-            start(i) = 1e-5;
-        case 'alpha'
-            lower(i) = 0;
-            upper(i) = 1;
-            start(i) = 0.1;
-        case 'r'
-            lower(i) = 0;
-            upper(i) = inf;
-            start(i) = 1;
-        case 'j_lim'
-            lower(i) = max(I);
-            upper(i) = 3*max(I);
-            start(i) = max(I)*1.01;
-        case 'Uerr'
-            lower(i) = -inf;
-            upper(i) = inf;
-            start(i) = 0;
-        otherwise
-            error(['fit_UI.getArgumentLimits: No argument limits could be found for ' argumentList{i}]);
+    try
+        limsList = LimsStruct.(argumentList{i});
+        lims = nan(1,3);
+        for j = 1:3
+            if isnumeric(limsList{j})
+                lims(j) = limsList{j};
+            elseif ischar(limsList{j})||isstring(limsList{j})
+                try
+                    lims(j) = eval(limsList{j});
+                catch ME
+                    if strcmp(ME.identifier,'MATLAB:UndefinedFunction')
+                        errormsg = "Expression for the fit limit of "+...
+                            argumentList{i} + " contains unrecognized "+...
+                            "functions or variables. Please recheck "+...
+                            "the expression and ensure that the dependent "+...
+                            "variable is marked with x.";
+                        error(errormsg);
+                    else
+                        rethrow(ME)
+                    end
+                end
+            else
+                error("Fit limits for " + argumentList{i} + " are of unsupported type.")
+            end
+        end
+                
+        lower(i) = lims(1);
+        upper(i) = lims(3);
+        start(i) = lims(2);
+        
+    catch ME
+        if strcmp(ME.identifier,'MATLAB:nonExistentField')
+            errormsg = "fit_UI.getArgumentLimits: No coefficient limits "...
+                +"could be found for "+ argumentList{i} +". Consider "...
+                +"setting limits for all the coefficients using method "...
+                +"func.setFitlims.";
+            error(errormsg);
+        else
+            rethrow(ME)
+        end
     end
+        
 end
 end
 
