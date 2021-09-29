@@ -541,8 +541,8 @@ classdef electrolyzerModel < handle
                 hold(ax,'on');
                 plot(ax,fitCurrent,fitVoltage)
                 hold(ax,'off');
-                ax.XLabel.String = "Current density";
-                ax.YLabel.String = "Voltage";
+                ax.XLabel.String = "Current density (A/cm^2)";
+                ax.YLabel.String = "Voltage (V)";
                 legend(ax,"Data", "Fit", "Location", "Best")
                 
                 % Add fit coefficients to the plot
@@ -663,10 +663,10 @@ classdef electrolyzerModel < handle
                 switch electrolyte
                     case 'KOH'
                         obj.molarMassOfElectrolyte = 39.0983 + 15.9994 + 1.0079;
-                        obj.setParams(struct('Variables',struct('electrolyte',1)));
+                        obj.setParams(struct('Variables',struct('electrolyte',1,'molarMassOfElectrolyte',obj.molarMassOfElectrolyte)));
                     case 'NaOH'
                         obj.molarMassOfElectrolyte = 22.9898 + 15.9994 + 1.0079;
-                        obj.setParams(struct('Variables',struct('electrolyte',2)));
+                        obj.setParams(struct('Variables',struct('electrolyte',2,'molarMassOfElectrolyte',obj.molarMassOfElectrolyte)));
                     otherwise
                         error('Only KOH and NaOH defined as possible alkali electrolytes.')
                 end

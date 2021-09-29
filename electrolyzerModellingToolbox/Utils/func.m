@@ -680,7 +680,19 @@ classdef func < handle
                         eval(Workspace.Dependencies.(fn{i}))
                     catch ME
                         if strcmp(ME.identifier,'MATLAB:InputParser:ArgumentFailedValidation')||strcmp(ME.identifier,'MATLAB:undefinedVarOrClass')
+                            % Some variable needed in a function call in
+                            % dependencies is not defined. This causes the
+                            % function call to throw an error, which is
+                            % unnecessary for this object
                             continue;
+                        elseif strcmp(ME.identifier,'MATLAB:nonExistentField')
+                            warningmsg = "Some dependencies could not be " + ...
+                                "evaluated because of missing variables. " + ...
+                                "Ensure that all the needed variables are " + ...
+                                "defined in the Workspace before using " + ...
+                                "this func object further.\n\n" + ...
+                                ME.message;
+                            warning('refreshWorkspace:nonExistentField',warningmsg)
                         else
                             rethrow(ME)
                         end                           

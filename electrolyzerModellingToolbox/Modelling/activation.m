@@ -46,17 +46,17 @@ function Uact = activation(varargin)
     
     switch model
         case 1 % Hyperbolic sine approximation with alpha assumed to be 1/2
-            modelStr = "Hyperbolic sine approximation with alpha assumed to be 1/2";
+            modelStr = model + " -- Hyperbolic sine approximation with alpha assumed to be 1/2";
             Workspace.Coefficients = struct('alpha',1/2,'j0',[]);
             Fitlims = struct('j0',{{1e-15,1e-5,1}});
             funcHandle = @(Workspace) 2*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
         case 2 % Hyperbolic sine approximation with variable alpha
-            modelStr = "Hyperbolic sine approximation with variable alpha";
+            modelStr = model + " -- Hyperbolic sine approximation with variable alpha";
             Workspace.Coefficients = struct('alpha',[],'j0',[]);
             Fitlims = struct('alpha',{{0,0.1,1}},'j0',{{1e-15,1e-5,1}});
             funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
         case 3 % Tafel equation (valid when j/j0 > 4 https://doi.org/10.1016/j.jpowsour.2005.03.174)
-            modelStr = "Tafel equation";
+            modelStr = model + " -- Tafel equation";
             Workspace.Coefficients = struct('alpha',[],'j0',[]);
             Fitlims = struct('alpha',{{0,0.1,1}},'j0',{{1e-15,1e-5,1}});
             funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(Workspace.Variables.current./Workspace.Coefficients.j0);
@@ -69,11 +69,11 @@ function Uact = activation(varargin)
     
     %% Print information to command window
     
-    fprintf('\nActivation overpotential calculation properties:\n')
+    fprintf('\nActivation overpotential modelling properties:\n')
     % TODO: Switch statements could be maybe combined and printing done after the
     % functionality. However this prevents printing the settings if error
     % occurs
-    fprintf('Activation voltage model: %s\n', modelStr)
+    fprintf('Model: %s\n', modelStr)
 
         
     

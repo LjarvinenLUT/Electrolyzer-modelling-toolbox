@@ -16,7 +16,7 @@ Ucon = concentration();
 
 Emodel = electrolyzerModel('type',type); % Electrolyzer model containing the sampled temperature
 Emodel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
-
+%%
 i = 2;
 switch i
 

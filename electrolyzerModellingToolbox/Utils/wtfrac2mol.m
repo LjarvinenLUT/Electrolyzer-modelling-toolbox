@@ -20,6 +20,6 @@ if wtfrac > 1 % If weight frqaction is assumed to be given as percents
     wtfrac = wtfrac/100;
 end
 
-m = 1/(M*(1/wtfrac-1));
+m = 1./(M*(1./wtfrac-1));
 
 end

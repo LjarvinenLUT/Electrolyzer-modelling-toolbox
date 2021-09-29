@@ -49,70 +49,38 @@ function Uohm = ohmic(varargin)
     defaultConductivityModel = 1;
     defaultResistanceModel = 1;
     defaultType = 'pem';
-    defaultTemperature = [];
 
     parser = inputParser;
     addParameter(parser,'type',defaultType,@(x) ischar(x)||isstring(x));
     addParameter(parser,'conductivityModel',defaultConductivityModel,@(x) isnumeric(x)&&isscalar(x));
     addParameter(parser,'resistanceModel',defaultResistanceModel,@(x) isnumeric(x)&&isscalar(x));
-    addParameter(parser,'delta',@(x) isnumeric(x));
-    addParameter(parser,'lambda',@(x) isnumeric(x));
-    addParameter(parser,'m',@(x) isnumeric(x));
-    addParameter(parser,'w',@(x) isnumeric(x));
-    addParameter(parser,'T',defaultTemperature,@(x) isnumeric(x));
     
     parse(parser, varargin{:});
     
     type = string(lower(parser.Results.type));
     conductivityModel = parser.Results.conductivityModel;
     resistanceModel = parser.Results.resistanceModel;
-    delta = parser.Results.delta;
-    lambda = parser.Results.lambda;
-    m = parser.Results.m;
-    w = parser.Results.w;
     Workspace.Variables = struct('current',[]);
-    T = parser.Results.T;
 
     
-    fprintf('\nOhmic overpotential calculation properties:\n')
-    fprintf('Resistance model: %d\n', resistanceModel)
-    if resistanceModel ~= 1
-        fprintf('Electrolyzer type: %s\n', type)
-        fprintf('Conductivity model: %d\n', conductivityModel)
-    end
+    fprintf('\nOhmic overpotential modelling properties:\n')
     
     %% Error checking
     
     switch resistanceModel
         case 1
-            
+            resistanceModelStr = resistanceModel + " -- Total cell resistance, combined electronic and ionic components";
+            fprintf('Resistance model: %s\n', resistanceModelStr)
         case 2
-            fprintf('\nTODO: Check units for ohmic overpotential parameters!\n')
-            if strcmpi(type,"PEM") && conductivityModel == 1
-                    if ~isnumeric(lambda)
-                        error('Variable "lambda" (water content) has to be set for PEM conductivity model 1 with resistance model 2 (TODO: Check which units)')
-                    elseif  lambda <= 1
-                        error('Lambda has to be greater than 1 when using PEM conductivity model 1')
-                    end
-            end
+            resistanceModelStr = resistanceModel + " -- Separated electronic and ionic resistance components";
+            fprintf('Resistance model: %s\n', resistanceModelStr)
+            fprintf('Electrolyzer type: %s\n', type)
+            fprintf('TODO: Check units for ohmic overpotential parameters!\n')
             if strcmpi(type,"Alkaline")
-                if conductivityModel == 1
-                    if ~isnumeric(m)
-                        error('Variable "m" (molar concentration) has to be set for alkaline conductivity model 1 with resistance model 2')
-                    end
-                elseif conductivityModel == 2
-                    if ~isnumeric(w)
-                        error('Variable "w" (mass concentration wt%)  has to be set for alkaline conductivity model 2')
-                    end
-                end
-            end
-            if  ~isnumeric(delta)
-                error('Variable "delta" (electrolyte thickness) has to be set when using resistance model 2(TODO: Check which units)')
-            end
-            if ~isnumeric(T) || isempty(T)
-                error('Variable "T" (temperature) has to be set when using resistance model 2 (TODO: Check which units)')
+                fprintf('Conductivity model: %d\n', conductivityModel)
             end
     end
+    
 
     
     %%
@@ -127,34 +95,56 @@ function Uohm = ohmic(varargin)
             funcHandle = @(Workspace) Workspace.Coefficients.r.*Workspace.Variables.current;
         case 2
             % Conductivity equations for PEM and Alkaline
-            %   lambda -  water content (for PEM)
+            %   lambda -  membrane water content (for PEM)
             %   m - molar concentration (for alkaline)
-            %   w - mass concentration wt% (for alkaline)
             %   delta -- electrolyte thickness (TODO: in which units)
             % Output
             %   sigma - specific conductivity (S/cm)
-            Workspace.Variables.T = T;
+            
+            Workspace.Variables = struct('T',[],'sigma',[],'delta',[]);  
+            
             switch type
                 case "alkaline"
                     warning('Ohmic overpotential using resistance model 2 in alkaline is currently only available for KOH electrolyte!')
+                    Workspace.Variables.m = [];
                     switch conductivityModel
                         case 1 % (Alkaline) Gilliam et al. "A review of specific conductivities of potassium hydroxide solutions for various concentrations and temperatures", 2007
-                            A = -2.041;  B = -0.0028;  C = 0.005332;
-                            D = 207.2;  E = 0.001043; F = -0.0000003;
-                            sigma = A*m + B*m^2 + C*m*Workspace.Variables.T + D*(m/Workspace.Variables.T) + E*m^3 + F*m^2*Workspace.Variables.T^2;
+%                             A = -2.041;  B = -0.0028;  C = 0.005332;
+%                             D = 207.2;  E = 0.001043; F = -0.0000003;
+%                             sigma = A*m + B*m^2 + C*m*T + D*(m/T) + E*m^3 + F*m^2*T^2;
+                            Workspace.Dependencies.sigma = "Workspace.Variables.sigma = "...
+                                + "-2.041*Workspace.Variables.m + "...
+                                + "-0.0028*Workspace.Variables.m.^2 + "...
+                                + "0.005332*Workspace.Variables.m.*Workspace.Variables.T + "...
+                                + "207.2*(Workspace.Variables.m./Workspace.Variables.T) + "...
+                                + "0.001043*Workspace.Variables.m.^3 + "...
+                                + "-0.0000003*Workspace.Variables.m.^2*Workspace.Variables.T.^2;"; % Dependency format
                         case 2 % (Alkaline, KOH) See et al. "Temperature and Concentration Dependence of the Specific Conductivity of Concentrated Solutions of Potassium Hydroxide"
-                            K1 = 0.279844803; K2 = -0.009241294; K3 = -0.000149660371;
-                            K4 = -0.000905209551; K5 = 0.000114933252; K6 = 0.1765;
-                            K7 = 0.0696648518; K8 = -28.9815658;
-                            sigma = K1*(100*w) + K2*Workspace.Variables.T + K3 * Workspace.Variables.T^2 + K4 * (Workspace.Variables.T*100*w) ...
-                                + K5*(Workspace.Variables.T^2*(100*w)^K6) + K7*(Workspace.Variables.T/(100*w)) + K8*((100*w)/Workspace.Variables.T);
+%                             K1 = 0.279844803; K2 = -0.009241294; K3 = -0.000149660371;
+%                             K4 = -0.000905209551; K5 = 0.000114933252; K6 = 0.1765;
+%                             K7 = 0.0696648518; K8 = -28.9815658;
+%                             sigma = K1*(100*w) + K2*Workspace.Variables.T + K3 * Workspace.Variables.T^2 + K4 * (Workspace.Variables.T*100*w) ...
+%                                 + K5*(Workspace.Variables.T^2*(100*w)^K6) + K7*(Workspace.Variables.T/(100*w)) + K8*((100*w)/Workspace.Variables.T);
+                            Workspace.Dependencies.sigma =  "Workspace.Variables.sigma = "...
+                                + "0.279844803*(100*mol2wtfrac(Workspace.Variables.m,Workspace.Variables.molarMassOfElectrolyte)) + "...
+                                + "-0.009241294*Workspace.Variables.T + "...
+                                + "-0.000149660371*Workspace.Variables.T.^2 + "...
+                                + "-0.000905209551*(Workspace.Variables.T.*(100.*mol2wtfrac(Workspace.Variables.m,Workspace.Variables.molarMassOfElectrolyte))) +"...
+                                + "0.000114933252*(Workspace.Variables.T.^2*(100*mol2wtfrac(Workspace.Variables.m,Workspace.Variables.molarMassOfElectrolyte)).^0.1765) +"...
+                                + "0.0696648518*(Workspace.Variables.T./(100*mol2wtfrac(Workspace.Variables.m,Workspace.Variables.molarMassOfElectrolyte))) +"...
+                                + "-28.9815658*((100*mol2wtfrac(Workspace.Variables.m,Workspace.Variables.molarMassOfElectrolyte))./Workspace.Variables.T);"; % Dependency format
                     end
                 case "pem"
                     % (PEM) https://doi.org/10.1149/1.2085971 Springer et al. "Polymer Electrolyte Fuel Cell Model"
-                    sigma = 0.005139 * lambda - 0.00326 * exp(1268 * (1/303 - 1./Workspace.Variables.T));
+%                     sigma = 0.005139 * lambda - 0.00326 * exp(1268 * (1/303 - 1./Workspace.Variables.T));
+                    Workspace.Variables.lambda = [];
+                    Workspace.Dependencies.sigma =  "Workspace.Variables.sigma = "...
+                        + "0.005139*Workspace.Variables.lambda - "...
+                        + "0.00326*exp(1268*(1/303-1./Workspace.Variables.T));"; % Dependecy format
             end
             
-            Workspace.Variables.R_ionic = delta./sigma;
+                      
+            Workspace.Dependencies.R_ionic = "Workspace.Variables.R_ionic = Workspace.Variables.delta./Workspace.Variables.sigma;";
             Workspace.Coefficients.r_electronics = [];
             Fitlims.r_electronics = {0,1,inf};
             funcHandle = @(Workspace) (Workspace.Coefficients.r_electronics + Workspace.Variables.R_ionic).*Workspace.Variables.current;

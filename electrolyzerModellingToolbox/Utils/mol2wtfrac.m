@@ -12,6 +12,6 @@ function wtfrac = mol2wtfrac(m,M)
 % 
 % See also WTFRAC2MOL
 
-wtfrac = 1/(1+1/(m*M));
+wtfrac = 1./(1+1./(m*M));
 
 end

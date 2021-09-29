@@ -19,7 +19,7 @@ function Uocv = nernst(type,varargin)
 %   NERNSTPRESSURECORRECTION
 
     %% Parse inputs
-    defaultModel = 6;
+    defaultModel = 1;
 
     parser = inputParser;
     addRequired(parser,'type',@(x) ischar(x)||isstring(x));
@@ -34,7 +34,7 @@ function Uocv = nernst(type,varargin)
     model = parser.Results.model;
     
     %% Print parameters to command window
-    fprintf('\nOpen circuit voltage calculation properties:\n')
+    fprintf('\nSingle cell open circuit voltage modelling properties:\n')
     fprintf('Reversible voltage model: %d\n', model)
     fprintf('Electrolyzer type: %s\n', type)
     if ~strcmp(type,"alkaline") && ~strcmp(type,"pem")
