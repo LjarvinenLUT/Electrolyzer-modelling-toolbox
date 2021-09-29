@@ -37,5 +37,11 @@
          <source>GettingStarted</source>
          <file>doc/html/GettingStarted.html</file>
       </demoitem>
+      <demoitem>
+         <label>Units</label>
+         <type>other</type>
+         <source>Units</source>
+         <file>doc/html/Units.html</file>
+      </demoitem>
    </demosection>
 </demos>

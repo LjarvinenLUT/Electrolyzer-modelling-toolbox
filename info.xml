@@ -3,7 +3,7 @@
              xsi:noNamespaceSchemaLocation="optional">
     <?xml-stylesheet type="text/xsl"href="optional"?>
     <!-- info.xml file for the mytoolbox toolbox -->
-    <!-- Version beta 0.4 -->
+    <!-- Version beta 0.5 -->
     <!-- Copyright 2021, Pietari Puranen and Lauri Järvinen.-->
     
     <!-- Supply the following six elements in the order specified -->

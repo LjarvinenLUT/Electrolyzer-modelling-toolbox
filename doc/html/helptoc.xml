@@ -22,6 +22,10 @@
         <tocitem target="ClassesAndFunctions.html" 
                  image="HelpIcon.FUNCTION">Function Reference
         </tocitem>
+        <!-- A word about units -->
+        <tocitem target="Units.html" 
+                 image="HelpIcon.USER_GUIDE">A Word About Units
+        </tocitem>
         <!-- User Guide comes next -->
         <tocitem target="usageExample.html" 
             image="HelpIcon.USER_GUIDE">Step-By-Step Usage Example
