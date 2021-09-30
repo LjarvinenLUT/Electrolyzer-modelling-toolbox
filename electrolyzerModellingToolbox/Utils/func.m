@@ -504,9 +504,17 @@ classdef func < handle
             %  funcHandle but keeps the Workspace content.
             
             if nargin == 1
-                childFunc = func(obj.funcHandle,obj.Workspace);
+                for i = 1:height(obj)
+                    for j = 1:width(obj)
+                        childFunc(i,j) = func(obj(i,j).funcHandle,obj(i,j).Workspace,obj(i,j).Fitlims);
+                    end
+                end
             elseif strcmp(varargin{1},'empty')
-                childFunc = func(@pass,obj.Workspace);
+                for i = 1:numel(obj)
+                    for j = 1:width(obj)
+                        childFunc(i,j) = func(@pass,obj(i,j).Workspace,obj(i,j).Fitlims);
+                    end
+                end
             else
                 error('Unknown input')
             end
@@ -703,7 +711,16 @@ classdef func < handle
                 return;
             end
             
-            if ~all(ismember(fieldnames(obj.Workspace.Coefficients),fieldnames(obj.Fitlims)))
+            % Determine if there are undefined coefficients without fit limits
+            % First find all the coefficients that don't have an value
+            fnCoeffs = fieldnames(obj.Workspace.Coefficients);
+            emptyFields = false(size(fnCoeffs));
+            for fni = 1:numel(fnCoeffs)
+                emptyFields(fni) = isempty(obj.Workspace.Coefficients.(fnCoeffs{fni}));
+            end
+            fnEmpty = fnCoeffs(emptyFields); % Field names of empty coefficients
+            
+            if any(~ismember(fnEmpty,fieldnames(obj.Fitlims)))
                 warningmsg = "Workspace contains coefficients with no"...
                     + " set fit limits. Consider setting the limits with"...
                     + " the setFitlims method before using this func"...

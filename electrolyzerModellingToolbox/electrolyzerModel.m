@@ -201,7 +201,7 @@ classdef electrolyzerModel < handle
             
             % Check if names were given for potentials
             if any(namesCall)
-                if length(varargin) >= indexOfCharEntries(namesCall)+1 && iscell(varargin{indexOfCharEntries(namesCall)+1})
+                if length(varargin) >= indexOfCharEntries(namesCall)+1 && (iscell(varargin{indexOfCharEntries(namesCall)+1})||isstring(varargin{indexOfCharEntries(namesCall)+1}))
                     names = varargin{indexOfCharEntries(namesCall)+1};
                     otherInputs(indexOfCharEntries(namesCall)+[0 1]) = false;
                 else
@@ -488,15 +488,11 @@ classdef electrolyzerModel < handle
                 % Take samples from the dense data vectors
                 N = 100; % Number of evenly taken voltage samples
                 voltageSamples = linspace(min(fullFitVoltage),max(fullFitVoltage),N)';
-                iii = 1;
                 for ii = 1:N
                     Udif = abs(fullFitVoltage-voltageSamples(ii));
                     [~,ind] = min(Udif);
-                    if iii == 1 || (iii > 1 && abs(fullFitCurrent(ind)-fitCurrent(iii-1))>0.02)
-                        fitCurrent(iii,1) = fullFitCurrent(ind); % Final sampled current vector
-                        fitVoltage(iii,1) = fullFitVoltage(ind); % Final sampled voltage vector
-                        iii = iii+1;
-                    end
+                    fitCurrent(ii,1) = fullFitCurrent(ind); % Final sampled current vector
+                    fitVoltage(ii,1) = fullFitVoltage(ind); % Final sampled voltage vector
                 end
                 
                 obj.PlottingCurves.currentFit = fitCurrent;
@@ -616,7 +612,7 @@ classdef electrolyzerModel < handle
             %   those of the parent.
             childObj = electrolyzerModel('type',obj.type,'electrolyte',obj.electrolyte);
             if ~func.isEmpty(obj.potentialFunc)
-                childObj.addPotentials(obj.funcStorage.func);
+                childObj.addPotentials(obj.funcStorage.func.copy,'names',obj.funcStorage.name);
             end
             childObj.setParams(obj.potentialFunc.Workspace);
         end

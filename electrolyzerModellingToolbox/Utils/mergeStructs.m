@@ -67,6 +67,10 @@ if overwrittenFields && warnDuplicates
     for i = 2:length(overwrittenFieldNames)
         fields = [fields ', ' overwrittenFieldNames{i}];
     end
-    warning(['Merged structures contained duplicated fields (' fields '). Their values have been overwritten by values in the second input structure.'])
+    warningmsg = "Merged structures contained duplicated fields:\n" ...
+        + fields ...
+        + "\nTheir values have been overwritten by values in the "...
+        + "second input structure.";
+    warning("mergeStructs:overwritten",warningmsg)
 end
 end

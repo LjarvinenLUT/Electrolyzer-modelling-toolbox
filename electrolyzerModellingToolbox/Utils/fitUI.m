@@ -110,7 +110,7 @@ std = sqrt(voltageStd.^2 + currentStd.^2);
 if std == 0
     errorWeights = 1;
 else
-    errorWeights = 1./std.^2;
+    errorWeights = max((1./std.^2)/1000,1);
 end
 
 

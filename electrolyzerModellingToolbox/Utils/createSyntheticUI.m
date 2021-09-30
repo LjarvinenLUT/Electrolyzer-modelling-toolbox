@@ -42,7 +42,8 @@ function [SynData,FullData,Workspace] = createSyntheticUI(varargin)
 %
 %   See also FITUI, FUNC, ELECTROLYZERMODEL
 
-fprintf("\nCreating synthetic UI data\n")
+fprintf("------------------------------------------------------------\n"...
+    + "Creating synthetic UI data\n")
 
 % Find entries that are of type char
 isCharEntries = cellfun(@ischar,varargin);
@@ -169,7 +170,7 @@ if funcGiven
     jmeas = linspace(jLims(1),jLims(2),10000);
     Umeas = eModel.calculate('current',jmeas);
 else
-    fprintf('\nActivation overpotential calculation properties:\n')
+    fprintf('\nActivation overpotential modelling properties:\n')
     fprintf('Activation voltage model: Buttler-Volmer equation\n')
     
     % Check that all the variables are scalars
@@ -231,6 +232,9 @@ end
 
 SynData = struct('voltage',Umeassamper,'current',jmeassamper);
 FullData = struct('voltage',Umeas,'current',jmeas);
+
+fprintf("\nSynthetic UI data creation finished.\n"...
+    + "------------------------------------------------------------\n")
     
 
     
