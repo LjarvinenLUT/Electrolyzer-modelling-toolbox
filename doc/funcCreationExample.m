@@ -33,7 +33,7 @@ Coefficients = struct('b',[],'c',[]);
 Dependencies = struct('t','Workspace.Variables.t = sin(5*pi.*Workspace.Variables.x);');
 
 %%
-% Here theconstant $a$ has been assigned value 2 in the creation process
+% Here the constant $a$ has been assigned value 2 in the creation process
 % but the other parameters are left empty for now. Also the variable $t$ is
 % defined to be dependent on the value of variable $x$ through function
 % $t = \sin(5\pi x)$.
@@ -52,7 +52,7 @@ Workspace = struct('Variables',Variables,...
 theFunc = func(funcHandle,Workspace);
 
 %%
-% The warning issued by the calling the constructor reminds thatto be able
+% The warning issued by the calling the constructor reminds that to be able
 % to perform a curve fit using the fitUI function, the user has to define
 % fit limits as a structure containing a field for each coefficient. The
 % limits have to be provided as a 1x3 cell array of either 
@@ -85,8 +85,7 @@ theFunc.setFitlims('c',{'min(x)','mean(x)','max(x)'})
 
 disp(theFunc.Fitlims)
 
-%%
-%
+
 
 %%
 % To add missing parameters to the object, the method |func.replaceParams|

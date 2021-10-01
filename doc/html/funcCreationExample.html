@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>funcCreationExample</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-09-30"><meta name="DC.source" content="funcCreationExample.m"><style type="text/css">
+      --><title>funcCreationExample</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-10-01"><meta name="DC.source" content="funcCreationExample.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -67,21 +67,22 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
 
 
-  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Creating custom potential term as a <tt>func</tt> object</a></li><li><a href="#10">Reason for using <tt>func</tt> objects</a></li></ul></div><h2 id="1">Creating custom potential term as a <tt>func</tt> object</h2><p>If the user cannot find the desired models from the modelling functions provided with the toolbox, they can define their own potential terms by creating custom <tt>func</tt> objects. To create a <tt>func</tt> object one needs a <tt>Workspace</tt> structure and the function handle that uses <b>only</b> the <tt>Workspace</tt> as its input. The <tt>Workspace</tt> structure should contain all the required variables, constants and coefficients (at least empty fields) in the <tt>Variables</tt>, <tt>Constants</tt> and <tt>Coefficients</tt> substructures, respectively. If there are any dependencies between any of the abovementioned parameters, these should be stored as strings in the <tt>Dependencies</tt> substructure. The values of the parameters can be left empty for later addition (recommended when there are multiple potential terms using the same parameters) or they can be preset in the creation process.</p><p>Let's create a simple custom <tt>func</tt> object as an example. The easiest way is to build the function handle first to see which parameters are required for the <tt>Workspace</tt></p><pre class="codeinput">funcHandle = @(Workspace) Workspace.Constants.a*Workspace.Variables.x.^Workspace.Coefficients.b - Workspace.Variables.t.*Workspace.Coefficients.c;
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Creating custom potential term as a <tt>func</tt> object</a></li><li><a href="#9">Reason for using <tt>func</tt> objects</a></li></ul></div><h2 id="1">Creating custom potential term as a <tt>func</tt> object</h2><p>If the user cannot find the desired models from the modelling functions provided with the toolbox, they can define their own potential terms by creating custom <tt>func</tt> objects. To create a <tt>func</tt> object one needs a <tt>Workspace</tt> structure and the function handle that uses <b>only</b> the <tt>Workspace</tt> as its input. The <tt>Workspace</tt> structure should contain all the required variables, constants and coefficients (at least empty fields) in the <tt>Variables</tt>, <tt>Constants</tt> and <tt>Coefficients</tt> substructures, respectively. If there are any dependencies between any of the abovementioned parameters, these should be stored as strings in the <tt>Dependencies</tt> substructure. The values of the parameters can be left empty for later addition (recommended when there are multiple potential terms using the same parameters) or they can be preset in the creation process.</p><p>Let's create a simple custom <tt>func</tt> object as an example. The easiest way is to build the function handle first to see which parameters are required for the <tt>Workspace</tt></p><pre class="codeinput">funcHandle = @(Workspace) Workspace.Constants.a*Workspace.Variables.x.^Workspace.Coefficients.b - Workspace.Variables.t.*Workspace.Coefficients.c;
 </pre><p>The function handle above represents function</p><p><img src="funcCreationExample_eq16431373179904272521.png" alt="$$a x^b - t c.$$"></p><p>For this potential term the <tt>Workspace</tt> contains one constant <img src="funcCreationExample_eq05508344529756732484.png" alt="$a$">, two variables <img src="funcCreationExample_eq12428413953531653171.png" alt="$x$"> and <img src="funcCreationExample_eq12656067504604335951.png" alt="$t$">, and two coefficients <img src="funcCreationExample_eq02044268985122151499.png" alt="$b$"> and <img src="funcCreationExample_eq08422257486649890878.png" alt="$c$">.</p><p>The substructures needed for the <tt>Workspace</tt> can now be created:</p><pre class="codeinput">Constants = struct(<span class="string">'a'</span>,2);
 Variables = struct(<span class="string">'x'</span>,[],<span class="string">'t'</span>,[]);
 Coefficients = struct(<span class="string">'b'</span>,[],<span class="string">'c'</span>,[]);
 Dependencies = struct(<span class="string">'t'</span>,<span class="string">'Workspace.Variables.t = sin(5*pi.*Workspace.Variables.x);'</span>);
-</pre><p>Here theconstant <img src="funcCreationExample_eq05508344529756732484.png" alt="$a$"> has been assigned value 2 in the creation process but the other parameters are left empty for now. Also the variable <img src="funcCreationExample_eq12656067504604335951.png" alt="$t$"> is defined to be dependent on the value of variable <img src="funcCreationExample_eq12428413953531653171.png" alt="$x$"> through function <img src="funcCreationExample_eq13862916669797514391.png" alt="$t = \sin(5\pi x)$">.</p><p>After the substructures have been defined, the <tt>Workspace</tt> structure can be built:</p><pre class="codeinput">Workspace = struct(<span class="string">'Variables'</span>,Variables,<span class="keyword">...</span>
+</pre><p>Here the constant <img src="funcCreationExample_eq05508344529756732484.png" alt="$a$"> has been assigned value 2 in the creation process but the other parameters are left empty for now. Also the variable <img src="funcCreationExample_eq12656067504604335951.png" alt="$t$"> is defined to be dependent on the value of variable <img src="funcCreationExample_eq12428413953531653171.png" alt="$x$"> through function <img src="funcCreationExample_eq13862916669797514391.png" alt="$t = \sin(5\pi x)$">.</p><p>After the substructures have been defined, the <tt>Workspace</tt> structure can be built:</p><pre class="codeinput">Workspace = struct(<span class="string">'Variables'</span>,Variables,<span class="keyword">...</span>
                    <span class="string">'Constants'</span>,Constants,<span class="keyword">...</span>
                    <span class="string">'Coefficients'</span>,Coefficients,<span class="keyword">...</span>
                    <span class="string">'Dependencies'</span>,Dependencies);
 </pre><p>The <tt>func</tt> object itself can now be created by calling the constructor method:</p><pre class="codeinput">theFunc = func(funcHandle,Workspace);
-</pre><pre class="codeoutput error">Undefined function 'func' for input arguments of type 'function_handle'.
-
-Error in funcCreationExample (line 52)
-theFunc = func(funcHandle,Workspace);
-</pre><p>The warning issued by the calling the constructor reminds thatto be able to perform a curve fit using the fitUI function, the user has to define fit limits as a structure containing a field for each coefficient. The limits have to be provided as a 1x3 cell array of either</p><div><ul><li>Numeric scalars</li><li>Character arrays representing equations that output numeric scalars. The equations can be dependent on the independent variable of the fit (marked with <tt>x</tt> regardless of its name in the Workspace structure). See <a href="matlab:doc('fitUI')"><tt>fitUI</tt></a> documentation for more information on the usage of the independent variable.</li></ul></div><p>Cells of the array represent the lower limit, the starting point and the higher limit in order {low,start,high}.</p><p>The fit limits can be provided as a third optional input for the constructor method, or they can be added or modified later on with the method <tt>func.setFitlims</tt>. Input types accepted by <tt>setFitlims</tt> are</p><div><ul><li>Compelte or incomplete <tt>Fitlims</tt> structure</li><li>Name value pairs with the names representing the respective coefficients and the values their limits.</li></ul></div><pre class="codeinput"><span class="comment">% Providing inclomplete Fitlims structure:</span>
+</pre><pre class="codeoutput">Warning: Workspace contains coefficients
+with no set fit limits. Consider setting
+the limits with the setFitlims method
+before using this func object for
+fitting. 
+</pre><p>The warning issued by the calling the constructor reminds that to be able to perform a curve fit using the fitUI function, the user has to define fit limits as a structure containing a field for each coefficient. The limits have to be provided as a 1x3 cell array of either</p><div><ul><li>Numeric scalars</li><li>Character arrays representing equations that output numeric scalars. The equations can be dependent on the independent variable of the fit (marked with <tt>x</tt> regardless of its name in the Workspace structure). See <a href="matlab:doc('fitUI')"><tt>fitUI</tt></a> documentation for more information on the usage of the independent variable.</li></ul></div><p>Cells of the array represent the lower limit, the starting point and the higher limit in order {low,start,high}.</p><p>The fit limits can be provided as a third optional input for the constructor method, or they can be added or modified later on with the method <tt>func.setFitlims</tt>. Input types accepted by <tt>setFitlims</tt> are</p><div><ul><li>Compelte or incomplete <tt>Fitlims</tt> structure</li><li>Name value pairs with the names representing the respective coefficients and the values their limits.</li></ul></div><pre class="codeinput"><span class="comment">% Providing inclomplete Fitlims structure:</span>
 Fitlims = struct(<span class="string">'b'</span>,{{0,2.5,5}}); <span class="comment">% Double braces have to be used to keep cell array form</span>
 theFunc.setFitlims(Fitlims)
 
@@ -89,19 +90,40 @@ theFunc.setFitlims(Fitlims)
 theFunc.setFitlims(<span class="string">'c'</span>,{<span class="string">'min(x)'</span>,<span class="string">'mean(x)'</span>,<span class="string">'max(x)'</span>})
 
 disp(theFunc.Fitlims)
+</pre><pre class="codeoutput">    b: {[0]  [2.5]  [5]}
+    c: {'min(x)'  'mean(x)'  'max(x)'}
+
 </pre><p>To add missing parameters to the object, the method <tt>func.replaceParams</tt> has to be used.</p><pre class="codeinput">theFunc.replaceParams(<span class="string">'x'</span>,(0:0.01:1)');
 disp(theFunc.viewWorkspace)
+</pre><pre class="codeoutput">                           description                       valueMean    valueMin    valueMax    standardDeviation
+         ________________________________________________    _________    ________    ________    _________________
+
+    a    {["Constant: scalar without confidence bounds"]}          2        NaN         NaN              NaN       
+    x    {["Variable: vector of length 101"            ]}        0.5          0           1              NaN       
+    t    {["Variable: dependent vector of length 101"  ]}     0.1258         -1           1              NaN       
+    b    {["Coefficient: no values assigned"           ]}        NaN        NaN         NaN              NaN       
+    c    {["Coefficient: no values assigned"           ]}        NaN        NaN         NaN              NaN       
+
 </pre><p>Alternatively the the <tt>func</tt> object could now be included to an <tt>electrolyzerModel</tt> object with <tt>electrolyzerModel.addPotentials</tt> method. Parameters can be replaced also with the help of <tt>electrolyzerModel.replaceParams</tt> method.</p><p>For determining the values for parameters <img src="funcCreationExample_eq02044268985122151499.png" alt="$b$"> and <img src="funcCreationExample_eq08422257486649890878.png" alt="$c$"> through curve fitting, their values have to be left empty. For this example, we assume the fit has been performed and the result has been:</p><pre class="codeinput">b = 3.25;
 c = 0.75;
 theFunc.replaceParams(<span class="string">'b'</span>,b,<span class="string">'c'</span>,c);
 disp(theFunc.viewWorkspace)
+</pre><pre class="codeoutput">                             description                        valueMean    valueMin    valueMax    standardDeviation
+         ___________________________________________________    _________    ________    ________    _________________
+
+    a    {["Constant: scalar without confidence bounds"   ]}          2        NaN         NaN              NaN       
+    x    {["Variable: vector of length 101"               ]}        0.5          0           1              NaN       
+    t    {["Variable: dependent vector of length 101"     ]}     0.1258         -1           1              NaN       
+    b    {["Coefficient: scalar without confidence bounds"]}       3.25        NaN         NaN              NaN       
+    c    {["Coefficient: scalar without confidence bounds"]}       0.75        NaN         NaN              NaN       
+
 </pre><p>With all the parameters defined, the value of the function can be calculated using method <tt>calculate</tt>:</p><pre class="codeinput">y = theFunc.calculate();
 
 figure
 plot(theFunc.Workspace.Variables.x,y)
 xlabel(<span class="string">'x'</span>)
 ylabel(<span class="string">'y'</span>)
-</pre><h2 id="10">Reason for using <tt>func</tt> objects</h2><p>This example doesn't demonstrate the reason behind the usage <tt>func</tt> objects instead of directly using the function handles for fitting. The special features of <tt>func</tt> class enable three main aspects:</p><div><ol><li>It enables the addition of two <tt>func</tt> objects with a static method <tt>func.add</tt> so that the function handle is maintained in readable form.</li><li>Adding two func objects unites the Workspaces of these two enabling later modifications of the parameters.</li><li>Using only one structure as the parameter for the function handle removes the need for correct input order for the function handle, as the function handle calls only the parameters it needs and uses them only in the intended way.</li></ol></div><p>The flexibility of the Electrolyzer Modelling Toolbox is mainly due to the ability of combining multiple potential functions in desired way still maintaining the ability to perform parametrization through curve fitting. At the same time, the function stays fully readable and can be modified as needed.</p><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+</pre><img vspace="5" hspace="5" src="funcCreationExample_01.png" alt=""> <h2 id="9">Reason for using <tt>func</tt> objects</h2><p>This example doesn't demonstrate the reason behind the usage <tt>func</tt> objects instead of directly using the function handles for fitting. The special features of <tt>func</tt> class enable three main aspects:</p><div><ol><li>It enables the addition of two <tt>func</tt> objects with a static method <tt>func.add</tt> so that the function handle is maintained in readable form.</li><li>Adding two func objects unites the Workspaces of these two enabling later modifications of the parameters.</li><li>Using only one structure as the parameter for the function handle removes the need for correct input order for the function handle, as the function handle calls only the parameters it needs and uses them only in the intended way.</li></ol></div><p>The flexibility of the Electrolyzer Modelling Toolbox is mainly due to the ability of combining multiple potential functions in desired way still maintaining the ability to perform parametrization through curve fitting. At the same time, the function stays fully readable and can be modified as needed.</p><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% Creating custom potential term as a |func| object
 % If the user cannot find the desired models from the modelling functions
@@ -138,7 +160,7 @@ Coefficients = struct('b',[],'c',[]);
 Dependencies = struct('t','Workspace.Variables.t = sin(5*pi.*Workspace.Variables.x);');
 
 %%
-% Here theconstant $a$ has been assigned value 2 in the creation process
+% Here the constant $a$ has been assigned value 2 in the creation process
 % but the other parameters are left empty for now. Also the variable $t$ is
 % defined to be dependent on the value of variable $x$ through function
 % $t = \sin(5\pi x)$.
@@ -157,7 +179,7 @@ Workspace = struct('Variables',Variables,...
 theFunc = func(funcHandle,Workspace);
 
 %%
-% The warning issued by the calling the constructor reminds thatto be able
+% The warning issued by the calling the constructor reminds that to be able
 % to perform a curve fit using the fitUI function, the user has to define
 % fit limits as a structure containing a field for each coefficient. The
 % limits have to be provided as a 1x3 cell array of either 
@@ -190,8 +212,7 @@ theFunc.setFitlims('c',{'min(x)','mean(x)','max(x)'})
 
 disp(theFunc.Fitlims)
 
-%%
-%
+
 
 %%
 % To add missing parameters to the object, the method |func.replaceParams|

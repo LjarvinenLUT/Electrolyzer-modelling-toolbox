@@ -7,7 +7,7 @@
     <param.summary>Water electrolysis modelling toolbox for UI curve parametrization</param.summary>
     <param.description>Beta version of the toolbox</param.description>
     <param.screenshot />
-    <param.version>0.5.3.0</param.version>
+    <param.version>0.5.3.1</param.version>
     <param.output>${PROJECT_ROOT}\Electrolyzer Modelling Toolbox.mltbx</param.output>
     <param.products.name />
     <param.products.id />
@@ -52,12 +52,14 @@ installEModel.m</param.exclude.filters>
       &lt;example name="funcCreationExample" type="html"&gt;
          &lt;file type="source"&gt;/doc/html/funcCreationExample.html&lt;/file&gt;
          &lt;file type="main"&gt;/doc/funcCreationExample.m&lt;/file&gt;
-         &lt;file type="thumbnail"/&gt;
+         &lt;file type="thumbnail"&gt;/doc/html/funcCreationExample.png&lt;/file&gt;
+         &lt;file type="image"&gt;/doc/html/funcCreationExample_01.png&lt;/file&gt;
       &lt;/example&gt;
       &lt;example name="usageExample" type="html"&gt;
          &lt;file type="source"&gt;/doc/html/usageExample.html&lt;/file&gt;
          &lt;file type="main"&gt;/doc/usageExample.m&lt;/file&gt;
-         &lt;file type="thumbnail"/&gt;
+         &lt;file type="thumbnail"&gt;/doc/html/usageExample.png&lt;/file&gt;
+         &lt;file type="image"&gt;/doc/html/usageExample_01.png&lt;/file&gt;
       &lt;/example&gt;
       &lt;example name="ClassesAndFunctions" type="html"&gt;
          &lt;file type="source"&gt;/doc/html/ClassesAndFunctions.html&lt;/file&gt;
