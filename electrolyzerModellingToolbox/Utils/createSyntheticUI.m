@@ -50,6 +50,14 @@ isCharEntries = cellfun(@ischar,varargin);
 indexOfCharEntries = find(isCharEntries);
 charEntries = varargin(isCharEntries);
 
+unknownEntries = ~ismember(charEntries,{'model','uLims','jLims','uSigma','jSigma'});
+if any(unknownEntries)
+    unknownEntryCalls = string(charEntries(unknownEntries));
+    error('createSyntheticUI:invalidData',"Invalid data! Unknown options: "...
+        + join(unknownEntryCalls,", ")...
+        + "\nOptions allowed: model, uLims, jLims, uSigma, jSigma")
+end
+
 % Find locations of different parameter calls
 modelCall = ismember(charEntries,{'model'});
 jLimsCall  = ismember(charEntries,{'jLims'});
@@ -57,12 +65,14 @@ uLimsCall  = ismember(charEntries,{'uLims'});
 jSigmaCall  = ismember(charEntries,{'jSigma'});
 uSigmaCall  = ismember(charEntries,{'uSigma'});
 
+
+
 %% Parse parameter calls
 try
     if any(jLimsCall) % Current limits
         jLims = varargin{indexOfCharEntries(jLimsCall)+1};
     else
-        jLims = [0 inf];
+        jLims = [0.02 5];
     end
     
     if any(uLimsCall) % Voltage limits
@@ -97,32 +107,20 @@ try
     if any(modelCall) 
         eModel = copy(varargin{indexOfCharEntries(modelCall)+1});
         
-        try % Are variables defined with the model?
-            eModel.potentialFunc.Workspace.Variables;
-        catch ME
-            if strcmp(ME.identifier,'MATLAB:nonExistentField')
-                fprintf("\nNo variables provided with the model.\nDefault values used.\n")
-                if strcmpi(eModel.type,'pem')
-                    Workspace = struct('Variables',struct('T',273.15+50,'pAn',2,'pCat',30));
-                else % alkaline
-                    Workspace = struct('Variables',struct('T',273.15+50,'ps',2,'m',0.05));
-                end
-                eModel.setParams(Workspace);
-            else
-                rethrow(ME)
+        if isempty(fieldnames(eModel.potentialFunc.Workspace.Variables)) % Are variables defined with the model?
+            fprintf("\nNo variables provided with the model.\nDefault values used.\n")
+            if strcmpi(eModel.type,'pem')
+                Workspace = struct('Variables',struct('T',273.15+50,'pAn',2,'pCat',30));
+            else % alkaline
+                Workspace = struct('Variables',struct('T',273.15+50,'ps',2,'m',0.05));
             end
+            eModel.setParams(Workspace);
         end
         
-        try % Are coefficients defined with the model?
-            eModel.potentialFunc.Workspace.Coefficients;
-        catch ME
-            if strcmp(ME.identifier,'MATLAB:nonExistentField')
-                fprintf("\nNo fit coefficients provided with the model. \nDefault values used.\n")
-                Workspace = struct('Coefficients',struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5));
-                eModel.setParams(Workspace);
-            else
-                rethrow(ME)
-            end
+        if isempty(fieldnames(eModel.potentialFunc.Workspace.Coefficients)) % Are coefficients defined with the model?
+            fprintf("\nNo fit coefficients provided with the model. \nDefault values used.\n")
+            Workspace = struct('Coefficients',struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5));
+            eModel.setParams(Workspace);
         end
         
         if func.isEmpty(eModel.potentialFunc) % Are potential terms defined with the model?
@@ -205,16 +203,12 @@ end
 
 % Take samples from the dense data vectors
 Usamples = linspace(max(min(Umeas),uLims(1)),min(max(Umeas),uLims(2)),N)';
-iii = 1;
-for ii = 1:N
-    Udif = abs(Umeas-Usamples(ii));
-    [~,ind] = min(Udif);
-    if iii == 1 || (iii > 1 && abs(jmeas(ind)-jmeassamp(iii-1))>0.01)
-        jmeassamp(iii,1) = jmeas(ind); % Final sampled current vector
-        Umeassamp(iii,1) = Umeas(ind); % Final sampled voltage vector
-        iii = iii+1;
-    end
-end
+Udif = abs(Umeas-Usamples');
+[~,ind] = min(Udif,[],1);
+jmeassamp = jmeas(ind); % Final sampled current vector
+Umeassamp = Umeas(ind); % Final sampled voltage vector
+
+
 
 % Adding normal error with the given standard deviation to measurements
 % The first value is kept errorless to avoid too radical change in current
@@ -232,6 +226,8 @@ end
 
 SynData = struct('voltage',Umeassamper,'current',jmeassamper);
 FullData = struct('voltage',Umeas,'current',jmeas);
+
+Workspace = eModel.potentialFunc.Workspace;
 
 fprintf("\nSynthetic UI data creation finished.\n"...
     + "------------------------------------------------------------\n")

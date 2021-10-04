@@ -442,7 +442,7 @@ classdef electrolyzerModel < handle
             
             [fitParams,gof] = fitUI(obj.potentialFunc,U,I,'method',method,'weights',weightsMethod);
             
-            obj.PlottingCurves = struct('currentMeasured',I,'voltageMeasured',U);
+            obj.PlottingCurves = struct('currentMeasured',I,'voltageMeasured',U,'method',method);
             
             obj.synchronizeFuncStorage;
             
@@ -470,10 +470,20 @@ classdef electrolyzerModel < handle
         end
         
         
-        function showUI(obj)
+        function showUI(obj,varargin)
             % SHOWUI Creates a figure and plots the UI curve on it.
             %   Uses data stored in PlottingCurves property by the fitUI
             %   method.
+            %
+            %   Optional input: Text to be showed as the name of the
+            %       created uifigure window.
+            
+            % 
+            if nargin == 2 && (isstring(varargin{1})||ischar(varargin{1}))
+                figureMsg = varargin{1};
+            else
+                figureMsg = 'Automatically created plot of the UI curve and its parameters';
+            end
             
             if isempty(obj.PlottingCurves)
                 warning('No UI curve fit performed, therefore no UI curve to show.')
@@ -525,14 +535,15 @@ classdef electrolyzerModel < handle
                     error('No current to plot!')
                 end
 %                 
-                f = uifigure('Name','Automatically created plot of the UI curve and its parameters');
-                f.Position([2 4]) = [f.Position(2)-150 f.Position(4)+150];
+                f = uifigure('Name',figureMsg,'HandleVisibility', 'on');
+                f.Position([2 4]) = [f.Position(2)-190 f.Position(4)+200];
                 figMeas = f.Position;
                 
                 format shortG % Format the table to show small numbers as the powers of ten
                 
+                % Add the UI curve plot
                 ax = uiaxes(f);
-                ax.Position = [10 160 figMeas(3)-20 figMeas(4)-170];
+                ax.Position = [10 190 figMeas(3)-20 figMeas(4)-190];
                 errorbar(ax,cvplot{:},'o')
                 hold(ax,'on');
                 plot(ax,fitCurrent,fitVoltage)
@@ -540,6 +551,16 @@ classdef electrolyzerModel < handle
                 ax.XLabel.String = "Current density (A/cm^2)";
                 ax.YLabel.String = "Voltage (V)";
                 legend(ax,"Data", "Fit", "Location", "Best")
+                
+                % Add label about the used method
+                lbl = uilabel(f);
+                lbl.Position = [30 160 figMeas(3)-20 20];
+                if strcmpi(obj.PlottingCurves.method,"PS")
+                    methodStr = "Particle swarm minimization on sum of squared residuals";
+                elseif strcmpi(obj.PlottingCurves.method,"NLLSE")
+                    methodStr = "Non-linear least squares error";
+                end 
+                lbl.Text = "Fit method: " + methodStr;
                 
                 % Add fit coefficients to the plot
                 coeffTable = obj.getCoefficients;
@@ -564,12 +585,12 @@ classdef electrolyzerModel < handle
             coeffTable = table(value,stdev,'RowNames',fnames,'VariableNames',{'Value','Std'});
         end
         
-        function report = viewWorkspace(obj)
+        function workspaceReport = viewWorkspace(obj)
             % VIEWWORKSPACE Outputs the Workspace in a human-readable table.
             %
             % See also FUNC.VIEWWORKSPACE
-            report = obj.potentialFunc.viewWorkspace;
-            disp(report)
+            workspaceReport = obj.potentialFunc.viewWorkspace;
+            disp(workspaceReport)
         end
         
         function report(obj)

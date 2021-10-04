@@ -110,7 +110,7 @@ std = sqrt(voltageStd.^2 + currentStd.^2);
 if std == 0
     errorWeights = 1;
 else
-    errorWeights = max((1./std.^2)/1000,1);
+    errorWeights = min((1./std.^2)/1000,1);
 end
 
 
@@ -168,14 +168,14 @@ switch method
                 'TolX', tolX,...
                 'Display','off');
             
-            fitfun = fittype(funcHandle,...
+            fitFun = fittype(funcHandle,...
                 'dependent','voltage',...
                 'coefficients',coefficients,...
                 'independent','current',...
                 'problem',problemVariableNames,...
                 'options',fo);
             
-            [fittedCurve,~,output] = fit(current,voltage,fitfun,'problem',problemVariables);
+            [fittedCurve,~,output] = fit(current,voltage,fitFun,'problem',problemVariables);
             
             
             % Voltage values obtained from the fit
@@ -226,7 +226,7 @@ switch method
         
         % Creating objective function for particle swarm: sum of square
         % residuals
-        fitfun = @(x) sum((funcHandle(x,problemVariables{:},current)-voltage).^2.*weights);
+        fitFun = @(x) sum((funcHandle(x,problemVariables{:},current)-voltage).^2.*weights);
         
         % Particle swarm options
         options = optimoptions('particleswarm','SwarmSize',600,'HybridFcn',@fmincon,'Display','off');%,'HybridFcn',@fmincon
@@ -234,7 +234,7 @@ switch method
         % Retry fitting if R^2 not good enough
         fval_best = Inf;
         for i = 1:10
-            [coeff,fval,exitflag,output] = particleswarm(fitfun,nvars,lb,ub,options);
+            [coeff,fval,exitflag,output] = particleswarm(fitFun,nvars,lb,ub,options);
             
             % Voltage values obtained from the fit
             fitVoltage = funcHandle(coeff,problemVariables{:},current);
@@ -399,6 +399,7 @@ data = [x,y]; % Data matrix
 Model.ssfun = ssfun; % Sum of squares function
 Model.sigma2 = ssr/(n-2); % Proposal variance
 
+    
 % Options
 Options.nsimu = 20000; % number of samples
 Options.qcov = 0.01*eye(n); % (initial) proposal covariance
