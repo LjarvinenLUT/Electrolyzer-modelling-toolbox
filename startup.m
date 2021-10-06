@@ -20,3 +20,5 @@ catch ME
         'directory of the toolbox.'];
     warning(warningMsg)
 end
+
+clear('toolpath');

@@ -536,14 +536,21 @@ classdef electrolyzerModel < handle
                 end
 %                 
                 f = uifigure('Name',figureMsg,'HandleVisibility', 'on');
-                f.Position([2 4]) = [f.Position(2)-190 f.Position(4)+200];
+                
+                % Sizing the figure
+                set(0,'units','pixels')
+                screenSize = get(0,'ScreenSize'); % Screen size [~ ~ width height]
+                figMeasInit = f.Position; % Initial figure dimensions [left bottom width height]
+                newHeight = figMeasInit(4)*1.5;
+                newBottom = min(max(10,figMeasInit(4)),screenSize(4)-newHeight);
+                f.Position([2 4]) = [newBottom newHeight]; % Determine new dimensions
                 figMeas = f.Position;
                 
                 format shortG % Format the table to show small numbers as the powers of ten
                 
                 % Add the UI curve plot
                 ax = uiaxes(f);
-                ax.Position = [10 190 figMeas(3)-20 figMeas(4)-190];
+                ax.Position = [figMeas(3)*0.025 figMeas(4)*0.325 figMeas(3)*0.95 figMeas(4)*0.65];
                 errorbar(ax,cvplot{:},'o')
                 hold(ax,'on');
                 plot(ax,fitCurrent,fitVoltage)
@@ -554,7 +561,7 @@ classdef electrolyzerModel < handle
                 
                 % Add label about the used method
                 lbl = uilabel(f);
-                lbl.Position = [30 160 figMeas(3)-20 20];
+                lbl.Position = [figMeas(3)*0.1 figMeas(4)*0.275 figMeas(3)*0.8 figMeas(4)*0.025];
                 if strcmpi(obj.PlottingCurves.method,"PS")
                     methodStr = "Particle swarm minimization on sum of squared residuals";
                 elseif strcmpi(obj.PlottingCurves.method,"NLLSE")
@@ -566,7 +573,7 @@ classdef electrolyzerModel < handle
                 coeffTable = obj.getCoefficients;
                 data = table2cell(coeffTable);
                 uit = uitable(f);
-                uit.Position = [10 10 figMeas(3)-20 130];
+                uit.Position = [figMeas(3)*0.025 figMeas(4)*0.025 figMeas(3)*0.95 figMeas(4)*0.225];
                 uit.Data = data;
                 uit.ColumnName = {'Value','STD'};
                 uit.RowName = coeffTable.Properties.RowNames;
