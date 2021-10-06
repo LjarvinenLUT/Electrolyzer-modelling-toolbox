@@ -259,6 +259,10 @@ classdef func < handle
                 error("Variables have to be given as name-value pairs")
             end
             
+            if isequal(obj.funcHandle,@pass)
+                error("No function defined. Results cannot be calculated.")
+            end
+            
             % Check if Workspace was given as an input
             workspaceCall = strcmpi(varargin,'Workspace');
             if any(workspaceCall)
