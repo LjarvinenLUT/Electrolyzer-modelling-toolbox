@@ -1,6 +1,9 @@
 function [SynData,FullData,Workspace] = createSyntheticUI(varargin)
 % CREATESYNTHETICUI Creates synthetic Voltage-Current pairs from an
-%   electrolyzer UI curve.
+%   electrolyzer UI curve. The function simulates a true measurement and
+%   thus enables the user to define measurement errors for both current and
+%   voltage, as well as the number of independent measurements for each
+%   data point to be averaged.
 %
 %   [SynData,FullData,Workspace] = CREATESYNTHETICUI() creates synthetic UI curve
 %       with N = 20 samples using default coefficients. Buttler-Volmer
@@ -22,13 +25,22 @@ function [SynData,FullData,Workspace] = createSyntheticUI(varargin)
 %           - 'jLims', enables defining of current limits for the synthetic
 %               UI data. Input should be in a form of 1x2 vector 
 %               [iLow iHigh].
-%           - 'jSigma', enables defining of standard deviation for current
-%               measurements.
+%               Default: [0.02 5]
+%           - 'jErr', enables defining of measurement error for single
+%               current measurements. Provided as fraction from the
+%               measured value.
+%               Default: 0
 %           - 'uLims', enables defining of voltage limits for the synthetic
 %               UI data. Input should be in a form of 1x2 vector 
 %               [uLow uHigh].
-%           - 'uSigma', enables defining of standard deviation for voltage
-%               measurements.
+%               Default: [0 inf]
+%           - 'uErr', enables defining of measurement error for single
+%               voltage measurements. Provided as fraction from the
+%               measured value.
+%               Default: 0
+%           - 'nSamp', number of "measurements" from normal distribution
+%               per data sample. 
+%               Default: 200
 %
 %   Output:
 %       - SynData -- Structure containing sampled data in fields 'current' 
@@ -50,20 +62,21 @@ isCharEntries = cellfun(@ischar,varargin);
 indexOfCharEntries = find(isCharEntries);
 charEntries = varargin(isCharEntries);
 
-unknownEntries = ~ismember(charEntries,{'model','uLims','jLims','uSigma','jSigma'});
+unknownEntries = ~ismember(charEntries,{'model','uLims','jLims','uErr','jErr','nSamp'});
 if any(unknownEntries)
     unknownEntryCalls = string(charEntries(unknownEntries));
     error('createSyntheticUI:invalidData',"Invalid data! Unknown options: "...
         + join(unknownEntryCalls,", ")...
-        + "\nOptions allowed: model, uLims, jLims, uSigma, jSigma")
+        + "\nOptions allowed: model, uLims, jLims, uErr, jErr, nSamp")
 end
 
 % Find locations of different parameter calls
 modelCall = ismember(charEntries,{'model'});
 jLimsCall  = ismember(charEntries,{'jLims'});
 uLimsCall  = ismember(charEntries,{'uLims'});
-jSigmaCall  = ismember(charEntries,{'jSigma'});
-uSigmaCall  = ismember(charEntries,{'uSigma'});
+jErrCall  = ismember(charEntries,{'jErr'});
+uErrCall  = ismember(charEntries,{'uErr'});
+nSampCall = ismember(charEntries,{'nSamp'});
 
 
 
@@ -81,16 +94,22 @@ try
         uLims = [0 inf];
     end
     
-    if any(jSigmaCall) % Standard deviation for current
-        jSigma = varargin{indexOfCharEntries(jSigmaCall)+1};
+    if any(jErrCall) % Standard deviation for current
+        jErr = varargin{indexOfCharEntries(jErrCall)+1};
     else
-        jSigma = 0;
+        jErr = 0;
     end
     
-    if any(uSigmaCall) % Standard deviation for voltage
-        uSigma = varargin{indexOfCharEntries(uSigmaCall)+1};
+    if any(uErrCall) % Standard deviation for voltage
+        uErr = varargin{indexOfCharEntries(uErrCall)+1};
     else
-        uSigma = 0;
+        uErr = 0;
+    end
+    
+    if any(nSampCall) % Standard deviation for voltage
+        nSamp = varargin{indexOfCharEntries(nSampCall)+1};
+    else
+        nSamp = 200;
     end
     
 catch ME
@@ -215,11 +234,11 @@ Umeassamp = Umeas(ind); % Final sampled voltage vector
 % value that would hinder fitting performance.
 jmeassamper = [jmeassamp(1) 0;nan(length(jmeassamp)-1,2)];
 Umeassamper = [Umeassamp(1) 0;nan(length(jmeassamp)-1,2)];
-for ii = 2:length(jmeassamp)
-%     jm = jmeassamp(ii).*(1 + randn(200,1).*jSigma);
-%     Um = Umeassamp(ii).*(1 + randn(200,1).*uSigma);
-    jm = jmeassamp(ii) + randn(200,1).*jSigma;
-    Um = Umeassamp(ii) + randn(200,1).*uSigma;
+for ii = 1:length(jmeassamp)
+    jm = jmeassamp(ii).*(1 + randn(nSamp,1).*jErr);
+    Um = Umeassamp(ii).*(1 + randn(nSamp,1).*uErr);
+%     jm = jmeassamp(ii) + randn(nSamp,1).*jErr;
+%     Um = Umeassamp(ii) + randn(nSamp,1).*uErr;
     jmeassamper(ii,:) = [mean(jm) std(jm)];
     Umeassamper(ii,:) = [mean(Um) std(Um)];
 end
