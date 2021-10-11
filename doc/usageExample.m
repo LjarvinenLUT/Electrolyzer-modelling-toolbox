@@ -156,14 +156,12 @@ pressureData = AlkaliUI.P(:,1);
 
 %%
 % Alternatively one can create synthetic UI curve for testing purpose using
-% special function |createSyntheticUI|:
-[SynData,~,SynWorkspace] = createSyntheticUI();
-
-%%
-% Here the structure |SynData| contains the voltage and current vectors,
-% with their respective standard deviations, in fields that are named
-% accordingly. |SynWorkspace| contains the variables and parameters used
-% for the data synthetisation.
+% special function |createSyntheticUI|, which enables user to set the
+% amount of data points, defaulted at 20. The user can also induce normally
+% distributed measurement error by defining the number of measurements for
+% each data point and the measurement error as a fraction of the reading.
+% For more detailed explanation of the function, see its
+% <matlab:doc('createSyntheticUI') documentation>.
 
 %%
 % Let's replace the preset temperature from the electrolyzer model with the
@@ -185,8 +183,8 @@ weights = "l";
 % densities. Now that mass transfer effects are not present in the data to
 % be fitted, we do not weigh the higher current densities, which could be
 % done by adding letter "h" to the weights call. More in-detail description
-% of the options can be found from the documentation of the function
-% |fitUI|.
+% of the options can be found from the <matlab:doc('fitUI') documentation
+% of the function |fitUI|>.
 
 [fitParams,gof] = eModel.fitUI(voltageData,currentData,'method',method,'weights',weights);
 

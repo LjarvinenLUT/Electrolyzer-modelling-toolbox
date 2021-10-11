@@ -406,6 +406,7 @@ Options.qcov = 0.01*eye(n); % (initial) proposal covariance
 Options.method = 'dram'; % method: DRAM
 Options.adaptint = 100; % adaptation interval
 Options.verbosity = 0; % Suppress output
+Options.waitbar = 0; % Suppress waitbar
 
 % Run Metropolis-Hastings MCMC simulation
 [results,chain] = mcmcrun(Model,data,coeffs,Options);

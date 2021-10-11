@@ -232,8 +232,8 @@ Umeassamp = Umeas(ind); % Final sampled voltage vector
 % Adding normal error with the given standard deviation to measurements
 % The first value is kept errorless to avoid too radical change in current
 % value that would hinder fitting performance.
-jmeassamper = [jmeassamp(1) 0;nan(length(jmeassamp)-1,2)];
-Umeassamper = [Umeassamp(1) 0;nan(length(jmeassamp)-1,2)];
+jmeassamper = nan(length(jmeassamp),2);
+Umeassamper = nan(length(jmeassamp),2);
 for ii = 1:length(jmeassamp)
     jm = jmeassamp(ii).*(1 + randn(nSamp,1).*jErr);
     Um = Umeassamp(ii).*(1 + randn(nSamp,1).*uErr);
