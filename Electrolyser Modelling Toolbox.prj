@@ -7,7 +7,7 @@
     <param.summary>Water electrolysis modelling toolbox for UI curve parametrization</param.summary>
     <param.description>Beta version of the toolbox</param.description>
     <param.screenshot />
-    <param.version>0.6.0.3</param.version>
+    <param.version>0.6.1.0</param.version>
     <param.output>${PROJECT_ROOT}\Electrolyzer Modelling Toolbox.mltbx</param.output>
     <param.products.name />
     <param.products.id />
