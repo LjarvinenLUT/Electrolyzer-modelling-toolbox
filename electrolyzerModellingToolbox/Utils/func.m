@@ -280,7 +280,7 @@ classdef func < handle
             end
             
             % Refresh all dependencies
-            TempWorkspace = refresh(TempWorkspace);
+            TempWorkspace = func.refresh(TempWorkspace);
             
             % The result is calculated if the TempWorkspace contains all
             % necessary values for the calculation.
@@ -723,7 +723,7 @@ classdef func < handle
             else
                 for i = 1:length(fn)
                     if strcmp(fn{i},'Dependencies')
-                        continue;
+                        TempWorkspace.(fn{i}) = Struct.(fn{i});
                     elseif isstruct(Struct.(fn{i}))
                         TempWorkspace.(fn{i}) = func.createTempWorkspace(Struct.(fn{i}));
                     elseif isempty(Struct.(fn{i})) || length(Struct.(fn{i})(1,:)) == 1
@@ -772,10 +772,8 @@ classdef func < handle
                         end
                     end
                 end
-                refreshedWorkspace = Workspace;
-            else
-                return;
             end
+            refreshedWorkspace = Workspace;
         end
     end
     
