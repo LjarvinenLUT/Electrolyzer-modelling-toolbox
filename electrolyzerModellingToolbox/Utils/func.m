@@ -278,7 +278,10 @@ classdef func < handle
                         varargin(2:2:end));
                 end
             end
-                        
+            
+            % Refresh all dependencies
+            TempWorkspace = refresh(TempWorkspace);
+            
             % The result is calculated if the TempWorkspace contains all
             % necessary values for the calculation.
             try
@@ -665,55 +668,27 @@ classdef func < handle
     
     %% Private dynamic methods
     methods (Access = private)
-
+        
         function equationStr = getEquation(obj)
             % GETEQUATION Creates human-readable equation string.
             %   Erases all occurences of Workspace from the equation body
-            %   leaving a string with human-readable equation structure.            
+            %   leaving a string with human-readable equation structure.
             equationStr = erase(obj.getEquationBody,...
-                                {'Workspace.Coefficients.',...
-                                'Workspace.Variables.',...
-                                'Workspace.Constants.'});
+                {'Workspace.Coefficients.',...
+                'Workspace.Variables.',...
+                'Workspace.Constants.'});
         end
         
         function equationBody = getEquationBody(obj)
             % GETEQUATIONBODY Outputs only the equation body.
-            %  Removes the @(Workspace) from the function handle.            
+            %  Removes the @(Workspace) from the function handle.
             equationBody = erase(func2str(obj.funcHandle),'@(Workspace)');
         end
         
         function refreshWorkspace(obj)
             % REFRESHWORKSPACE Recalculates dependent Workspace parameters.
             Workspace = obj.Workspace;
-            if ismember('Dependencies',fieldnames(Workspace))
-                fn = fieldnames(Workspace.Dependencies);
-                for i = 1:numel(fn)
-                    try
-                        eval(Workspace.Dependencies.(fn{i}))
-                    catch ME
-                        if strcmp(ME.identifier,'MATLAB:InputParser:ArgumentFailedValidation')||strcmp(ME.identifier,'MATLAB:undefinedVarOrClass')
-                            % Some variable needed in a function call in
-                            % dependencies is not defined. This causes the
-                            % function call to throw an error, which is
-                            % unnecessary for this object
-                            continue;
-                        elseif strcmp(ME.identifier,'MATLAB:nonExistentField')
-                            warningmsg = "Some dependencies could not be " + ...
-                                "evaluated because of missing variables. " + ...
-                                "Ensure that all the needed variables are " + ...
-                                "defined in the Workspace before using " + ...
-                                "this func object further.\n\n" + ...
-                                ME.message;
-                            warning('refreshWorkspace:nonExistentField',warningmsg)
-                        else
-                            rethrow(ME)
-                        end                           
-                    end
-                end
-                obj.Workspace = Workspace;
-            else
-                return;
-            end
+            obj.Workspace = func.refresh(Workspace);
             
             % Determine if there are undefined coefficients without fit limits
             % First find all the coefficients that don't have an value
@@ -731,11 +706,12 @@ classdef func < handle
                     + " object for fitting.";
                 warning(warningmsg)
             end
-            
         end
+            
         
     end
     
+
     %% Private static methods
     
     methods (Access = private, Static)
@@ -766,6 +742,39 @@ classdef func < handle
                         TempWorkspace.(fn{i}) = Struct.(fn{i})(:,1);
                     end
                 end
+            end
+        end
+        
+        function refreshedWorkspace = refresh(Workspace)
+            % REFRESH Recalculates dependent Workspace parameters.
+            if ismember('Dependencies',fieldnames(Workspace))
+                fn = fieldnames(Workspace.Dependencies);
+                for i = 1:numel(fn)
+                    try
+                        eval(Workspace.Dependencies.(fn{i}))
+                    catch ME
+                        if strcmp(ME.identifier,'MATLAB:InputParser:ArgumentFailedValidation')||strcmp(ME.identifier,'MATLAB:undefinedVarOrClass')
+                            % Some variable needed in a function call in
+                            % dependencies is not defined. This causes the
+                            % function call to throw an error, which is
+                            % unnecessary for this object
+                            continue;
+                        elseif strcmp(ME.identifier,'MATLAB:nonExistentField')
+                            warningmsg = "Some dependencies could not be " + ...
+                                "evaluated because of missing variables. " + ...
+                                "Ensure that all the needed variables are " + ...
+                                "defined in the Workspace before using " + ...
+                                "this func object further.\n\n" + ...
+                                ME.message;
+                            warning('refreshWorkspace:nonExistentField',warningmsg)
+                        else
+                            rethrow(ME)
+                        end
+                    end
+                end
+                refreshedWorkspace = Workspace;
+            else
+                return;
             end
         end
     end
