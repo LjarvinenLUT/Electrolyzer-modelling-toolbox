@@ -534,16 +534,19 @@ classdef electrolyzerModel < handle
                 else
                     error('No current to plot!')
                 end
-%                 
-                f = uifigure('Name',figureMsg,'HandleVisibility', 'on');
+%               
+                % Figure parameters
+                dummyFig = figure;
+                set(dummyFig,'Units','pixels')
+                initFigPosition = get(dummyFig,'Position'); % Initial figure dimensions [left bottom width height]
+                close(dummyFig)
+                f = uifigure('Name',figureMsg,'HandleVisibility', 'on','Position',initFigPosition);
                 
-                % Sizing the figure
-                set(0,'units','pixels')
-                screenSize = get(0,'ScreenSize'); % Screen size [~ ~ width height]
-                figMeasInit = f.Position; % Initial figure dimensions [left bottom width height]
-                newHeight = figMeasInit(4)*1.5;
-                newBottom = min(max(10,figMeasInit(4)),screenSize(4)-newHeight);
-                f.Position([2 4]) = [newBottom newHeight]; % Determine new dimensions
+                % Resizing the figure
+                newHeight = initFigPosition(4)*1.5;
+                newBottom = max(0,f.Position(2)+f.Position(4)-newHeight);
+                f.Position([2,4]) = [newBottom newHeight]; % Determine new dimensions
+                
                 figMeas = f.Position;
                 
                 format shortG % Format the table to show small numbers as the powers of ten
@@ -560,14 +563,14 @@ classdef electrolyzerModel < handle
                 legend(ax,"Data", "Fit", "Location", "Best")
                 
                 % Add label about the used method
-                lbl = uilabel(f);
-                lbl.Position = [figMeas(3)*0.1 figMeas(4)*0.275 figMeas(3)*0.8 figMeas(4)*0.025];
+                txa = uitextarea(f);
+                txa.Position = [figMeas(3)*0.025 figMeas(4)*0.275 figMeas(3)*0.95 figMeas(4)*0.05];
                 if strcmpi(obj.PlottingCurves.method,"PS")
-                    methodStr = "Particle swarm minimization on sum of squared residuals";
+                    methodStr = "Particle swarm minimization on the sum of squared residuals";
                 elseif strcmpi(obj.PlottingCurves.method,"NLLSE")
                     methodStr = "Non-linear least squares error";
                 end 
-                lbl.Text = "Fit method: " + methodStr;
+                txa.Value = "Fit method: " + methodStr;
                 
                 % Add fit coefficients to the plot
                 coeffTable = obj.getCoefficients;
