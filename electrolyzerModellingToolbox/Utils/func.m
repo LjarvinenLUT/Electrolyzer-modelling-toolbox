@@ -140,6 +140,9 @@ classdef func < handle
             %  structure (either Workspace compatible or not). Replaces
             %  values only for existing fields with the same name as given.
             %  The method acts recursively inside Workspace.
+            %  
+            %  Note: If a dependency is defined for a parameter to be
+            %  replaced, the dependency is erased.
             %
             % See also ADDVALUESTOSTRUCT
             if isempty(varargin{1})
@@ -163,15 +166,13 @@ classdef func < handle
                 error('Parameters to be replaced have to be either set as a single structure or as name-value pairs')
             end
             
-            if ismember('Dependencies',fieldnames(obj.Workspace))
-                TempWorkspace = rmfield(obj.Workspace,'Dependencies'); % Avoid replacing dependencies if named the same as their respective variable
-                Dependencies = obj.Workspace.Dependencies;
-                TempWorkspace = addValuesToStruct(TempWorkspace,paramsToReplace);
-                TempWorkspace.Dependencies = Dependencies;
-                obj.Workspace = TempWorkspace;
-            else
-                obj.Workspace = addValuesToStruct(obj.Workspace,paramsToReplace);
+            if ismember('Dependencies',fieldnames(obj.Workspace)) % Erase dependencies for the replaced parameters
+                paramNames = fieldnames(paramsToReplace);
+                dependentParamNames = paramNames(isfield(obj.Workspace.Dependencies,paramNames));
+                obj.Workspace.Dependencies = rmfield(obj.Workspace.Dependencies,dependentParamNames);
             end
+            
+            obj.Workspace = addValuesToStruct(obj.Workspace,paramsToReplace);
             
             obj.refreshWorkspace;
         end
@@ -199,6 +200,9 @@ classdef func < handle
                 end
                 if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Variables))
                     obj.Workspace.Variables = rmfield(obj.Workspace.Variables,paramsToRemove{i});
+                end
+                if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Dependencies))
+                    obj.Workspace.Dependencies = rmfield(obj.Workspace.Dependencies,paramsToRemove{i});
                 end
             end
         end
@@ -550,7 +554,9 @@ classdef func < handle
                     valueMean(i) = value(:,1);
                 elseif ismember('Dependencies',fieldnames(obj.Workspace)) && any(ismember(fieldName(i),fieldnames(obj.Workspace.Dependencies)))
                     descriptionText = ": dependent";
-                    if length(value(:,1)) == 1
+                    if isempty(value)
+                        descriptionText = strcat(descriptionText,", no value assigned");
+                    elseif length(value(:,1)) == 1
                         valueMean(i) = value(:,1);
                         descriptionText = strcat(descriptionText," scalar");
                     else
@@ -581,8 +587,8 @@ classdef func < handle
                             descriptionText = strcat(descriptionText," with individual values of standard deviation");
                         end
                     end
-                else
-                    descriptionText = ": no values assigned";
+                else % No value assigned
+                    descriptionText = ": no values assigned";    
                 end
                 description{i} = strcat(fields{i,1}(1:end-1),descriptionText);
             end
