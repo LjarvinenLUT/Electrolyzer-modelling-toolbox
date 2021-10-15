@@ -136,11 +136,11 @@ function Uohm = ohmic(varargin)
                     end
                 case "pem"
                     % (PEM) https://doi.org/10.1149/1.2085971 Springer et al. "Polymer Electrolyte Fuel Cell Model"
-%                     sigma = 0.005139 * lambda - 0.00326 * exp(1268 * (1/303 - 1./Workspace.Variables.T));
+%                     sigma = (0.005139 * lambda - 0.00326) * exp(1268 * (1/303 - 1./Workspace.Variables.T));
                     Workspace.Variables.lambda = [];
                     Workspace.Dependencies.sigma =  "Workspace.Variables.sigma = "...
-                        + "0.005139*Workspace.Variables.lambda - "...
-                        + "0.00326*exp(1268*(1/303-1./Workspace.Variables.T));"; % Dependecy format
+                        + "(0.005139*Workspace.Variables.lambda - 0.00326)"...
+                        + "*exp(1268*(1/303-1./Workspace.Variables.T));"; % Dependecy format
             end
             
                       

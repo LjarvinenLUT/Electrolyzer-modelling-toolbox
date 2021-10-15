@@ -36,19 +36,20 @@ xlabel('$j/j_0$')
 xlim([-20 20])
 legendflex([p(1) p(2) p(3) p(4) p(5)],{'0.3','$0.4$','$0.5$','$0.6$','0.7'},'xscale', 0.4,'anchor',{'se','se'},'buffer',[-10 10],'title','$\alpha$')
 
-fullFileOutput = fileOutputPath+"BV_var_alpha.pdf";
-% saveas(gcf,fullFileOutput);
-% export_fig(gcf, fullFileOutput);
-fig.PaperUnits = 'centimeters';
-fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
-% f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
-fig.PaperPositionMode = 'auto';
-print(fullFileOutput,'-dpdf','-r0');
+% fullFileOutput = fileOutputPath+"BV_var_alpha.pdf";
+% % saveas(gcf,fullFileOutput);
+% % export_fig(gcf, fullFileOutput);
+% fig.PaperUnits = 'centimeters';
+% fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
+% % f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
+% fig.PaperPositionMode = 'auto';
+% print(fullFileOutput,'-dpdf','-r0');
 
 %% Buttler-Volmer compared to Tafel
 
 jperj0Tafel1 = exp(alpha.*UactperfT);
 jperj0Tafel2 = -exp((alpha-1).*UactperfT);
+jperj0TafelPlus = exp(alpha.*UactperfT) - 1;
 
 fig = figure('Name','Buttler-Volmer vs. Tafel for alpha=1/2');
 hold on;
@@ -63,14 +64,14 @@ xlabel('$j/j_0$')
 xlim([-20 20])
 legendflex([p1 p2 p3],{'Buttler-Volmer','Tafel equation for positive current','Tafel equation for negative current'},'xscale', 0.4,'anchor',{'se','se'},'buffer',[-10 10])
 
-fullFileOutput = fileOutputPath+"BV_vs_Tafel.pdf";
-% saveas(gcf,fullFileOutput);
-% export_fig(gcf, fullFileOutput);
-fig.PaperUnits = 'centimeters';
-fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
-% f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
-fig.PaperPositionMode = 'auto';
-print(fullFileOutput,'-dpdf','-r0');
+% fullFileOutput = fileOutputPath+"BV_vs_Tafel.pdf";
+% % saveas(gcf,fullFileOutput);
+% % export_fig(gcf, fullFileOutput);
+% fig.PaperUnits = 'centimeters';
+% fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
+% % f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
+% fig.PaperPositionMode = 'auto';
+% print(fullFileOutput,'-dpdf','-r0');
 
 fig = figure('Name','Logarithmic Buttler-Volmer vs. Tafel for alpha=1/2');
 hold on;
@@ -86,14 +87,14 @@ xlim([-5 5])
 ylim([-10 10])
 legendflex([p1 p2 p3],{'Buttler-Volmer','Tafel equation for positive current','Tafel equation for negative current'},'xscale', 0.4,'anchor',{'se','se'},'buffer',[-10 10])
 
-fullFileOutput = fileOutputPath+"BV_vs_Tafel_log.pdf";
-% saveas(gcf,fullFileOutput);
-% export_fig(gcf, fullFileOutput);
-fig.PaperUnits = 'centimeters';
-fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
-% f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
-fig.PaperPositionMode = 'auto';
-print(fullFileOutput,'-dpdf','-r0');
+% fullFileOutput = fileOutputPath+"BV_vs_Tafel_log.pdf";
+% % saveas(gcf,fullFileOutput);
+% % export_fig(gcf, fullFileOutput);
+% fig.PaperUnits = 'centimeters';
+% fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
+% % f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
+% fig.PaperPositionMode = 'auto';
+% print(fullFileOutput,'-dpdf','-r0');
 
 
 fig = figure('Name','Logarithmic Buttler-Volmer vs. Tafel for alpha=0.7');
@@ -110,14 +111,14 @@ xlim([-5 5])
 ylim([-10 10])
 legendflex([p1 p2 p3],{'Buttler-Volmer','Tafel equation for positive current','Tafel equation for negative current'},'xscale', 0.4,'anchor',{'se','se'},'buffer',[-10 10])
 
-fullFileOutput = fileOutputPath+"BV_vs_Tafel_log_alpha_0_7.pdf";
-% saveas(gcf,fullFileOutput);
-% export_fig(gcf, fullFileOutput);
-fig.PaperUnits = 'centimeters';
-fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
-% f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
-fig.PaperPositionMode = 'auto';
-print(fullFileOutput,'-dpdf','-r0');
+% fullFileOutput = fileOutputPath+"BV_vs_Tafel_log_alpha_0_7.pdf";
+% % saveas(gcf,fullFileOutput);
+% % export_fig(gcf, fullFileOutput);
+% fig.PaperUnits = 'centimeters';
+% fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
+% % f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
+% fig.PaperPositionMode = 'auto';
+% print(fullFileOutput,'-dpdf','-r0');
 
 %% Buttler-Volmer compared to asinh approximation
 
@@ -141,14 +142,14 @@ xlabel('$j/j_0$')
 xlim([-10 10])
 legendflex([p2(1) p2(2) p2(3)],{'0.3','0.5','0.7'},'xscale', 0.4,'anchor',{'se','se'},'buffer',[-10 10],'title','$\alpha$')
 
-fullFileOutput = fileOutputPath+"BV_vs_sinh_var_alpha.pdf";
-% saveas(gcf,fullFileOutput);
-% export_fig(gcf, fullFileOutput);
-fig.PaperUnits = 'centimeters';
-fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
-% f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
-fig.PaperPositionMode = 'auto';
-print(fullFileOutput,'-dpdf','-r0');
+% fullFileOutput = fileOutputPath+"BV_vs_sinh_var_alpha.pdf";
+% % saveas(gcf,fullFileOutput);
+% % export_fig(gcf, fullFileOutput);
+% fig.PaperUnits = 'centimeters';
+% fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
+% % f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
+% fig.PaperPositionMode = 'auto';
+% print(fullFileOutput,'-dpdf','-r0');
 
 
 %% asinh approximation for combined electrode
@@ -238,11 +239,35 @@ xlabel('$j/j_0$')
 xlim([0 10])
 legendflex([p1 p2 p3],{'Buttler-Volmer','sinh approximation','Tafel approximation'},'xscale', 0.4,'anchor',{'se','se'},'buffer',[-10 10],'title','$\alpha = 0.3$')
 
-fullFileOutput = fileOutputPath+"BV_vs_sinh_vs_tafel.pdf";
-% saveas(gcf,fullFileOutput);
-% export_fig(gcf, fullFileOutput);
-fig.PaperUnits = 'centimeters';
-fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
-% f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
-fig.PaperPositionMode = 'auto';
-print(fullFileOutput,'-dpdf','-r0');
+% fullFileOutput = fileOutputPath+"BV_vs_sinh_vs_tafel.pdf";
+% % saveas(gcf,fullFileOutput);
+% % export_fig(gcf, fullFileOutput);
+% fig.PaperUnits = 'centimeters';
+% fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
+% % f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
+% fig.PaperPositionMode = 'auto';
+% print(fullFileOutput,'-dpdf','-r0');
+
+%% Tafel + 1 approximations compared to others
+
+fig = figure('Name','Buttler-Volmer vs sinh approximation vs Tafel with alpha = 0.3');
+hold on;
+p1 = plot(jperj0(1,:),UactperfT);
+p2 = plot(jperj0sinh(1,:),UactperfT);
+p3 = plot(jperj0TafelPlus(1,:),UactperfT);
+hold off;
+yline(0)
+ylabel('$U_{\mathrm{act}}/fT$')
+xline(0)
+xlabel('$j/j_0$')
+xlim([0 10])
+legendflex([p1 p2 p3],{'Buttler-Volmer','sinh approximation','Tafel approximation'},'xscale', 0.4,'anchor',{'se','se'},'buffer',[-10 10],'title','$\alpha = 0.3$')
+
+% fullFileOutput = fileOutputPath+"BV_vs_sinh_vs_tafel.pdf";
+% % saveas(gcf,fullFileOutput);
+% % export_fig(gcf, fullFileOutput);
+% fig.PaperUnits = 'centimeters';
+% fig.PaperSize = [FigSizeWidth FigSizeHeight]; % Make the "page" just big enough to hold the size output I want
+% % f.PaperPosition(1:2) = [0 0]; % Specify that we start at the lower-left corner of the page
+% fig.PaperPositionMode = 'auto';
+% print(fullFileOutput,'-dpdf','-r0');

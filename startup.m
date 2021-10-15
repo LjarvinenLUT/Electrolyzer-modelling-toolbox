@@ -21,4 +21,6 @@ catch ME
     warning(warningMsg)
 end
 
+SetFigureProperties;
+
 clear('toolpath');
