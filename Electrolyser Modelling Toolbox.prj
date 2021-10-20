@@ -7,7 +7,7 @@
     <param.summary>Water electrolysis modelling toolbox for UI curve parametrization</param.summary>
     <param.description>Beta version of the toolbox</param.description>
     <param.screenshot />
-    <param.version>0.6.4.1</param.version>
+    <param.version>0.7.0.0</param.version>
     <param.output>${PROJECT_ROOT}\Electrolyzer Modelling Toolbox.mltbx</param.output>
     <param.products.name />
     <param.products.id />
@@ -95,6 +95,7 @@ setFigProp.*</param.exclude.filters>
       <item>/electrolyzerModellingToolbox/Figures</item>
       <item>/electrolyzerModellingToolbox/Tests</item>
       <item>/electrolyzerModellingToolbox/Utils/legendflex</item>
+      <item>/electrolyzerModellingToolbox/Tests/Vesan Testi</item>
     </param.matlabpath.excludes>
     <param.javaclasspath.excludes />
     <param.exported.on.package>false</param.exported.on.package>
