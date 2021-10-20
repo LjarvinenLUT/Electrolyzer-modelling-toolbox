@@ -1,10 +1,10 @@
 # Electrolysis modelling toolbox
-09/2021
+10/2021
 
 
 VERSION
 
-Beta 0.6
+Beta 0.7
 
 
 COPYRIGHT AND LICENSING
