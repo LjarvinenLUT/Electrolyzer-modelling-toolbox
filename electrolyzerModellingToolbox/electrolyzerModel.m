@@ -595,12 +595,15 @@ classdef electrolyzerModel < handle
             coeffTable = table(value,stdev,'RowNames',fnames,'VariableNames',{'Value','Std'});
         end
         
-        function workspaceReport = viewWorkspace(obj)
+        function varargout = viewWorkspace(obj)
             % VIEWWORKSPACE Outputs the Workspace in a human-readable table.
             %
             % See also FUNC.VIEWWORKSPACE
-            workspaceReport = obj.potentialFunc.viewWorkspace;
-            disp(workspaceReport)
+            if nargout == 0
+                obj.potentialFunc.viewWorkspace;
+            else
+                varargout{:} = obj.potentialFunc.viewWorkspace;
+            end
         end
         
         function report(obj)

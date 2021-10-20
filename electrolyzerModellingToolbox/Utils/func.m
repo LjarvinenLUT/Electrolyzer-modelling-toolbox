@@ -258,6 +258,30 @@ classdef func < handle
             %   calculation and any variable required by the function that is
             %   not input to CALCULATE is looked for from the Workspace of the
             %   object.
+            %
+            %   Examples of usage:
+            %
+            %   results = obj.CALCULATE calculates voltage values based on
+            %               the Workspace structure. Also current has to be
+            %               included in the workspace
+            %
+            %   [] = obj.CALCULATE('current',j) calculates voltage values
+            %               based on the current values provided in vector
+            %               j. Other needed variables are taken from the
+            %               Workspace.
+            %
+            %   [] = obj.CALCULATE('var1',var1,'var2',var2) calculates
+            %               voltage values based on the provided values and
+            %               obtains the rest of the needed variables from
+            %               the Workspace.
+            %
+            %   [] = obj.CALCULATE('Workspace',Workspace) calculates
+            %               voltage values based on the provided
+            %               Workspace-structure only.
+            %
+            %   Note: Providing full Workspace or individual parameters to
+            %   CALCULATE method does not modify the Workspace stored in
+            %   the func object.
             
             if ~mod(nargin,2)
                 error("Variables have to be given as name-value pairs")
@@ -532,7 +556,7 @@ classdef func < handle
         end
         
         
-        function report = viewWorkspace(obj)
+        function varargout = viewWorkspace(obj)
             % VIEWWORKSPACE Outputs a tabular report of the Workspace.
             
             fieldNameConst = fieldnames(obj.Workspace.Constants);
@@ -594,6 +618,12 @@ classdef func < handle
             end
             report = table(description,valueMean,valueMin,valueMax,standardDeviation);
             report.Properties.RowNames = fieldName;
+            
+            if nargout >= 1
+                varargout{1} = report;
+            else
+                disp(report)
+            end
         end
         
     end
@@ -669,6 +699,9 @@ classdef func < handle
                              'Variables';...
                              'Constants';...
                              'Dependencies'}));
+            for fn = transpose(fieldnames(Struct))
+                b = b && isstruct(Struct.(fn{:}));
+            end
         end
     end
     

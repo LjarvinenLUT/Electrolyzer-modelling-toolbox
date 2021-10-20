@@ -20,6 +20,7 @@ FigPosBottom = 0;
 set(groot,'defaultFigurePosition',[FigPosLeft FigPosBottom FigSizeWidth FigSizeHeight]); 
 
 f = figure;
+pause(0.1); % The system needs time to open the figure properly to obtain the true OuterPosition...
 outPos = get(f,'OuterPosition');
 close(f);
 FigPosLeft = FigPosLeft-outPos(1);
@@ -39,9 +40,9 @@ set(groot,'defaultAxesGridLineStyle', GridLineStyle);
 set(groot,'defaultFigureColor', 'w');
 set(groot,'defaultAxesFontName', FontName);
 set(groot,'defaultAxesFontSize', FontSize);
-%set(groot,'LegendInterpreter', 'latex');
-%set(groot,'defaultTextInterpreter','latex');
-%set(groot,'defaultLegendInterpreter','latex');
-%set(groot,'defaultAxesTickLabelInterpreter','latex');
+% set(groot,'LegendInterpreter', 'latex');
+set(groot,'defaultTextInterpreter','latex');
+set(groot,'defaultLegendInterpreter','latex');
+set(groot,'defaultAxesTickLabelInterpreter','latex');
 end
 
