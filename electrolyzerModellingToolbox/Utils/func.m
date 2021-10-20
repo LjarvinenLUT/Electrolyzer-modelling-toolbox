@@ -125,12 +125,14 @@ classdef func < handle
             %
             %  See also FUNC.ISWORKSPACE, MERGESTRUCTS
             if func.isWorkspace(SetStruct)
+                OldWorkspace = obj.Workspace;
                 obj.Workspace = mergeStructs(obj.Workspace,SetStruct);
+                
+                obj.refreshWorkspace(OldWorkspace);
             else
                 error('Parameters to be set have to be given as a single Workspace structure')
             end
             
-            obj.refreshWorkspace;
         end
         
         
@@ -142,23 +144,40 @@ classdef func < handle
             %  The method acts recursively inside Workspace.
             %  
             %  Note: If a dependency is defined for a parameter to be
-            %  replaced, the dependency is erased.
+            %  replaced, the dependency is erased, unless option 'rebuild'
+            %  is used. Rebuild option is used when REPLACEPARAMS is used
+            %  to input fit results when introducing parameters to a copied
+            %  func object. The benefits of the option are in situations
+            %  when there are dependencies defined that do not directly
+            %  alter the parameter they are related to, but execute some
+            %  other code, like a warning. If 'rebuild' is used when there
+            %  are dependencies affecting a parameter that is supposed to be
+            %  changed manually, the dependency overwrites any changes
+            %  made.
             %
             % See also ADDVALUESTOSTRUCT
+            
+            rebuildCall = strcmpi(varargin,'rebuild');
+            varargin(rebuildCall) = [];
+            
             if isempty(varargin{1})
                 return;
-            elseif length(varargin) == 1 && isstruct(varargin{1})
+            elseif length(varargin) == 1 && isstruct(varargin{1}) % Single structure input
                 Struct = varargin{1};
-                if func.isWorkspace(Struct)
+                if func.isWorkspace(Struct) % Workspace structure input
                     fields = fieldnames(Struct);
                     for i = 1:length(fields)
-                        replaceParams(obj,Struct.(fields{i}))
+                        if any(rebuildCall)
+                            replaceParams(obj,Struct.(fields{i}),'rebuild')
+                        else
+                            replaceParams(obj,Struct.(fields{i}))
+                        end
                     end
                     return;
-                else
+                else % Non-workspace structure input
                     paramsToReplace = Struct;
                 end
-            elseif mod(nargin,2)
+            elseif ~mod(length(varargin),2) % Input as name-value pairs
                 for i = 1:2:length(varargin)
                     paramsToReplace.(varargin{i}) = varargin{i+1};
                 end
@@ -166,15 +185,30 @@ classdef func < handle
                 error('Parameters to be replaced have to be either set as a single structure or as name-value pairs')
             end
             
-            if ismember('Dependencies',fieldnames(obj.Workspace)) % Erase dependencies for the replaced parameters
+            % Means of avoiding overwriting existing dependencies
+            if ismember('Dependencies',fieldnames(obj.Workspace))
                 paramNames = fieldnames(paramsToReplace);
                 dependentParamNames = paramNames(isfield(obj.Workspace.Dependencies,paramNames));
-                obj.Workspace.Dependencies = rmfield(obj.Workspace.Dependencies,dependentParamNames);
+                tempDependencies = obj.Workspace.Dependencies; % Store the 
+                    % dependencies from the old Workspace to be manually
+                    % added to the new Workspace after replacing the
+                    % parameters.
+                if ~any(rebuildCall) % Erase dependencies for the replaced parameters.
+                    % Enables manual input of dependent variables so that
+                    % they are no longer dependent.
+                    tempDependencies = rmfield(tempDependencies,dependentParamNames);
+                end
+            else
+                tempDependencies = [];
             end
             
+            OldWorkspace = obj.Workspace;
             obj.Workspace = addValuesToStruct(obj.Workspace,paramsToReplace);
+            if ~isempty(tempDependencies)
+                obj.Workspace.Dependencies = tempDependencies;
+            end
             
-            obj.refreshWorkspace;
+            obj.refreshWorkspace(OldWorkspace);
         end
         
         function removeParams(obj,varargin)
@@ -191,6 +225,8 @@ classdef func < handle
                 paramsToRemove = varargin;
             end
             
+            OldWorkspace = obj.Workspace;
+            
             for i = 1:length(paramsToRemove)
                 if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Constants))
                     obj.Workspace.Constants = rmfield(obj.Workspace.Constants,paramsToRemove{i});
@@ -205,6 +241,8 @@ classdef func < handle
                     obj.Workspace.Dependencies = rmfield(obj.Workspace.Dependencies,paramsToRemove{i});
                 end
             end
+            
+            obj.refreshWorkspace(OldWorkspace);
         end
         
         function setFitlims(obj,varargin)
@@ -308,7 +346,7 @@ classdef func < handle
             end
             
             % Refresh all dependencies
-            TempWorkspace = func.refresh(TempWorkspace);
+            TempWorkspace = func.refresh(TempWorkspace,obj.Workspace);
             
             % The result is calculated if the TempWorkspace contains all
             % necessary values for the calculation.
@@ -724,10 +762,15 @@ classdef func < handle
             equationBody = erase(func2str(obj.funcHandle),'@(Workspace)');
         end
         
-        function refreshWorkspace(obj)
+        function refreshWorkspace(obj,varargin)
             % REFRESHWORKSPACE Recalculates dependent Workspace parameters.
             Workspace = obj.Workspace;
-            obj.Workspace = func.refresh(Workspace);
+            if ~isempty(varargin)
+                obj.Workspace = func.refresh(Workspace,varargin{1});
+            else
+                obj.Workspace = func.refresh(Workspace);
+            end
+            
             
             % Determine if there are undefined coefficients without fit limits
             % First find all the coefficients that don't have an value
@@ -784,8 +827,14 @@ classdef func < handle
             end
         end
         
-        function refreshedWorkspace = refresh(Workspace)
+        function refreshedWorkspace = refresh(Workspace,varargin)
             % REFRESH Recalculates dependent Workspace parameters.
+            if nargin >= 2
+                changed = func.detectChanges(Workspace,varargin{1});
+            else
+                changed = func.detectChanges(Workspace,Workspace);
+            end
+            
             if ismember('Dependencies',fieldnames(Workspace))
                 fn = fieldnames(Workspace.Dependencies);
                 for i = 1:numel(fn)
@@ -814,6 +863,29 @@ classdef func < handle
             end
             refreshedWorkspace = Workspace;
         end
+        
+        
+        function changed = detectChanges(NewWorkspace,OldWorkspace)
+            % DETECTCHANGES Detects differences between two Workspaces
+            if func.isWorkspace(NewWorkspace) && func.isWorkspace(OldWorkspace) 
+                [common, dNew, ~] = comp_struct(NewWorkspace,OldWorkspace);
+                compResults = {common,dNew};
+                changed = struct();
+                for i = 1:2
+                    S = compResults{i};
+                    if isstruct(S)
+                        for fn1 = fieldnames(S)'
+                            for fn2 = fieldnames(S.(fn1{:}))'
+                                changed.(fn2{:}) = (i~=1);
+                            end
+                        end
+                    end
+                end      
+            else
+                error("One or both of the given structures are not Workspace-compatible")
+            end
+        end
+        
     end
     
     

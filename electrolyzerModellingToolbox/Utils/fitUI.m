@@ -274,7 +274,7 @@ fitParams = array2table([coeffValues;sigma], 'VariableNames', coefficients);
 
 %% Input fitted coefficients to the func object
 for i = 1:length(coefficients)
-    fitFunc.replaceParams(coefficients{i},[coeffValues(i) sigma(i)]);
+    fitFunc.replaceParams(coefficients{i},[coeffValues(i) sigma(i)],'rebuild');
 end
 
 

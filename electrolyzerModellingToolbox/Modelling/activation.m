@@ -44,6 +44,10 @@ function Uact = activation(varargin)
     
     Workspace.Variables = struct('current',[],'T',[]);
     
+    Workspace.Dependencies.warning_j0 = "if ~isempty(Workspace.Coefficients.j0)&&changed.T;"+...
+                                "warning('Temperature dependency of the exchange current density (j0) is not taken into account in the models. Changing the temperature without a new fit will result in unrealistic behaviour.');"+...
+                                "end;";
+    
     switch model
         case 1 % Hyperbolic sine approximation with alpha assumed to be 1/2
             modelStr = model + " -- Hyperbolic sine approximation with alpha assumed to be 1/2";

@@ -14,8 +14,8 @@ Uact = activation('model',2);
 Uohm = ohmic();
 Ucon = concentration();
 
-Emodel = electrolyzerModel('type',type); % Electrolyzer model containing the sampled temperature
-Emodel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
+eModel = electrolyzerModel('type',type); % Electrolyzer model containing the sampled temperature
+eModel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
 %%
 i = 1;
 switch i
@@ -31,10 +31,10 @@ switch i
         r = 0.1; % Ohm, total resistance
         j_lim = 1.5; % A/cm^2, limiting current density
         
-        synModel = Emodel.copy;
+        synModel = eModel.copy;
         synModel.setParams(struct('Coefficients',struct('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)))
         
-        [SynData,FullData] = createSyntheticUI('eModel',synModel,'jLims',[0.005 Inf],'jSigma',0.2,'uSigma',0.06);
+        [SynData,FullData] = createSyntheticUI('model',synModel,'jLims',[0.01 Inf],'jErr',0.01,'uErr',0.01);
         
 %         Umeas = []; % "Measured" voltage
 %         jmeas = []; % "Measured" current based on Buttler-Volmer equation
@@ -104,13 +104,13 @@ switch i
         ylabel('U')
         
         %% Create electrolyzer model objects
-        Emodel = electrolyzerModel('type',type); % Electrolyzer model containing the sampled temperature
-        Emodel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
+%         eModel = electrolyzerModel('type',type); % Electrolyzer model containing the sampled temperature
+%         eModel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
 %         Emodelfull = Emodel.copy; % Electrolyzer model containing the full dataset for temperature.
 %         Emodelfull.replaceParams('T',T);
-        Emodel.addPotentials('ocv','act','ohm','con');
+        eModel.addPotentials('ocv','act','ohm','con');
 %         Emodelfull.addPotentials('ocv','act','ohm','con');
-        EmodelPS = Emodel.copy;
+        eModel2 = eModel.copy;
 %         EmodelfullPS = Emodelfull.copy;
         
         %% Fit
@@ -119,7 +119,7 @@ switch i
         
         % Non-linear least squares error
         tic;
-        [fitParams1,gof1] = Emodel.fitUI(SynData.voltage(:,1),SynData.current(:,1),'method','nllse','weights',weights);
+        [fitParams1,gof1] = eModel.fitUI(SynData.voltage(:,1),SynData.current(:,1),'method','nllse','weights',weights);
         toc
 		
 		j0_fit1 = fitParams1.j0;
@@ -129,7 +129,7 @@ switch i
 
 		% Calculate voltage with calculate-method of func-object
 %         Emodelfull.replaceParams(Emodel.potentialFunc.Workspace.Coefficients)
-		Ufit1 = Emodel.calculate('current',FullData.current);
+		Ufit1 = eModel.calculate('current',FullData.current);
         
         RMSE1 = gof1.rmse; % Root mean squares error
         
@@ -148,7 +148,7 @@ switch i
         
         % Particleswarm
         tic;
-        [fitParams2,gof2] = EmodelPS.fitUI(SynData.voltage(:,1),SynData.current(:,1),'method','ps','weights',weights);
+        [fitParams2,gof2] = eModel2.fitUI(SynData.voltage(:,1),SynData.current(:,1),'method','ps','weights',weights);
         toc
         
         
@@ -159,7 +159,7 @@ switch i
         
 		% Calculate voltage with calculate-method of func-object
 %         EmodelfullPS.replaceParams(EmodelPS.potentialFunc.Workspace.Coefficients)
-		Ufit2 = EmodelPS.calculate('current',FullData.current);
+		Ufit2 = eModel2.calculate('current',FullData.current);
         
         RMSE2 = gof2.rmse; % Root mean squares error
         
@@ -169,8 +169,8 @@ switch i
         hold on;
         errorbar(SynData.current(:,1),SynData.voltage(:,1),SynData.voltage(:,2),SynData.voltage(:,2),SynData.current(:,2),SynData.current(:,2),'o')
         plot(FullData.current,Ufit2)
-        xlabel("j (A)")
-        ylabel("U (V)")
+        xlabel("$j$ (A)")
+        ylabel("$U$ (V)")
         legend("Data", "Fit", "Location", "Best")
         title('Particleswarm')
         hold off;
@@ -178,13 +178,13 @@ switch i
         %% Test with original parameters
 %         Emodelfull2 = Emodelfull.copy;
 %         Emodelfull2.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
-        Emodel2 = Emodel.copy;
-        Emodel2.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
+        eModel3 = eModel.copy;
+        eModel3.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
 
         
-        Ufit = Emodel2.calculate('current',FullData.current);
+        Ufit = eModel3.calculate('current',FullData.current);
         
-        RMSE = sqrt(mean((Emodel2.calculate('current',SynData.current(:,1))-SynData.voltage(:,1)).^2)); % Root mean squares error
+        RMSE = sqrt(mean((eModel3.calculate('current',SynData.current(:,1))-SynData.voltage(:,1)).^2)); % Root mean squares error
         
         % Plotting
         
@@ -192,8 +192,8 @@ switch i
         hold on;
         errorbar(SynData.current(:,1),SynData.voltage(:,1),SynData.voltage(:,2),SynData.voltage(:,2),SynData.current(:,2),SynData.current(:,2),'o')
         plot(FullData.current,Ufit)
-        xlabel("j (A)")
-        ylabel("U (V)")
+        xlabel("$j$ (A)")
+        ylabel("$U$ (V)")
         legend("Data", "Fit", "Location", "Best")
         title('Optimal parameters')
         hold off;
@@ -213,9 +213,9 @@ switch i
         load('JulichData.mat')
         
         %% Create electrolyzer model objects
-        Emodel = electrolyzerModel('type','PEM');
-        Emodel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
-        Emodel.addPotentials('ocv','act','ohm');
+        eModel = electrolyzerModel('type','PEM');
+        eModel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
+        eModel.addPotentials('ocv','act','ohm');
         
         for j = 1:3
             
@@ -227,7 +227,7 @@ switch i
             
             % Non-linear least squares error
             tic;
-            [fitParams1,gof1] = Emodel.fitUI(U,I,'method','nllse','weights',weights,'plot',true);
+            [fitParams1,gof1] = eModel.fitUI(U,I,'method','nllse','weights',weights,'plot',true);
             toc
             
             I0fit(1:2,j) = fitParams1.j0;
@@ -235,7 +235,7 @@ switch i
             rfit(1:2,j) = fitParams1.r;
             
             % Calculate voltage with calculate-method of func-object
-            Ufit1 = Emodel.calculate('current',Imeas);
+            Ufit1 = eModel.calculate('current',Imeas);
             
             RMSE(1,j) = gof1.rmse; % Root mean squares error
             Rsqrd(1,j) = gof1.rsquare; % R^2 of the fit
@@ -246,8 +246,8 @@ switch i
             hold on;
             errorbar(I(:,1),U(:,1),U(:,2),U(:,2),I(:,2),I(:,2),'o')
             plot(Imeas,Ufit1)
-            xlabel("I (A)")
-            ylabel("U (V)")
+            xlabel("$I$ (A)")
+            ylabel("$U$ (V)")
             legend("Data", "Fit", "Location", "Best")
             title(['Non-linear least squares error: Jülich ' num2str(j)])
             hold off;
@@ -255,7 +255,7 @@ switch i
             
             % Particleswarm
             tic;
-            [fitParams2,gof2] = Emodel.fitUI(U,I,'method','ps','weights',weights,'plot',true);
+            [fitParams2,gof2] = eModel.fitUI(U,I,'method','ps','weights',weights,'plot',true);
             toc
             
             
@@ -264,7 +264,7 @@ switch i
             rfit(3:4,j) = fitParams2.r;
             
 			% Calculate voltage with calculate-method of func-object
-            Ufit2 = Emodel.calculate('current',Imeas);
+            Ufit2 = eModel.calculate('current',Imeas);
             
             RMSE(2,j) = gof2.rmse; % Root mean squares error
             Rsqrd(2,j) = gof2.rsquare; % R^2 of the fit
@@ -275,11 +275,14 @@ switch i
             hold on;
             errorbar(I(:,1),U(:,1),U(:,2),U(:,2),I(:,2),I(:,2),'o')
             plot(Imeas,Ufit2)
-            xlabel("I (A)")
-            ylabel("U (V)")
+            xlabel("$I$ (A)")
+            ylabel("$U$ (V)")
             legend("Data", "Fit", "Location", "Best")
             title(['Particleswarm: Jülich ' num2str(j)])
             hold off;
             
         end
 end
+
+%% Test warning message from changing the temperature after fit
+eModel.replaceParams('T',273.15)

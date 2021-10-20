@@ -60,28 +60,10 @@ function Uohm = ohmic(varargin)
     type = string(lower(parser.Results.type));
     conductivityModel = parser.Results.conductivityModel;
     resistanceModel = parser.Results.resistanceModel;
-    Workspace.Variables = struct('current',[]);
+    Workspace.Variables = struct('current',[],'T',[]);
 
     
     fprintf('\nOhmic overpotential modelling properties:\n')
-    
-    %% Error checking
-    
-    switch resistanceModel
-        case 1
-            resistanceModelStr = resistanceModel + " -- Total cell resistance, combined electronic and ionic components";
-            fprintf('Resistance model: %s\n', resistanceModelStr)
-        case 2
-            resistanceModelStr = resistanceModel + " -- Separated electronic and ionic resistance components";
-            fprintf('Resistance model: %s\n', resistanceModelStr)
-            fprintf('Electrolyzer type: %s\n', type)
-            fprintf('TODO: Check units for ohmic overpotential parameters!\n')
-            if strcmpi(type,"Alkaline")
-                fprintf('Conductivity model: %d\n', conductivityModel)
-            end
-    end
-    
-
     
     %%
     
@@ -90,9 +72,16 @@ function Uohm = ohmic(varargin)
     
     switch resistanceModel
         case 1 % https://doi.org/10.1016/j.ijhydene.2015.03.164 "Electrochemical performance modeling of a proton exchange membrane electrolyzer cell for hydrogen energy"
+            
+            resistanceModelStr = resistanceModel + " -- Total cell resistance, combined electronic and ionic components";
+            fprintf('Resistance model: %s\n', resistanceModelStr)
+            
             Workspace.Coefficients.r = [];
             Fitlims.r = {0,1,1000};
             funcHandle = @(Workspace) Workspace.Coefficients.r.*Workspace.Variables.current;
+            Workspace.Dependencies.warning_r = "if ~isempty(Workspace.Coefficients.r)&&changed.T;"+...
+                                "warning('Temperature dependency of the area specific resistivity (r) is not taken into account in the models. Changing the temperature without a new fit will result in unrealistic behaviour.');"+...
+                                "end;";
         case 2
             % Conductivity equations for PEM and Alkaline
             %   lambda -  membrane water content (for PEM)
@@ -101,7 +90,17 @@ function Uohm = ohmic(varargin)
             % Output
             %   sigma - specific conductivity (S/cm)
             
-            Workspace.Variables = struct('T',[],'sigma',[],'delta',[]);  
+            % Printing explanation
+            resistanceModelStr = resistanceModel + " -- Separated electronic and ionic resistance components";
+            fprintf('Resistance model: %s\n', resistanceModelStr)
+            fprintf('Electrolyzer type: %s\n', type)
+            fprintf('TODO: Check units for ohmic overpotential parameters!\n')
+            if strcmpi(type,"Alkaline")
+                fprintf('Conductivity model: %d\n', conductivityModel)
+            end
+            
+            Workspace.Variables.sigma = [];
+            Workspace.Variables.delta = [];  
             
             switch type
                 case "alkaline"

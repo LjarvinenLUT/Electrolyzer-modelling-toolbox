@@ -749,7 +749,7 @@ classdef electrolyzerModel < handle
             %  the funcStorage to match the Workspace of the potentialFunc 
             %  object.
             for i = 1:height(obj.funcStorage)
-                obj.funcStorage.func(i).replaceParams(obj.potentialFunc.Workspace)
+                obj.funcStorage.func(i).replaceParams(obj.potentialFunc.Workspace,'rebuild')
             end
         end
     end
