@@ -34,7 +34,7 @@ switch i
         synModel = eModel.copy;
         synModel.setParams(struct('Coefficients',struct('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)))
         
-        [SynData,FullData] = createSyntheticUI('model',synModel,'jLims',[0.01 Inf],'jErr',0.01,'uErr',0.01);
+        [SynData,FullData] = createSyntheticUI('model',synModel,'jLims',[0.01 j_lim-0.01],'jErr',0.01,'uErr',0.01);
         
 %         Umeas = []; % "Measured" voltage
 %         jmeas = []; % "Measured" current based on Buttler-Volmer equation

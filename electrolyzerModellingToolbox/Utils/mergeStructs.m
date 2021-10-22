@@ -51,7 +51,7 @@ for i = 1:length(f_b)
         elseif isstruct(StructB.(f_b{i})) && isstruct(StructA.(f_b{i}))
             MergedStruct.(f_b{i}) = mergeStructs(StructA.(f_b{i}),StructB.(f_b{i}));
         else
-            if ~isequal(StructB.(f_b{i}),StructA.(f_b{i}))
+            if ~isequaln(StructB.(f_b{i}),StructA.(f_b{i}))
                 overwrittenFields = true;
                 overwrittenFieldNames = [overwrittenFieldNames,f_b{i}];
             end

@@ -830,7 +830,8 @@ classdef func < handle
         function refreshedWorkspace = refresh(Workspace,varargin)
             % REFRESH Recalculates dependent Workspace parameters.
             if nargin >= 2
-                changed = func.detectChanges(Workspace,varargin{1});
+                OldWorkspace = varargin{1};
+                changed = func.detectChanges(Workspace,OldWorkspace);
             else
                 changed = func.detectChanges(Workspace,Workspace);
             end
@@ -839,7 +840,9 @@ classdef func < handle
                 fn = fieldnames(Workspace.Dependencies);
                 for i = 1:numel(fn)
                     try
+                        warning off backtrace
                         eval(Workspace.Dependencies.(fn{i}))
+                        warning on backtrace
                     catch ME
                         if strcmp(ME.identifier,'MATLAB:InputParser:ArgumentFailedValidation')||strcmp(ME.identifier,'MATLAB:undefinedVarOrClass')
                             % Some variable needed in a function call in
