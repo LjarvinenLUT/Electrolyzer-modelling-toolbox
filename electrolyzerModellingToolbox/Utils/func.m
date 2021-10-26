@@ -336,13 +336,8 @@ classdef func < handle
             else
                 % Create a temporary workspace that includes the user input
                 % variables in addition to the ones found from the func 
-                % Workspace.
-                TempWorkspace = func.createTempWorkspace(obj.Workspace);
-                if nargin>1
-                    TempWorkspace = addValuesToStruct(TempWorkspace,...
-                        varargin(1:2:end),...
-                        varargin(2:2:end));
-                end
+                % Workspace.                
+                TempWorkspace = func.createTempWorkspace(obj.Workspace,varargin);
             end
             
             % Refresh all dependencies
@@ -797,32 +792,49 @@ classdef func < handle
     %% Private static methods
     
     methods (Access = private, Static)
-        function TempWorkspace = createTempWorkspace(Struct)
-            % CREATETEMPWORKSPACE Creates a copy of the Workspace structure but without values for standard deviation.            
+        function TempWorkspace = createTempWorkspace(Struct,replacingArguments)
+            % CREATETEMPWORKSPACE Creates a copy of the Workspace structure
+            %   but without values for standard deviation. Replaces the
+            %   values for given fields (replacingArguments, cell array of
+            %   name-value pairs)
+            
             fn = fieldnames(Struct);
-            if isempty(fn)
-                TempWorkspace = struct();
+            
+            if isempty(replacingArguments)
+                replArgNames = {};
             else
-                for i = 1:length(fn)
-                    if strcmp(fn{i},'Dependencies')
-                        TempWorkspace.(fn{i}) = Struct.(fn{i});
-                    elseif isstruct(Struct.(fn{i}))
-                        TempWorkspace.(fn{i}) = func.createTempWorkspace(Struct.(fn{i}));
-                    elseif isempty(Struct.(fn{i})) || length(Struct.(fn{i})(1,:)) == 1
-                        TempWorkspace.(fn{i}) = Struct.(fn{i});
+                replArgNames = replacingArguments(1:2:end);
+                replArgs = replacingArguments(2:2:end);
+            end
+            
+            TempWorkspace = struct();
+            
+            for i = 1:length(fn)
+                if strcmp(fn{i},'Dependencies')
+                    TempWorkspace.(fn{i}) = Struct.(fn{i});
+                elseif isstruct(Struct.(fn{i}))
+                    TempWorkspace.(fn{i}) = func.createTempWorkspace(Struct.(fn{i}),replacingArguments);
+                elseif isempty(Struct.(fn{i}))
+                    replIndex = ismember(fn{i},replArgNames);
+                    if any(replIndex)
+                        TempWorkspace.(fn{i}) = replArgs{replIndex};
                     else
-                        fieldSize = size(Struct.(fn{i}));
-                        if fieldSize(2)>2
-                            warningMsg = strcat("It seems that the Workspace variable "...
-                                ,string(fn{i})," has more than two columns (",...
-                                string(fieldSize(1)),"x",string(fieldSize(2)),...
-                                "). Consider providing the data as the first column of the variable matrix. ",...
-                                "The second column should be preserved for standard deviation, if applicable. ",...
-                                "The method func.calculation takes into acount only the first column of the vector and regards that as the given dataset.");
-                            warning(warningMsg)
-                        end
-                        TempWorkspace.(fn{i}) = Struct.(fn{i})(:,1);
+                        continue;
                     end
+                elseif length(Struct.(fn{i})(1,:)) == 1
+                    TempWorkspace.(fn{i}) = Struct.(fn{i});
+                else
+                    fieldSize = size(Struct.(fn{i}));
+                    if fieldSize(2)>2
+                        warningMsg = strcat("It seems that the Workspace variable "...
+                            ,string(fn{i})," has more than two columns (",...
+                            string(fieldSize(1)),"x",string(fieldSize(2)),...
+                            "). Consider providing the data as the first column of the variable matrix. ",...
+                            "The second column should be preserved for standard deviation, if applicable. ",...
+                            "The method func.calculation takes into acount only the first column of the vector and regards that as the given dataset.");
+                        warning(warningMsg)
+                    end
+                    TempWorkspace.(fn{i}) = Struct.(fn{i})(:,1);
                 end
             end
         end
