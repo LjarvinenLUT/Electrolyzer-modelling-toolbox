@@ -40,7 +40,7 @@ Workspace.Variables = struct('T',[]);
         case 5 % D.M. Bernardi, M.W. Verbrugge, "A Mathematical Model of the Solid-Polymer-Electrolyte Fuel Cell", J. Electrochem. Soc., 139 (1992), p. 2477
             % Inaccurate at higher temperatures (error 1 mV)
             funcHandle = @(Workspace) 1.229 - 8.46e-4.*(Workspace.Variables.T - 298.15);
-        case 6 % Costa Lopes et al. "Experimental and theoretical development of a PEM electrolyzer model applied to energy storage systems", 2009 Brazilian Power Electronics Conference, DOI: 10.1109/COBEP.2009.5347619
+        case 6 % da Costa Lopes et al. "Experimental and theoretical development of a PEM electrolyzer model applied to energy storage systems", 2009 Brazilian Power Electronics Conference, DOI: 10.1109/COBEP.2009.5347619
             % Very inaccurate at higher temperatures (error 3.5 mV)
             funcHandle = @(Workspace) 1.449 - 6.139e-4.*Workspace.Variables.T - 4.592e-7.*Workspace.Variables.T.^2 + 1.46e-10.*Workspace.Variables.T.^3;
         otherwise

@@ -1,5 +1,5 @@
-function SetFigureProperties()
-%SetFigureProperties Define the default figure properties suitable for
+function setFigProp()
+%SetFigProp Define the default figure properties suitable for
 %publications
 
 %% Set units

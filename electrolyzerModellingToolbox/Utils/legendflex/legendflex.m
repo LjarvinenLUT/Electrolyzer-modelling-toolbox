@@ -504,6 +504,7 @@ if hg2flag
 else
     hnew.obj = zeros(size(h.obj));
 end
+
 for it = 1:nobj
     props = [textProps; textVals(it,:)];
     hnew.obj(it) = text(xtext(it), ytext(it), h.textstr{it}, props{:}, ...
