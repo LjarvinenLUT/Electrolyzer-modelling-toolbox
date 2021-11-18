@@ -27,6 +27,9 @@ function [common, d1, d2] = comp_struct(s1,s2,prt,pse,tol,n1,n2)
 %
 % updated - aug 22, 2015
 %
+% Modified by Pietari Puranen, November 18, 2021, to enable empty fields in
+% input structures without removing them.
+%
 % hint:
 % passing just one structure causes the program to copy the structure
 % and compare the two.  This is an easy way to list the structure
@@ -36,7 +39,7 @@ function [common, d1, d2] = comp_struct(s1,s2,prt,pse,tol,n1,n2)
 
 %% default arguent check
 if nargin < 2
-	help comp_struct; error('I / O error');
+    help comp_struct; error('I / O error');
 end
 
 if nargin < 3 || isempty(prt); prt = 0; end
@@ -56,160 +59,177 @@ d1 = s1; d2 = s2; common = s1;
 flag = [0 0];
 % test entire structure
 if ~isequal(s1,s2)
-	% differances noted - parse
-	if isstruct(s1) && isstruct(s2)
-		% both structures - once sub structures are tested, do not 
-		% modify the parrent
-		flag(2) = 1;
-		% both structures - get the field names for each structure
-		fn1 = fieldnames(s1);
-		fn2 = fieldnames(s2);
-		% missing fields?  (common was a copy of s1 - so only s1 needs checking)
-		temp = find(~ismember(fn1,fn2));
-		for ii = 1:numel(temp)
-			% drop unique fields
-			common = rmfield(common,fn1{temp(ii)});
-		end
-		% get the common fields
-		fn = fieldnames(common);
-		% missing fields in set 1
-		for ii = 1:numel(fn)
-			% common field - recurse and test
-			for jj = 1:min([numel(d1) numel(d2)])
-				[common(jj).(fn{ii}) d1(jj).(fn{ii}) d2(jj).(fn{ii})] = ...
-					comp_struct(s1(jj).(fn{ii}),s2(jj).(fn{ii}), ...
-					prt,pse,tol, ...
-					[n1 '(' num2str(jj) ').' fn{ii}], ...
-					[n2 '(' num2str(jj) ').' fn{ii}]);
-			end
-		end
-	% one or both not structures evaluate
-	elseif isstruct(s1)
-		% first variable is structure - second is not
-		if prt
-			fprintf('Error:	%s is a structure and %s is not a structure\n',n1,n2);
-		end
-		if pse
-			uiwait(msgbox(sprintf('Error:  %s is a structure and %s is not a structure\n',n1,n2)))
-		end
-		% flag purge
-		flag(1) = 1;
-		
-	elseif isstruct(s2)
-		% second variable is structure - first is not
-		if prt
-			fprintf('Error:	%s is not a structure and %s is a structure\n',n1,n2);
-		end
-		if pse; pause; end
-		% flag purge
-		flag(1) = 1;
-	else
-		% the same?
-		if ~isequal(s1,s2)
-			flag(1) = 1;
-			% not the same - differance?
-			% class error
-			if ~strcmp(class(s1),class(s2))
-				% different classes
-				if prt
-					fprintf('Error:	%s is class %s and %s class %s\n',n1,class(s1),n2,class(s2));
-				end
-				if pse; pause; end
-				flag(1) = 1;
-			else
-				% tolerance error?
-				if min(size(s1) == size(s2)) && ...
-						(isa(s1,'single') || isa(s1,'double'))
-					% tolerance match?
-					if numel(find(abs(s1-s2) < tol)) == numel(s1)
-						flag(1) = 0;
-					end
-				else
-					% print and pause?
-					if prt > 1
-						fprintf('%s is ',n1); disp(s1);
-						fprintf('\b, %s is ',n2); disp(s2);
-					end
-					if pse > 1; pause; end
-				end
-			end
-		end
-	end
+    % differances noted - parse
+    if isstruct(s1) && isstruct(s2)
+        % both structures - once sub structures are tested, do not
+        % modify the parrent
+        flag(2) = 1;
+        % both structures - get the field names for each structure
+        fn1 = fieldnames(s1);
+        fn2 = fieldnames(s2);
+        % missing fields?  (common was a copy of s1 - so only s1 needs checking)
+        temp = find(~ismember(fn1,fn2));
+        for ii = 1:numel(temp)
+            % drop unique fields
+            common = rmfield(common,fn1{temp(ii)});
+        end
+        % get the common fields
+        fn = fieldnames(common);
+        % missing fields in set 1
+        for ii = 1:numel(fn)
+            % common field - recurse and test
+            for jj = 1:min([numel(d1) numel(d2)])
+                [common(jj).(fn{ii}) d1(jj).(fn{ii}) d2(jj).(fn{ii})] = ...
+                    comp_struct(s1(jj).(fn{ii}),s2(jj).(fn{ii}), ...
+                    prt,pse,tol, ...
+                    [n1 '(' num2str(jj) ').' fn{ii}], ...
+                    [n2 '(' num2str(jj) ').' fn{ii}]);
+            end
+        end
+        % one or both not structures evaluate
+    elseif isstruct(s1)
+        % first variable is structure - second is not
+        if prt
+            fprintf('Error:	%s is a structure and %s is not a structure\n',n1,n2);
+        end
+        if pse
+            uiwait(msgbox(sprintf('Error:  %s is a structure and %s is not a structure\n',n1,n2)))
+        end
+        % flag purge
+        flag(1) = 1;
+        
+    elseif isstruct(s2)
+        % second variable is structure - first is not
+        if prt
+            fprintf('Error:	%s is not a structure and %s is a structure\n',n1,n2);
+        end
+        if pse; pause; end
+        % flag purge
+        flag(1) = 1;
+    else
+        % the same?
+        if ~isequal(s1,s2)
+            flag(1) = 1;
+            % not the same - differance?
+            % class error
+            if ~strcmp(class(s1),class(s2))
+                % different classes
+                if prt
+                    fprintf('Error:	%s is class %s and %s class %s\n',n1,class(s1),n2,class(s2));
+                end
+                if pse; pause; end
+                flag(1) = 1;
+            else
+                % tolerance error?
+                if min(size(s1) == size(s2)) && ...
+                        (isa(s1,'single') || isa(s1,'double'))
+                    % tolerance match?
+                    if numel(find(abs(s1-s2) < tol)) == numel(s1)
+                        flag(1) = 0;
+                    end
+                else
+                    % print and pause?
+                    if prt > 1
+                        fprintf('%s is ',n1); disp(s1);
+                        fprintf('\b, %s is ',n2); disp(s2);
+                    end
+                    if pse > 1; pause; end
+                end
+            end
+        end
+    end
 end
 
 
 %% keep or delete
-if flag(1) && ~flag(2)
-	% denote error
-	common = [];
-elseif ~flag(2)
-	% remove from error structures
-	d1 = [];
-	d2 = [];
+if ~flag(2) % Handling individual fields instead of structures
+    if flag(1) % Field has changed
+        % denote error
+        common = {common,'R'};
+    else % Field has not changed
+        % remove from error structures
+        d1 = {d1,'R'};
+        d2 = {d2,'R'};
+    end
 end
 
 
 %% purge empty fields
 % test common
 if isstruct(common)
-	% fieldnames
-	fn = fieldnames(common);
-	for ii = 1:numel(fn)
-		temp = 1;
-		% test for empty field
-		for jj = 1:numel(common)
-			if ~isempty(common(jj).(fn{ii})); temp = 0; end
-		end
-		% purge if field was empty
-		if temp
-			common = rmfield(common,fn{ii});
-		end
-	end
+    % fieldnames
+    fn = fieldnames(common);
+    for ii = 1:numel(fn)
+        remove = 0;
+        % test for empty field
+        for jj = 1:numel(common)
+            field = common(jj).(fn{ii});
+            if iscell(field) && strcmp(field{end},'R')
+                remove = 1;
+            end
+        end
+        % purge if field was empty
+        if remove
+            common = rmfield(common,fn{ii});
+        end
+    end
 end
 % test d1
 if isstruct(d1)
-	% fieldnames
-	fn = fieldnames(d1);
-	for ii = 1:numel(fn)
-		temp = 1;
-		% test for empty field
-		for jj = 1:numel(d1)
-			if ~isempty(d1(jj).(fn{ii})); temp = 0; end
-		end
-		% purge if field was empty
-		if temp
-			d1 = rmfield(d1,fn{ii});
-		end
-	end
+    % fieldnames
+    fn = fieldnames(d1);
+    for ii = 1:numel(fn)
+        remove = 0;
+        % test for empty field
+        for jj = 1:numel(d1)
+            field = d1(jj).(fn{ii});
+            if iscell(field) && strcmp(field{end},'R')
+                remove = 1;
+            end
+        end
+        % purge if field was empty
+        if remove
+            d1 = rmfield(d1,fn{ii});
+        end
+    end
 end
 % test d2
 if isstruct(d2)
-	% fieldnames
-	fn = fieldnames(d2);
-	for ii = 1:numel(fn)
-		temp = 1;
-		% test for empty field
-		for jj = 1:numel(d2)
-			if ~isempty(d2(jj).(fn{ii})); temp = 0; end
-		end
-		% purge if field was empty
-		if temp
-			d2 = rmfield(d2,fn{ii});
-		end
-	end
+    % fieldnames
+    fn = fieldnames(d2);
+    for ii = 1:numel(fn)
+        remove = 0;
+        % test for empty field
+        for jj = 1:numel(d2)
+            field = d2(jj).(fn{ii});
+            if iscell(field) && strcmp(field{end},'R')
+                remove = 1;
+            end
+        end
+        % purge if field was empty
+        if remove
+            d2 = rmfield(d2,fn{ii});
+        end
+    end
 end
 
 
 %% test for null fields
 if isstruct(common)
-	% fieldnames
-	if isempty(fieldnames(common)); common = []; end
+    % fieldnames
+    if isempty(fieldnames(common))
+        common = {common,'R'};
+    end
 end
 if isstruct(d1)
-	% fieldnames
-	if isempty(fieldnames(d1)); d1 = []; end
+    % fieldnames
+    if isempty(fieldnames(d1))
+        d1 = {d1,'R'};
+    end
 end
 if isstruct(d2)
-	% fieldnames
-	if isempty(fieldnames(d2)); d2 = []; end
+    % fieldnames
+    if isempty(fieldnames(d2))
+        d2 = {d2,'R'};
+    end
 end

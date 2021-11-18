@@ -341,12 +341,12 @@ classdef func < handle
             end
             
             % Refresh all dependencies
-            TempWorkspace = func.refresh(TempWorkspace,obj.Workspace);
+            TempWorkspaceRefreshed = func.refresh(TempWorkspace,obj.Workspace);
             
             % The result is calculated if the TempWorkspace contains all
             % necessary values for the calculation.
             try
-                result = obj.funcHandle(TempWorkspace);
+                result = obj.funcHandle(TempWorkspaceRefreshed);
             catch ME
                 if strcmp(ME.identifier,'MATLAB:nonExistentField')
                     msg = "Result cannot be calculated because one or " +...
@@ -807,7 +807,7 @@ classdef func < handle
                 replArgs = replacingArguments(2:2:end);
             end
             
-            TempWorkspace = struct();
+            TempWorkspace = Struct;
             
             for i = 1:length(fn)
                 if strcmp(fn{i},'Dependencies')
