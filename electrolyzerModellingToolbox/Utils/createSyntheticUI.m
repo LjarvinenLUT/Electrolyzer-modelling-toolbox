@@ -204,20 +204,12 @@ else
     f = R/(F*n_e);
     U1 = ((0:0.001:100)*(f*T))'; % Uact/(f*T) = 0...50, Activation overpotential sweep limits
     
-    Umeas = []; % "Measured" voltage
-    jmeas = []; % "Measured" current based on Buttler-Volmer equation
     
-    for ii = 1:length(U1)
-        jmeastemp = eModel.potentialFunc.Workspace.Coefficients.j0*(exp(eModel.potentialFunc.Workspace.Coefficients.alpha/(f*T)*U1(ii))-exp((eModel.potentialFunc.Workspace.Coefficients.alpha-1)/(f*T)*U1(ii))); % "Measured" current based on Buttler-Volmer equation
-        if jmeastemp >= jLims(2)
-            break;
-        elseif jmeastemp > jLims(1)
-            U2 = eModel.calculate('current',jmeastemp); % Other potentials
-            Umeastemp = U1(ii)+U2; % "Measured" voltage
-            jmeas = [jmeas;jmeastemp];
-            Umeas = [Umeas;Umeastemp];
-        end
-    end
+    jmeastemp = eModel.potentialFunc.Workspace.Coefficients.j0*(exp(eModel.potentialFunc.Workspace.Coefficients.alpha/(f*T)*U1)-exp((eModel.potentialFunc.Workspace.Coefficients.alpha-1)/(f*T)*U1)); % "Measured" current based on Buttler-Volmer equation
+    jmeas = jmeastemp(jmeastemp > jLims(1) & jmeastemp < jLims(2)); % Apply limits to current
+    U1 = U1(jmeastemp > jLims(1) & jmeastemp < jLims(2)); % Apply limits to activation overpotential
+    U2 = eModel.calculate('current',jmeas); % Other potentials
+    Umeas = U1+U2; % "Measured" voltage
 end
 
 % Take samples from the dense data vectors
