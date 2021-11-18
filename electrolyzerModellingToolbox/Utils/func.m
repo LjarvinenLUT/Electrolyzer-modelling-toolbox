@@ -317,13 +317,38 @@ classdef func < handle
             %               voltage values based on the provided
             %               Workspace-structure only.
             %
+            %   [] = obj.CALCULATE(__,'detectChanges',b) enables user to
+            %               decide whether dependencies that are related
+            %               to the change in some Workspace parameter are
+            %               evaluated or not. This kind of dependencies are
+            %               mostly warnings about unaccounted temperature
+            %               dependency in some models. Options for b:
+            %                   true -- Detect changes and evaluate change
+            %                       dependent dependencies. This may slow
+            %                       down calculation in the case of looped
+            %                       calculation
+            %                   false -- Do not evaluate change dependent
+            %                       dependencies. 
+            %
             %   Note: Providing full Workspace or individual parameters to
             %   CALCULATE method does not modify the Workspace stored in
             %   the func object.
             
+            
             if ~mod(nargin,2)
                 error("Variables have to be given as name-value pairs")
             end
+            
+            % Check if change detection was specified by the user
+            detectChangesCall = strcmpi(varargin,'detectChanges');
+            if any(detectChangesCall)
+                index = [false detectChangesCall(1:end-1)]; % index after the call
+                detectChanges = varargin{index};
+                varargin = varargin(~(detectChangesCall & index));
+            else % use default
+                detectChanges = true;
+            end
+            
             
             if isequal(obj.funcHandle,@pass)
                 error("No function defined. Results cannot be calculated.")
@@ -332,7 +357,10 @@ classdef func < handle
             % Check if Workspace was given as an input
             workspaceCall = strcmpi(varargin,'Workspace');
             if any(workspaceCall)
-                TempWorkspace = func.createTempWorkspace(varargin{[false workspaceCall(1:end-1)]});
+                % Create temporary Workspace based only on the given
+                % Workspace
+                index = [false workspaceCall(1:end-1)]; % index after the call
+                TempWorkspace = func.createTempWorkspace(varargin{index});
             else
                 % Create a temporary workspace that includes the user input
                 % variables in addition to the ones found from the func 
@@ -340,8 +368,16 @@ classdef func < handle
                 TempWorkspace = func.createTempWorkspace(obj.Workspace,varargin);
             end
             
-            % Refresh all dependencies
-            TempWorkspaceRefreshed = func.refresh(TempWorkspace,obj.Workspace);
+            % Refresh dependencies
+            if detectChanges
+                % Refresh dependencies that relate to change state of some
+                % Workspace parameters (mostly warnings)
+                TempWorkspaceRefreshed = func.refresh(TempWorkspace,obj.Workspace);
+            else
+                % Refresh only dependencies that are directly related to
+                % the values of Workspace parameters
+                TempWorkspaceRefreshed = func.refresh(TempWorkspace);
+            end
             
             % The result is calculated if the TempWorkspace contains all
             % necessary values for the calculation.
@@ -815,7 +851,7 @@ classdef func < handle
                 elseif isstruct(Struct.(fn{i}))
                     TempWorkspace.(fn{i}) = func.createTempWorkspace(Struct.(fn{i}),replacingArguments);
                 elseif isempty(Struct.(fn{i}))
-                    replIndex = ismember(fn{i},replArgNames);
+                    replIndex = ismember(replArgNames,fn{i});
                     if any(replIndex)
                         TempWorkspace.(fn{i}) = replArgs{replIndex};
                     else
