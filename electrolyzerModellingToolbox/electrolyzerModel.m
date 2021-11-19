@@ -558,7 +558,12 @@ classdef electrolyzerModel < handle
                 hold(ax,'on');
                 plot(ax,fitCurrent,fitVoltage)
                 hold(ax,'off');
-                ax.XLabel.String = "Current density (A/cm^2)";
+                textInterpreter = get(groot,'defaultTextInterpreter');
+                if strcmp(textInterpreter,'latex')
+                    ax.XLabel.String = "Current density (A/cm$^2$)";
+                else
+                    ax.XLabel.String = "Current density (A/cm^2)";
+                end
                 ax.YLabel.String = "Voltage (V)";
                 legend(ax,"Data", "Fit", "Location", "Best")
                 
