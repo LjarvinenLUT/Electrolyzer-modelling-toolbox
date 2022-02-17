@@ -1,13 +1,13 @@
 function [fitParams,gof] = fitUI(fitFunc,voltage,current,varargin)
 % FITUI Fits a given function for a UI curve with given voltage and
-% current data to find unknown coefficient values.
+% current data to find unknown parameter values.
 %
 %   [fitParam,gof] = FITUI(fitFunc,voltage,current) fits the
 %       given function to data using particle swarm optimisation and
 %       weighting beginning and end of the dataset.
 %       Inputs:
 %           fitFunc -- A func object containing a function handle for the
-%                   UI curve and all the necessary coefficients, constants
+%                   UI curve and all the necessary parameters, constants
 %                   and measured values for the fit.
 %           voltage -- Measured voltage values to be used for fitting. Can
 %                       be a nx1 column vector containing the data or a nx2
@@ -45,12 +45,12 @@ function [fitParams,gof] = fitUI(fitFunc,voltage,current,varargin)
 %           - 'none' -- No additional weights applied (default)
 %
 %   Output:
-%       fitParam -- Fit coefficient values in a table with their standard
+%       fitParam -- Fit parameter values in a table with their standard
 %                   deviation (confidence value with 1 sigma)
 %       gof -- Goodness of fit values in a structure.
 %
 %   Function FITUI updates the workspace of input func to include the
-%   coefficients
+%   parameters
 %
 %	See also FUNC, ELECTROLYZERMODEL
 
@@ -148,10 +148,12 @@ switch method
         
         methodStr = "Non-Linear Least Squares Error Regression";
         
-        %Destructurize function handle, get coefficients and their limits, problem variable names and their values
-        [funcHandle,coefficients,problemVariableNames,problemVariables] = fitFunc.destructurize('current');
+        %Destructurize function handle, get parameters and their limits, problem variable names and their values
+        [funcHandle,parameters,problemVariableNames,problemVariables] = fitFunc.destructurize('current');
         
-        [lb, ub, start] = getArgumentLimits(coefficients, fitFunc.Fitlims, current);
+        [lb, ub, start] = getArgumentLimits(parameters,...
+            fitFunc.Fitlims,...
+            current);
         
         % Retry fitting if R^2 not good enough
         ssr_best = Inf;
@@ -170,12 +172,15 @@ switch method
             
             fitFun = fittype(funcHandle,...
                 'dependent','voltage',...
-                'coefficients',coefficients,...
+                'coefficients',parameters,...
                 'independent','current',...
                 'problem',problemVariableNames,...
                 'options',fo);
             
-            [fittedCurve,~,output] = fit(current,voltage,fitFun,'problem',problemVariables);
+            [fittedCurve,~,output] = fit(current,...
+                voltage,...
+                fitFun,...
+                'problem',problemVariables);
             
             
             % Voltage values obtained from the fit
@@ -186,8 +191,8 @@ switch method
             
             if gofIter.ssr < ssr_best
                 ssr_best = gofIter.ssr;
-                % Coefficient values
-                coeffValues = coeffvalues(fittedCurve);
+                % Parameter values
+                paramValues = coeffvalues(fittedCurve);
                 gof = gofIter;
                 if gofIter.rsquare >0.998 % If good enough fit is achieved:
                     break; % terminate loop
@@ -197,19 +202,19 @@ switch method
                 case 0 % Fit algorithm exited due to iteration limitation
                     % Induce randomness into starting variables to try find
                     % the global minimum
-                    ialpha = strcmp(coefficients,'alpha');
+                    ialpha = strcmp(parameters,'alpha');
                     start(ialpha) = min(max(rand*(ub(ialpha)-lb(ialpha)),lb(ialpha)),ub(ialpha));
-                    ij0 = strcmp(coefficients,'j0');
+                    ij0 = strcmp(parameters,'j0');
                     js = logspace(-10,0,1000);
                     start(ij0) = min(max(js(round(rand*1000)),lb(ij0)),ub(ij0));
-                case 2 % Fit algorithm exited due to coefficient change limitation
+                case 2 % Fit algorithm exited due to parameter change limitation
                     tolX = tolX*1e-2; % Increase tolerance
             end
             
         end
         
-        % Fit 2 sigma confidence bounds [lower upper]
-        sigma = mean(abs(confint(fittedCurve)-coeffValues))/2;
+        % 2-sigma confidence bounds
+        sigma = mean(abs(confint(fittedCurve)-paramValues));
         
         
         
@@ -217,34 +222,43 @@ switch method
         
         methodStr = "Particle Swarm Optimisation";
         
-        %% Vectorify function handle, get coefficients and their limits, problem variable names and their values
-        [funcHandle,coefficients,~,problemVariables] = fitFunc.vectorify('current');
+        %% Vectorify function handle, get parameters and their limits, problem variable names and their values
+        [funcHandle,parameters,~,problemVariables] = fitFunc.vectorify('current');
         
-        [lb, ub, ~] = getArgumentLimits(coefficients, fitFunc.Fitlims, current);
+        [lb, ub, ~] = getArgumentLimits(parameters,...
+            fitFunc.Fitlims,...
+            current);
         
-        nvars = length(coefficients); % Amount of fit parameters
+        nvars = length(parameters); % Amount of fit parameters
         
         % Creating objective function for particle swarm: sum of square
         % residuals
         fitFun = @(x) sum((funcHandle(x,problemVariables{:},current)-voltage).^2.*weights);
         
         % Particle swarm options
-        options = optimoptions('particleswarm','SwarmSize',600,'HybridFcn',@fmincon,'Display','off');%,'HybridFcn',@fmincon
+        options = optimoptions('particleswarm',...
+            'SwarmSize',600,...
+            'HybridFcn',@fmincon,...
+            'Display','off');%,'HybridFcn',@fmincon
         
         % Retry fitting if R^2 not good enough
         fval_best = Inf;
         for i = 1:10
-            [coeff,fval,exitflag,output] = particleswarm(fitFun,nvars,lb,ub,options);
+            [param,fval,exitflag,output] = particleswarm(fitFun,...
+                nvars,...
+                lb,...
+                ub,...
+                options);
             
             % Voltage values obtained from the fit
-            fitVoltage = funcHandle(coeff,problemVariables{:},current);
+            fitVoltage = funcHandle(param,problemVariables{:},current);
             
             % Unweighted goodness of fit values
             gofIter = goodnessOfFit(fitVoltage,voltage);
             
             if fval < fval_best % If previous best fit is improved
                 fval_best = fval;
-                coeffValues = coeff;
+                paramValues = param;
                 gof = gofIter;
                 if gofIter.rsquare >0.998 % If good enough fit is achieved:
                     break; % terminate loop
@@ -254,14 +268,63 @@ switch method
         
         %% Call MCMC for uncertainty estimation
         
-        coeffStruct = cell(1,length(coefficients));
-        for i = 1:length(coefficients)
-            coeffStruct{i} = {coefficients{i},coeffValues(i),lb(i),ub(i)};
+        params = cell(1,length(parameters));
+        for i = 1:length(parameters)
+            params{i} = {parameters{i},paramValues(i),lb(i),ub(i)};
         end
+
+        % If the amount of measurements is too low and measurement error is
+        % significant, increase measurement points artificially from the
+        % measurement error (gaussian distribution around existing
+        % measurements) DISABLED
+        if false && length(current) < 20 && ...
+                (any(abs(currentStd-current)>1e-5) ||...
+                any(abs(voltageStd-voltage)>1e-5))
+            [currentNew,voltageNew] = increaseNumberOfPoints(current,...
+                currentStd,...
+                voltage,...
+                voltageStd,...
+                2*length(current));
+        else
+            currentNew = current;
+            voltageNew = voltage;
+        end
+
+        % Fit 95% confidence bounds
+        mcmcfun = @(x) sum((funcHandle(x,problemVariables{:},currentNew)-voltageNew).^2);
+        [results,chain] = mcmc(currentNew,voltageNew,params,mcmcfun,gof.ssr);
+
+%         % visualizing the results using MCMCPLOT
+%         % TODO add user choice
+%         figure('Name','Covariance')
+%         mcmcplot(chain,[],results,'pairs');
+% 
+%         figure('Name','Chains')
+%         subplot(2,2,1)
+%         plot(chain(:,1))
+%         legend(params{1}{1})
+%         subplot(2,2,2)
+%         plot(chain(:,2))
+%         legend(params{2}{1})
+%         subplot(2,2,3)
+%         plot(chain(:,3))
+%         legend(params{3}{1})
+%         subplot(2,2,4)
+%         plot(chain(:,4))
+%         legend(params{4}{1})
+% 
+%         figure('Name','Distribution')
+%         mcmcplot(chain,[],results,'denspanel',4);
+
+%         model = @(x) (funcHandle(x,problemVariables{:},currentNew));
+%         out = mcmcpred(results,chain(50:100:end,:),[],current,model);
+%         figure('Name','Plot with distribution')
+%         mcmcpredplot(out);
+
+        y = chainstats(chain,results,0); % [value, std, something, something]
         
-        % Fit 95% confidence bounds [lower upper]
-        mcmcfun = @(x) sum((funcHandle(x,problemVariables{:},current)-voltage).^2);
-        sigma = mcmc(current,voltage,coeffStruct,mcmcfun,gof.ssr);
+        % 2-sigma confidence bounds
+        sigma = y(:,2)'*2;
 end
 
 %% Print message about the fit
@@ -270,11 +333,11 @@ fprintf('\nData fit performed using %s approach\nR^2: %f\n', methodStr,gof.rsqua
 
 %% Use map to store fitting parameters can be referenced by name
 % Example: fit_param.j0)
-fitParams = array2table([coeffValues;sigma], 'VariableNames', coefficients);
+fitParams = array2table([paramValues;sigma], 'VariableNames', parameters);
 
-%% Input fitted coefficients to the func object
-for i = 1:length(coefficients)
-    fitFunc.replaceParams(coefficients{i},[coeffValues(i) sigma(i)],'rebuild');
+%% Input fitted parameters to the func object
+for i = 1:length(parameters)
+    fitFunc.replaceInWorkspace(parameters{i},[paramValues(i) sigma(i)],'rebuild');
 end
 
 
@@ -285,17 +348,17 @@ end
 %%
 function [lower, upper, start] = getArgumentLimits(argumentList,LimsStruct, x)
 % GETARGUMENTLIMITS gets lower and upper limits and also startpoint of each
-%	fitting coefficient.
+%	fitting parameter.
 %       Inputs:
-%           argumentList -- List of coefficient names in a cell array.
+%           argumentList -- List of parameter names in a cell array.
 %           LimsStruct -- The structure for the limits in the func object
 %           x -- Current density for determining the limits for
-%                   coefficients with limits depending on the independent
+%                   parameters with limits depending on the independent
 %                   variable.
 %       Outputs:
-%           lower -- Array of the lower limits for the coefficients in the
+%           lower -- Array of the lower limits for the parameters in the
 %                       same order as listed in argumentList.
-%           higher -- Array of the higher limits for the coefficients in
+%           higher -- Array of the higher limits for the parameters in
 %                       the same order as listed in argumentList.
 %           start -- Array of starting points for non-linear least squares
 %                       error estimation listed in the same order as in
@@ -341,9 +404,9 @@ for i = 1:length(argumentList)
         
     catch ME
         if strcmp(ME.identifier,'MATLAB:nonExistentField')
-            errormsg = "fit_UI.getArgumentLimits: No coefficient limits "...
+            errormsg = "fit_UI.getArgumentLimits: No parameter limits "...
                 +"could be found for "+ argumentList{i} +". Consider "...
-                +"setting limits for all the coefficients using method "...
+                +"setting limits for all the parameters using method "...
                 +"func.setFitlims.";
             error(errormsg);
         else
@@ -382,43 +445,64 @@ end
 
 
 %%
-function sigma = mcmc(x,y,coeffs,ssfun,ssr)
-% MCMC estimates the posterior distribution for fit coefficients using
+function [results,chain] = mcmc(x,y,params,ssfun,ssr)
+% MCMC estimates the posterior distribution for fit parameters using
 %   Markov Chain Monte Carlo
 %
-% the coeffs structure: name, init.val, min, max
-% coeffs = {
+% the params structure: name, init.val, min, max
+% params = {
 % {'\theta_1',initVal,lowB,upB}
 % {'\theta_2',initVal,lowB,upB}
 % };
 
-n = length(x); % Length of the data
+nSamples = length(x); % Length of the data
+nParams = length(params); % Number of parameters
+dof = nSamples-nParams; % Degrees of freedome
 data = [x,y]; % Data matrix
 
 % Setup Model
 Model.ssfun = ssfun; % Sum of squares function
-Model.sigma2 = ssr/(n-2); % Proposal variance
+Model.sigma2 = ssr/dof; % Proposal variance
 
     
 % Options
-Options.nsimu = 20000; % number of samples
-Options.qcov = 0.01*eye(n); % (initial) proposal covariance
+Options.nsimu = nSamples*1000; % number of samples
+Options.qcov = 0.01*eye(nSamples); % (initial) proposal covariance
 Options.method = 'dram'; % method: DRAM
 Options.adaptint = 100; % adaptation interval
 Options.verbosity = 0; % Suppress output
 Options.waitbar = 0; % Suppress waitbar
 
 % Run Metropolis-Hastings MCMC simulation
-[results,chain] = mcmcrun(Model,data,coeffs,Options);
+[results,chain] = mcmcrun(Model,data,params,Options);
 
-% visualizing the results using MCMCPLOT
-% figure
-% mcmcplot(chain,[],results.names);
-% figure
-% mcmcplot(chain,[],results.names,'pairs');
+end
 
-y = chainstats(chain,results,0);
 
-sigma = y(:,2)';
+%%
+function [xNew,yNew] = increaseNumberOfPoints(x,xStd,y,yStd,n)
+% INCREASENUMBEROFPOINTS artificially increases the number of measurement
+% points based on measurement error. Assumes gaussian distribution around
+% the measured value. Generates points randomly around the real
+% measurements. 
+
+xNew = x;
+yNew = y;
+
+if any(length(x)~=[length(y) length(xStd) length(yStd)])
+    error("Input vector lengths are not equal")
+elseif length(x) >= n
+    return;
+end
+
+ki = length(x);
+k = ki;
+
+while k < n
+    index = randi(ki);
+    xNew(k+1) = mean(x(index)+randn(25,1)*xStd(index)); 
+    yNew(k+1) = mean(y(index)+randn(25,1)*yStd(index));
+    k = k+1;
+end
 
 end

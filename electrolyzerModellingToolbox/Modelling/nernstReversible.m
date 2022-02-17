@@ -47,7 +47,7 @@ Workspace.Variables = struct('T',[]);
             error('No valid model number given for reversible voltage.')
     end
     
-    Workspace.Coefficients = struct();
+    Workspace.Parameters = struct();
     
     Urev = func(funcHandle,Workspace);
 

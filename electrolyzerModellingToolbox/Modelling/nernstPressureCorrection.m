@@ -90,7 +90,7 @@ function Ucor = nernstPressureCorrection(type)
             funcHandle = @(Workspace) (Workspace.Constants.R.*Workspace.Variables.T)/(Workspace.Constants.n_e*Workspace.Constants.F).*log((Workspace.Variables.ps-Workspace.Variables.psvEl).^(3/2)./Workspace.Variables.aH2OEl);
     end
     
-    Workspace.Coefficients = struct();
+    Workspace.Parameters = struct();
     
     Ucor = func(funcHandle,Workspace);
 end

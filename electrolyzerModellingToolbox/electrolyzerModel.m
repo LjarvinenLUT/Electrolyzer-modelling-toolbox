@@ -22,9 +22,11 @@ classdef electrolyzerModel < handle
     %                           curve from the fit results
     %       potentialFunc -- A func object containing the UI curve
     %                           determining equation, values of its
-    %                           variables, constants and coefficients, and
+    %                           variables, constants and parameters, and
     %                           functionality for UI fitting and
     %                           calculation.
+    %       shuntCurrentEnabled -- A boolean indicating the inclusion of
+    %                               shunt current (current offset)
     %       type -- Type of the electrolyzer, PEM or alkaline
     %
     %   ELECTROLYZERMODEL Methods:
@@ -36,27 +38,28 @@ classdef electrolyzerModel < handle
     %       copy -- Creates a copy of the object whose properties are no
     %               longer linked to the parent.
     %       fitUI -- Performs a fit for the UI curve extracting values for
-    %                   its coefficients.
-    %       getCoefficients -- Outputs the coefficients from
+    %                   its parameters.
+    %       getParams -- Outputs the parameters from
     %                           potentialFunc Workspace in a table.
     %       mol2wtfrac -- Convert concentration from molality to weight
-    %                       fractions
+    %                       fractions.
     %       removePotentials -- Remove given potential terms from the
     %                           potentialFunc object and the func Storage.
-    %       removeParams -- Remove parameters from the potentialFunc
+    %       removeFromWorkspace -- Remove values from the potentialFunc
     %                           Workspace structure.
-    %       replaceParams --  A method for replacing parameters in the
-    %                           potentialFunc Workspace structure.
+    %       replaceInWorkspace --  A method for replacing values in
+    %                               the potentialFunc Workspace structure.
     %       report -- Print a report of all the properties of the modelling
     %                   object.
     %       showUI -- Plots the UI curve for the model.
-    %       setFitlims -- Set fit limits for the model coefficients.
-    %       setParams -- Set parameters in the Workspace structure of the
-    %                       potentialFunc object
+    %       setFitlims -- Set fit limits for the model parameters.
+    %       setInWorkspace -- Set values in the Workspace structure of
+    %                           the potentialFunc object.
+    %       shuntCurrent -- Enable or disable shunt current in the model.
     %       viewWorkspace -- Outputs the workspace of potentialFunc in a
-    %                           human-readable table
+    %                           human-readable table.
     %       wtfrac2mol -- Convert concentration from weight fractions to
-    %                       molality
+    %                       molality.
     %
     %   See also FUNC
     
@@ -68,6 +71,7 @@ classdef electrolyzerModel < handle
         potentialFunc; % A func object for combined overpotential function
         funcStorage; % A table that stores the separate func objects
         PlottingCurves; % A structure with the measurements and fit curve
+        shuntCurrentEnabled; % A boolean for inclusion of shunt current
     end
     
     
@@ -100,9 +104,6 @@ classdef electrolyzerModel < handle
             setType(obj, parser.Results.type);
             setElectrolyte(obj, string(parser.Results.electrolyte));
             
-            
-            
-            
             % Create funcStorage
             variableNamesTypes = [["name", "string"];...
                 ["func", "func"];...
@@ -114,40 +115,40 @@ classdef electrolyzerModel < handle
             obj.PlottingCurves = struct([]);
         end
         
-        function setParams(obj,SetWorkspace)
-            % SETPARAMS  Sets parameters in the Workspace of potentialFunc.
+        function setInWorkspace(obj,SetWorkspace)
+            % SETINWORKSPACE  Sets values in the Workspace of potentialFunc.
             %  Parameters to be set should be provided as a Workspace
             %  structure. To check compatibility, use func.isWorkspace.
             %
-            %  See also FUNC.SETPARAMS, FUNC.ISWORKSPACE
-            obj.potentialFunc.setParams(SetWorkspace)
+            %  See also FUNC.SETINWORKSPACE, FUNC.ISWORKSPACE
+            obj.potentialFunc.setInWorkspace(SetWorkspace)
             obj.synchronizeFuncStorage;
         end
         
-        function removeParams(obj,varargin)
-            % REMOVEPARAMS Removes parameters from the Workspace structure.
+        function removeFromWorkspace(obj,varargin)
+            % REMOVEFROMWORKSPACE Removes parameters from the Workspace structure.
             %  Parameters to be removed have to be provided either as a list or
             %  a cell of strings/character vectors.
             %
-            %  See also FUNC.REMOVEPARAMS
+            %  See also FUNC.REMOVEFROMWORKSPACE
             if length(varargin) == 1 && iscell(varargin{1})
-                paramsToRemove = varargin{1};
+                valuesToRemove = varargin{1};
             else
-                paramsToRemove = varargin;
+                valuesToRemove = varargin;
             end
             
-            obj.potentialFunc.removeParams(paramsToRemove)
+            obj.potentialFunc.removeFromWorkspace(valuesToRemove)
             obj.synchronizeFuncStorage;
         end
         
         
-        function replaceParams(obj,varargin)
-            % REPLACEPARAMS Replaces parameters in the Workspace structure.
+        function replaceInWorkspace(obj,varargin)
+            % REPLACEINWORKSPACE Replaces parameters in the Workspace structure.
             %  Parameters should be provided as a name-value pair or directly
             %  as a structure.
             %
-            % See also FUNC.REPLACEPARAMS
-            obj.potentialFunc.replaceParams(varargin{:});
+            % See also FUNC.REPLACEINWORKSPACE
+            obj.potentialFunc.replaceInWorkspace(varargin{:});
             obj.synchronizeFuncStorage;
         end
         
@@ -318,9 +319,8 @@ classdef electrolyzerModel < handle
             end
             
             % Recreate potentialFunc from the storage
-            obj.clearPotentials('rebuild');
-            funcs = obj.funcStorage.func;
-            obj.addPotentials(funcs,'rebuild');
+            obj.recreatePotentialFunc
+
         end
         
         
@@ -342,7 +342,7 @@ classdef electrolyzerModel < handle
         
         function setFitlims(obj,varargin)
             % SETFITLIMS Sets the potentialFunc property fitLims.
-            %   Set fitting limit values for the model coefficients.
+            %   Set fitting limit values for the model parameters.
             %   Fitlims structure contains one field for each coefficient,
             %   named identical to the coefficient. Each field contains a
             %   1x3 cell array with values {low,start,high} for lower
@@ -363,10 +363,51 @@ classdef electrolyzerModel < handle
             
             obj.potentialFunc.setFitlims(varargin{:});
         end
+
+
+
+        function shuntCurrent(obj,state)
+            % SHUNTCURRENT Enables or disables shunt current.
+            %   Input options:
+            %       to enable shunt currents:
+            %           true or "enable"
+            %       to disable shunt currents:
+            %           false or "disable"
+
+            if ~exist("state","var")
+                % If state not provided, use the one already defined
+            elseif ismember(lower(string(state)),["enable" "enabled"]) || islogical(state) && state
+                obj.shuntCurrentEnabled = true;
+                fprintf('\nShunt currents enabled:\n')
+                fprintf('Model: constant shunt current\n')
+            elseif ismember(lower(string(state)),["disable" "disabled"]) || islogical(state) && ~state
+                obj.shuntCurrentEnabled = false;
+                fprintf('\nShunt currents disabled\n')
+            else
+                error("Unknown input "+string(state)+". Known inputs include true, false, 'enable' and 'disable'.")
+            end
+
+            % Recreate the potentialFunc to reset current
+            obj.recreatePotentialFunc
+
+            if obj.shuntCurrentEnabled
+                SetWorkspace.Parameters.shuntCurrent = [];
+                obj.setFitlims('shuntCurrent',{0,0,'min(x)'})
+                obj.setInWorkspace(SetWorkspace)
+                oldFuncHandle = func2str(obj.potentialFunc.funcHandle);
+                newFuncHandle = str2func(strrep(oldFuncHandle,...
+                    'Workspace.Variables.current',...
+                    '(Workspace.Variables.current-Workspace.Parameters.shuntCurrent)'));
+                obj.potentialFunc.setFuncHandle(newFuncHandle)
+            else
+                obj.removeFromWorkspace("shuntCurrent")
+            end
+        end
+
         
         
         function [fitParams,gof] = fitUI(obj,varargin)
-            % FITUI Extracts the fit coefficients for the electrolyzerModel.
+            % FITUI Extracts the fit parameters for the electrolyzerModel.
             %  Calls external function fitUI.
             %
             %  obj.FITUI() performs UI curve fit using voltage and current
@@ -424,6 +465,9 @@ classdef electrolyzerModel < handle
             method = upper(string(parser.Results.method));
             weightsMethod = lower(string(parser.Results.weights));
             usePlotting = parser.Results.plot;
+
+            % Apply shunt current if enabled
+            obj.shuntCurrent;
             
             if isnan(I) % Current not provided as an input
                 if any(ismember('current',fieldnames(obj.potentialFunc.Workspace.Variables)))
@@ -577,25 +621,25 @@ classdef electrolyzerModel < handle
                 end 
                 txa.Value = "Fit method: " + methodStr;
                 
-                % Add fit coefficients to the plot
-                coeffTable = obj.getCoefficients;
-                data = table2cell(coeffTable);
+                % Add fit parameters to the plot
+                paramTable = obj.getParams;
+                data = table2cell(paramTable);
                 uit = uitable(f);
                 uit.Position = [figMeas(3)*0.025 figMeas(4)*0.025 figMeas(3)*0.95 figMeas(4)*0.225];
                 uit.Data = data;
                 uit.ColumnName = {'Value','STD'};
-                uit.RowName = coeffTable.Properties.RowNames;
+                uit.RowName = paramTable.Properties.RowNames;
                 uit.ColumnFormat = {'shortG','shortG'}; % Format to scientific notation if better
             end
         end
         
-        function coeffTable = getCoefficients(obj)
-            % GETCOEFFICIENTS Outputs a table containing fit coefficients.
-            Coefficients = obj.potentialFunc.Workspace.Coefficients;
-            fnames = fieldnames(Coefficients);
+        function coeffTable = getParams(obj)
+            % GETPARAMS Outputs a table containing fit parameters.
+            Parameters = obj.potentialFunc.Workspace.Parameters;
+            fnames = fieldnames(Parameters);
             for i = 1:numel(fnames)
-                value(i,1) = Coefficients.(fnames{i})(1);
-                stdev(i,1) = Coefficients.(fnames{i})(2);
+                value(i,1) = Parameters.(fnames{i})(1);
+                stdev(i,1) = Parameters.(fnames{i})(2);
             end
             coeffTable = table(value,stdev,'RowNames',fnames,'VariableNames',{'Value','Std'});
         end
@@ -653,7 +697,7 @@ classdef electrolyzerModel < handle
             if ~func.isEmpty(obj.potentialFunc)
                 childObj.addPotentials(obj.funcStorage.func.copy,'names',obj.funcStorage.name);
             end
-            childObj.setParams(obj.potentialFunc.Workspace);
+            childObj.setInWorkspace(obj.potentialFunc.Workspace);
         end
         
         function molality = wtfrac2mol(obj,wtfrac)
@@ -698,10 +742,10 @@ classdef electrolyzerModel < handle
                 switch electrolyte
                     case 'KOH'
                         obj.molarMassOfElectrolyte = 39.0983 + 15.9994 + 1.0079;
-                        obj.setParams(struct('Variables',struct('electrolyte',1,'molarMassOfElectrolyte',obj.molarMassOfElectrolyte)));
+                        obj.setInWorkspace(struct('Variables',struct('electrolyte',1,'molarMassOfElectrolyte',obj.molarMassOfElectrolyte)));
                     case 'NaOH'
                         obj.molarMassOfElectrolyte = 22.9898 + 15.9994 + 1.0079;
-                        obj.setParams(struct('Variables',struct('electrolyte',2,'molarMassOfElectrolyte',obj.molarMassOfElectrolyte)));
+                        obj.setInWorkspace(struct('Variables',struct('electrolyte',2,'molarMassOfElectrolyte',obj.molarMassOfElectrolyte)));
                     otherwise
                         error('Only KOH and NaOH defined as possible alkali electrolytes.')
                 end
@@ -754,8 +798,15 @@ classdef electrolyzerModel < handle
             %  the funcStorage to match the Workspace of the potentialFunc 
             %  object.
             for i = 1:height(obj.funcStorage)
-                obj.funcStorage.func(i).replaceParams(obj.potentialFunc.Workspace,'rebuild')
+                obj.funcStorage.func(i).replaceInWorkspace(obj.potentialFunc.Workspace,'rebuild')
             end
+        end
+
+        function recreatePotentialFunc(obj)
+            % RECREATEPOTENTIALFUNC Recreate potentialFunc from the storage.
+            obj.clearPotentials('rebuild');
+            funcs = obj.funcStorage.func;
+            obj.addPotentials(funcs,'rebuild');
         end
     end
     

@@ -11,7 +11,7 @@ function Ucon = concentration(varargin)
 %   Models available currently are:
 %       #1 -- Model with logarithmic dependency from the fraction between 
 %               current and its limiting value.
-%               Coefficient:
+%               Parameter:
 %                   j_lim -- Limiting current density
 %               Variables:
 %                   current -- Current density
@@ -19,7 +19,7 @@ function Ucon = concentration(varargin)
 %       #2 -- Model with dependency on reagent concentrations on both anode
 %               and cathode before and after mass transfer. This model
 %               cannot be applied unless the reagent concentrations have
-%               been measured. The model has no fitting coefficients.
+%               been measured. The model has no fitting parameters.
 %               Recured variables are:
 %                   T -- Temperature in kelvins
 %                   Cx10 -- Equilibrium reagent concentration at the cathode
@@ -60,8 +60,8 @@ function Ucon = concentration(varargin)
     switch model
         case 1 % Model with logarithmic dependency from the fraction between current and its limiting value.
             modelStr = model + " -- Limiting current model";
-            funcHandle = @(Workspace) -((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(1 - Workspace.Variables.current/Workspace.Coefficients.j_lim);
-            Workspace.Coefficients = struct('j_lim',[]);
+            funcHandle = @(Workspace) -((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(1 - Workspace.Variables.current/Workspace.Parameters.j_lim);
+            Workspace.Parameters = struct('j_lim',[]);
             Workspace.Variables = struct('current',[],'T',[]);
             Fitlims.j_lim = {'max(x)','max(x)*1.01','max(x)*3'};
         case 2 % F. Marangio "Theoretical model and experimental analysis of a high pressure PEM water electrolyzer for hydrogen production" https://doi.org/10.1016/j.ijhydene.2008.11.083
@@ -72,7 +72,7 @@ function Ucon = concentration(varargin)
             modelStr = model + " -- Model based on reagent concentrations on electrode surfaces";
             funcHandle = @(Workspace) ((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log((Workspace.Variables.Cx11/Workspace.Variables.Cx10)*(Workspace.Variables.Cx21/Workspace.Variables.Cx20)^(1/2)); % Both concentrations are functions of current
             Workspace.Variables = struct('T',[],'Cx11',[],'Cx10',[],'Cx21',[],'Cx20',[]);
-            Workspace.Coefficients = struct();
+            Workspace.Parameters = struct();
             Fitlims = struct([]);
             warning("Concentration overpotential model #" + num2str(model) + " cannot be used for fitting! Concentration on electrode surface is an unknown function of current. The function handle combines effects of hydrogen and oxygen side. Refer to manual for more information")
         otherwise

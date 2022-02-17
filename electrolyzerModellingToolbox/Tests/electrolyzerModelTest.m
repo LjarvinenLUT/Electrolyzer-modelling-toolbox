@@ -17,18 +17,18 @@ Workspace = struct('Variables',struct('T',T,'pCat',pCat,'pAn',pAn),'Constants',s
 
 func.isWorkspace(Workspace)
 
-e.setParams(Workspace);
+e.setInWorkspace(Workspace);
 
 e.viewWorkspace;
 
 %% Removing variables
 
-e.removeParams('Q','p')
+e.removeFromWorkspace('Q','p')
 e.viewWorkspace;
 
 %% Replacing variables
 
-e.replaceParams('T',T+30)
+e.replaceInWorkspace('T',T+30)
 e.viewWorkspace;
 
 %% Defining potential function with defaults

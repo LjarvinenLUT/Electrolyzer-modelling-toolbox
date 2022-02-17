@@ -3,7 +3,7 @@ function Uact = activation(varargin)
 % modelling of water electrolysis.
 %
 %   Uact = ACTIVATION() uses hyperbolic sine approximation with variable
-%   electron transfer coefficient, alpha
+%   electron transfer parameter, alpha
 %
 %   Uact = ACTIVATION('model',n) uses a model defined by number n.  
 %
@@ -20,8 +20,8 @@ function Uact = activation(varargin)
 %                   electrochemical water splitting reaction
 %       Variables: 
 %           current -- Current density
-%           T -- Temperature in kelvins
-%   	Coefficients:
+%           T -- Temperature in kelvin
+%   	Parameters:
 %           alpha -- Electron transfer coefficient
 %           j0 -- Exchange current density
 %
@@ -44,26 +44,26 @@ function Uact = activation(varargin)
     
     Workspace.Variables = struct('current',[],'T',[]);
     
-    Workspace.Dependencies.warning_j0 = "if ~isempty(Workspace.Coefficients.j0)&&changed.T;"+...
+    Workspace.Dependencies.warning_j0 = "if ~isempty(Workspace.Parameters.j0)&&changed.T;"+...
                                 "warning('Temperature dependency of the exchange current density (j0) is not taken into account in the models. Changing the temperature without a new fit will result in unrealistic behaviour.');"+...
                                 "end;";
     
     switch model
         case 1 % Hyperbolic sine approximation with variable alpha
             modelStr = model + " -- Hyperbolic sine approximation with variable alpha";
-            Workspace.Coefficients = struct('alpha',[],'j0',[]);
+            Workspace.Parameters = struct('alpha',[],'j0',[]);
             Fitlims = struct('alpha',{{0,0.1,1}},'j0',{{1e-15,1e-5,1}});
-            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
+            funcHandle = @(Workspace) 1/Workspace.Parameters.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Parameters.j0));
         case 2 % Hyperbolic sine approximation with alpha assumed to be 1/2
             modelStr = model + " -- Hyperbolic sine approximation with alpha assumed to be 1/2";
-            Workspace.Coefficients = struct('alpha',1/2,'j0',[]);
+            Workspace.Parameters = struct('alpha',1/2,'j0',[]);
             Fitlims = struct('j0',{{1e-15,1e-5,1}});
-            funcHandle = @(Workspace) 2*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Coefficients.j0));
+            funcHandle = @(Workspace) 2*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*asinh(Workspace.Variables.current./(2*Workspace.Parameters.j0));
         case 3 % Tafel equation (valid when j/j0 > 4 https://doi.org/10.1016/j.jpowsour.2005.03.174)
             modelStr = model + " -- Tafel equation";
-            Workspace.Coefficients = struct('alpha',[],'j0',[]);
+            Workspace.Parameters = struct('alpha',[],'j0',[]);
             Fitlims = struct('alpha',{{0,0.1,1}},'j0',{{1e-15,1e-5,1}});
-            funcHandle = @(Workspace) 1/Workspace.Coefficients.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(Workspace.Variables.current./Workspace.Coefficients.j0);
+            funcHandle = @(Workspace) 1/Workspace.Parameters.alpha.*((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(Workspace.Variables.current./Workspace.Parameters.j0);
         otherwise
             error("Activation overpotential model #" + num2str(model) + " not defined.")
     end

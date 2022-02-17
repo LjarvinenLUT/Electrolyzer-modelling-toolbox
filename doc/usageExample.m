@@ -2,7 +2,7 @@
 % Usage of the water electrolysis modelling library is mainly based on the
 % functionality of an |electrolyzerModel| object. This object is used to
 % store all the information reqired for the model including electrolyzer
-% type, measured variables, constants, model coefficients and
+% type, measured variables, constants, model parameters and
 % modelling equations. Simple-to-use methods for fitting and plotting are
 % also incorporated.
 %
@@ -84,7 +84,7 @@ m = eModel.wtfrac2mol(wtfrac)
 %%
 % Variables have to be provided to the model as a Workspace structure (see
 % the documentation of |func| for more information). A Workspace structure
-% contains substructures for Variables, Coefficients and Constants. For our
+% contains substructures for Variables, Parameters and Constants. For our
 % purpose we have to provide the previously defined variables:
 Workspace = struct('Variables',struct('T',T,'ps',ps,'m',m))
 
@@ -96,7 +96,7 @@ func.isWorkspace(Workspace)
 %%
 % The workspace-compatible structure can now be set for the electrolyzer
 % model:
-eModel.setParams(Workspace)
+eModel.setInWorkspace(Workspace)
 eModel.viewWorkspace;
 
 %% Defining the modelling function
@@ -124,7 +124,7 @@ eModel.addPotentials('nernst','ohmic','activation')
 % fit or plot in that case.
 %
 % The |func| objects provided for the system all introduced their necessary
-% constants and coefficients to the Workspace structure
+% constants and parameters to the Workspace structure
 eModel.report;
 
 %% Copying the modelling object
@@ -166,7 +166,7 @@ pressureData = AlkaliUI.P(:,1);
 %%
 % Let's replace the preset temperature from the electrolyzer model with the
 % measured temperature vector
-eModel.replaceParams('T',temperatureData,'ps',pressureData);
+eModel.replaceInWorkspace('T',temperatureData,'ps',pressureData);
 
 %%
 % Let's choose particle swarm as our fitting method.
@@ -191,7 +191,7 @@ weights = "l";
 %%
 % *NOTE:* The fitting tool doesn't consider the units of the measured data
 % but the user has to keep in mind the used units. Some fitting
-% coefficients are sensitive to units, for example resistance |r| and
+% parameters are sensitive to units, for example resistance |r| and
 % exchange current density |j0|.
 
 %% Viewing the results
@@ -204,8 +204,8 @@ eModel.showUI
 % seen from the output of |fitUI|
 disp(fitParams)
 %%
-% or by calling |electrolyzerModel.getCoefficients| method.
-disp(eModel.getCoefficients)
+% or by calling |electrolyzerModel.getParams| method.
+disp(eModel.getParams)
 
 
 %%

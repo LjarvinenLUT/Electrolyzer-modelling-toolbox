@@ -11,7 +11,7 @@ function Uohm = ohmic(varargin)
 %                       object contains the following fields in its
 %                       workspace:
 %                       Variables: current -- Current density
-%                       Coefficients: r -- Area specific resistance
+%                       Parameters: r -- Area specific resistance
 %               #2 -- Ohm's law with electrolyte specific resistance
 %               separated.
 %                   - Requires electrolysis type as a name-value pair:
@@ -39,7 +39,7 @@ function Uohm = ohmic(varargin)
 %                       Variables: 
 %                           current -- Current density
 %                           R_ionic -- Ionic resistance
-%                       Coefficients: 
+%                       Parameters: 
 %                           r_electronics -- Area specific resistance of
 %                               the electronics only
 %                      
@@ -76,10 +76,10 @@ function Uohm = ohmic(varargin)
             resistanceModelStr = resistanceModel + " -- Total cell resistance, combined electronic and ionic components";
             fprintf('Resistance model: %s\n', resistanceModelStr)
             
-            Workspace.Coefficients.r = [];
+            Workspace.Parameters.r = [];
             Fitlims.r = {0,1,1000};
-            funcHandle = @(Workspace) Workspace.Coefficients.r.*Workspace.Variables.current;
-            Workspace.Dependencies.warning_r = "if ~isempty(Workspace.Coefficients.r)&&changed.T;"+...
+            funcHandle = @(Workspace) Workspace.Parameters.r.*Workspace.Variables.current;
+            Workspace.Dependencies.warning_r = "if ~isempty(Workspace.Parameters.r)&&changed.T;"+...
                                 "warning('Temperature dependency of the area specific resistivity (r) is not taken into account in the models. Changing the temperature without a new fit will result in unrealistic behaviour.');"+...
                                 "end;";
         case 2
@@ -144,9 +144,9 @@ function Uohm = ohmic(varargin)
             
                       
             Workspace.Dependencies.R_ionic = "Workspace.Variables.R_ionic = Workspace.Variables.delta./Workspace.Variables.sigma;";
-            Workspace.Coefficients.r_electronics = [];
+            Workspace.Parameters.r_electronics = [];
             Fitlims.r_electronics = {0,1,1000};
-            funcHandle = @(Workspace) (Workspace.Coefficients.r_electronics + Workspace.Variables.R_ionic).*Workspace.Variables.current;
+            funcHandle = @(Workspace) (Workspace.Parameters.r_electronics + Workspace.Variables.R_ionic).*Workspace.Variables.current;
     end
     
     Workspace.Constants = struct();

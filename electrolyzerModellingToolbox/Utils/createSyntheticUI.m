@@ -106,7 +106,7 @@ try
         uErr = 0;
     end
     
-    if any(nSampCall) % Standard deviation for voltage
+    if any(nSampCall) % Number of samples for calculation of standard deviation
         nSamp = varargin{indexOfCharEntries(nSampCall)+1};
     else
         nSamp = 200;
@@ -136,9 +136,9 @@ try
             eModel.setParams(Workspace);
         end
         
-        if isempty(fieldnames(eModel.potentialFunc.Workspace.Coefficients)) % Are coefficients defined with the model?
+        if isempty(fieldnames(eModel.potentialFunc.Workspace.Parameters)) % Are coefficients defined with the model?
             fprintf("\nNo fit coefficients provided with the model. \nDefault values used.\n")
-            Workspace = struct('Coefficients',struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5));
+            Workspace = struct('Parameters',struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5));
             eModel.setParams(Workspace);
         end
         
@@ -155,8 +155,8 @@ try
         funcGiven = false;
         eModel = electrolyzerModel();
         Variables = struct('T',273.15+50,'pAn',2,'pCat',30);
-        Coefficients = struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5);
-        Workspace = struct('Variables',Variables,'Coefficients',Coefficients);
+        Parameters = struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5);
+        Workspace = struct('Variables',Variables,'Parameters',Parameters);
         eModel.setParams(Workspace);
         eModel.addPotentials('ocv','ohm','con');
     end
@@ -179,8 +179,8 @@ end
 
 % If concentration overpotential is used, do not let current vector exceed
 %   the limiting current value (j_lim)
-if ismember('j_lim',fieldnames(eModel.potentialFunc.Workspace.Coefficients))
-    jLims(2) = min(jLims(2),eModel.potentialFunc.Workspace.Coefficients.j_lim);
+if ismember('j_lim',fieldnames(eModel.potentialFunc.Workspace.Parameters))
+    jLims(2) = min(jLims(2),eModel.potentialFunc.Workspace.Parameters.j_lim);
 end
 
 if funcGiven
@@ -205,7 +205,7 @@ else
     U1 = ((0:0.001:100)*(f*T))'; % Uact/(f*T) = 0...50, Activation overpotential sweep limits
     
     
-    jmeastemp = eModel.potentialFunc.Workspace.Coefficients.j0*(exp(eModel.potentialFunc.Workspace.Coefficients.alpha/(f*T)*U1)-exp((eModel.potentialFunc.Workspace.Coefficients.alpha-1)/(f*T)*U1)); % "Measured" current based on Buttler-Volmer equation
+    jmeastemp = eModel.potentialFunc.Workspace.Parameters.j0*(exp(eModel.potentialFunc.Workspace.Parameters.alpha/(f*T)*U1)-exp((eModel.potentialFunc.Workspace.Parameters.alpha-1)/(f*T)*U1)); % "Measured" current based on Buttler-Volmer equation
     jmeas = jmeastemp(jmeastemp > jLims(1) & jmeastemp < jLims(2)); % Apply limits to current
     U1 = U1(jmeastemp > jLims(1) & jmeastemp < jLims(2)); % Apply limits to activation overpotential
     U2 = eModel.calculate('current',jmeas); % Other potentials

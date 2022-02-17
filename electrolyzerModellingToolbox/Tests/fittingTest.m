@@ -15,7 +15,7 @@ Uohm = ohmic();
 Ucon = concentration();
 
 eModel = electrolyzerModel('type',type); % Electrolyzer model containing the sampled temperature
-eModel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
+eModel.setInWorkspace(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
 %%
 i = 1;
 switch i
@@ -32,7 +32,7 @@ switch i
         j_lim = 1.5; % A/cm^2, limiting current density
         
         synModel = eModel.copy;
-        synModel.setParams(struct('Coefficients',struct('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)))
+        synModel.setInWorkspace(struct('Parameters',struct('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)))
         
         [SynData,FullData] = createSyntheticUI('model',synModel,'jLims',[0.01 j_lim-0.01],'jErr',0.01,'uErr',0.01);
         
@@ -93,7 +93,7 @@ switch i
 %             jmeassamper(ii,:) = [mean(jm) std(jm)];
 %             Umeassamper(ii,:) = [mean(Um) std(Um)];
 %         end
-%         Uforfit.replaceParams('T',Tmeassamp);
+%         Uforfit.replaceInWorkspace('T',Tmeassamp);
         
         figure
         errorbar(SynData.current(:,1),SynData.voltage(:,1),SynData.voltage(:,2),SynData.voltage(:,2),SynData.current(:,2),SynData.current(:,2),'o')
@@ -105,9 +105,9 @@ switch i
         
         %% Create electrolyzer model objects
 %         eModel = electrolyzerModel('type',type); % Electrolyzer model containing the sampled temperature
-%         eModel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
+%         eModel.setInWorkspace(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
 %         Emodelfull = Emodel.copy; % Electrolyzer model containing the full dataset for temperature.
-%         Emodelfull.replaceParams('T',T);
+%         Emodelfull.replaceInWorkspace('T',T);
         eModel.addPotentials('ocv','act','ohm','con');
 %         Emodelfull.addPotentials('ocv','act','ohm','con');
         eModel2 = eModel.copy;
@@ -128,7 +128,7 @@ switch i
         j_lim_fit1 = fitParams1.j_lim;
 
 		% Calculate voltage with calculate-method of func-object
-%         Emodelfull.replaceParams(Emodel.potentialFunc.Workspace.Coefficients)
+%         Emodelfull.replaceInWorkspace(Emodel.potentialFunc.Workspace.Parameters)
 		Ufit1 = eModel.calculate('current',FullData.current);
         
         RMSE1 = gof1.rmse; % Root mean squares error
@@ -158,7 +158,7 @@ switch i
         j_lim_fit2 = fitParams2.j_lim;
         
 		% Calculate voltage with calculate-method of func-object
-%         EmodelfullPS.replaceParams(EmodelPS.potentialFunc.Workspace.Coefficients)
+%         EmodelfullPS.replaceInWorkspace(EmodelPS.potentialFunc.Workspace.Parameters)
 		Ufit2 = eModel2.calculate('current',FullData.current);
         
         RMSE2 = gof2.rmse; % Root mean squares error
@@ -177,9 +177,9 @@ switch i
         
         %% Test with original parameters
 %         Emodelfull2 = Emodelfull.copy;
-%         Emodelfull2.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
+%         Emodelfull2.replaceInWorkspace('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
         eModel3 = eModel.copy;
-        eModel3.replaceParams('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
+        eModel3.replaceInWorkspace('alpha',alpha,'j0',j0,'r',r,'j_lim',j_lim)
 
         
         Ufit = eModel3.calculate('current',FullData.current);
@@ -214,7 +214,7 @@ switch i
         
         %% Create electrolyzer model objects
         eModel = electrolyzerModel('type','PEM');
-        eModel.setParams(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
+        eModel.setInWorkspace(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
         eModel.addPotentials('ocv','act','ohm');
         
         for j = 1:3
@@ -285,4 +285,4 @@ switch i
 end
 
 %% Test warning message from changing the temperature after fit
-eModel.replaceParams('T',273.15)
+eModel.replaceInWorkspace('T',273.15)

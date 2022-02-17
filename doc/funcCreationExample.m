@@ -4,8 +4,8 @@
 % creating custom |func| objects. To create a |func| object one needs a
 % |Workspace| structure and the function handle that uses *only* the
 % |Workspace| as its input. The |Workspace| structure should contain all
-% the required variables, constants and coefficients (at least empty
-% fields) in the |Variables|, |Constants| and |Coefficients| substructures,
+% the required variables, constants and parameters (at least empty
+% fields) in the |Variables|, |Constants| and |Parameters| substructures,
 % respectively. If there are any dependencies between any of the
 % abovementioned parameters, these should be stored as strings in the
 % |Dependencies| substructure. The values of the parameters can be left
@@ -16,7 +16,7 @@
 % Let's create a simple custom |func| object as an example. The easiest way
 % is to build the function handle first to see which parameters are
 % required for the |Workspace|
-funcHandle = @(Workspace) Workspace.Constants.a*Workspace.Variables.x.^Workspace.Coefficients.b - Workspace.Variables.t.*Workspace.Coefficients.c;
+funcHandle = @(Workspace) Workspace.Constants.a*Workspace.Variables.x.^Workspace.Parameters.b - Workspace.Variables.t.*Workspace.Parameters.c;
 
 %%
 % The function handle above represents function
@@ -24,12 +24,12 @@ funcHandle = @(Workspace) Workspace.Constants.a*Workspace.Variables.x.^Workspace
 % $$a x^b - t c.$$
 %
 % For this potential term the |Workspace| contains one constant $a$, two
-% variables $x$ and $t$, and two coefficients $b$ and $c$.
+% variables $x$ and $t$, and two parameters $b$ and $c$.
 %
 % The substructures needed for the |Workspace| can now be created:
 Constants = struct('a',2);
 Variables = struct('x',[],'t',[]);
-Coefficients = struct('b',[],'c',[]);
+Parameters = struct('b',[],'c',[]);
 Dependencies = struct('t','Workspace.Variables.t = sin(5*pi.*Workspace.Variables.x);');
 
 %%
@@ -42,7 +42,7 @@ Dependencies = struct('t','Workspace.Variables.t = sin(5*pi.*Workspace.Variables
 % be built:
 Workspace = struct('Variables',Variables,...
                    'Constants',Constants,...
-                   'Coefficients',Coefficients,...
+                   'Parameters',Parameters,...
                    'Dependencies',Dependencies);
 
 
@@ -54,7 +54,7 @@ theFunc = func(funcHandle,Workspace);
 %%
 % The warning issued by the calling the constructor reminds that to be able
 % to perform a curve fit using the fitUI function, the user has to define
-% fit limits as a structure containing a field for each coefficient. The
+% fit limits as a structure containing a field for each parameter. The
 % limits have to be provided as a 1x3 cell array of either 
 %
 % * Numeric scalars
@@ -72,7 +72,7 @@ theFunc = func(funcHandle,Workspace);
 % method |func.setFitlims|. Input types accepted by |setFitlims| are 
 % 
 % * Compelte or incomplete |Fitlims| structure
-% * Name value pairs with the names representing the respective coefficients
+% * Name value pairs with the names representing the respective parameters
 % and the values their limits.
 %
 
@@ -88,23 +88,23 @@ disp(theFunc.Fitlims)
 
 
 %%
-% To add missing parameters to the object, the method |func.replaceParams|
+% To add missing parameters to the object, the method |func.replaceWorkspaceValues|
 % has to be used.
-theFunc.replaceParams('x',(0:0.01:1)');
+theFunc.replaceWorkspaceValues('x',(0:0.01:1)');
 disp(theFunc.viewWorkspace)
 
 %%
 % Alternatively the the |func| object could now be included to an
 % |electrolyzerModel| object with |electrolyzerModel.addPotentials| method.
 % Parameters can be replaced also with the help of
-% |electrolyzerModel.replaceParams| method. 
+% |electrolyzerModel.replaceWorkspaceValues| method. 
 %
 % For determining the values for parameters $b$ and $c$ through curve
 % fitting, their values have to be left empty. For this example, we assume
 % the fit has been performed and the result has been:
 b = 3.25;
 c = 0.75;
-theFunc.replaceParams('b',b,'c',c);
+theFunc.replaceWorkspaceValues('b',b,'c',c);
 disp(theFunc.viewWorkspace)
 
 %%

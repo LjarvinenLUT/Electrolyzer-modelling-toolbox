@@ -6,7 +6,7 @@ classdef func < handle
     %   single function handle assigned to them even if some of the requred
     %   parameters contain data in vector form. FUNC manages this by having
     %   a separate Workspace structure that contains all the constants,
-    %   variables and coefficients in their respective structures. The
+    %   variables and parameters in their respective structures. The
     %   function handle uses this Workspace as its only parameter and calls
     %   the required fields in the function handle. As there is only one
     %   input parameter, there is no requirement for the exact order of
@@ -23,14 +23,14 @@ classdef func < handle
     %                       - Variables for measured variable values, like
     %                           temperature or pressure that are needed for
     %                           the model.
-    %                       - Coefficients for system coefficients that are
+    %                       - Parameters for system parameters that are
     %                           obtained from the parametrization, like
     %                           electric resistance or limiting current
     %                           density. Performing fit using
     %                           fitUI.m function automatically fills the
-    %                           values for the coefficients. Alternatively
+    %                           values for the parameters. Alternatively
     %                           they can be manually provided using
-    %                           replaceParams method.
+    %                           replaceInWorkspace method.
     %                       - Dependencies between any two variables. Every
     %                           time any Workspace variables are modified,
     %                           the dependencies are run to refresh the
@@ -38,10 +38,10 @@ classdef func < handle
     %                           stored as strings of the commands and
     %                           function calls that are used to calculate
     %                           the dependent variables.
-    %       Fitlims -- The structure for model coefficient limits in
+    %       Fitlims -- The structure for model parameter limits in
     %                       fitting. 1x3 cell array containing values
     %                       {low,start,high}
-    %                       for each of the coefficients. Any of the values
+    %                       for each of the parameters. Any of the values
     %                       can be either numeric constants or MATLAB
     %                       equations in string form that output a numeric
     %                       constant using the independent variable of the
@@ -54,13 +54,14 @@ classdef func < handle
     %       destructurize -- Destructurizes the structure-based function
     %                           handle to enable fitting with original
     %                           Matlab functions.
-    %       removeParams -- Remove parameters from the Workspace structure.
-    %       replaceParams -- Replaces the values of existing parameters in
-    %                           Workspace structure.
+    %       removeFromWorkspace -- Remove values from the Workspace
+    %                               structure. 
+    %       replaceInWorkspace -- Replaces the values of existing
+    %                               fields in Workspace structure.
     %       setFitlims -- Sets the values of Fitlims structure.
     %       setFuncHandle -- Sets the protected property of funcHandle
     %                           together with the property equation.
-    %       setParams -- Sets new parameters to Workspace structure.
+    %       setInWorkspace -- Sets new values to Workspace structure.
     %       viewWorkspace -- Outputs a human-readable report of the
     %                           contents of the Workspace structure.
     %       vectorify -- Destructurizes the structure-based function
@@ -78,17 +79,17 @@ classdef func < handle
     properties (SetAccess = protected)
        equation; % Function handle in string form
        funcHandle; % Function handle of the function that uses only Workspace structure as an input
-       Workspace; % Structure containing the Coefficients, Variables, Constants and Dependencies between them:
-%         Coefficients; % Structure containing the coefficients
+       Workspace; % Structure containing the Parameters, Variables, Constants and Dependencies between them:
+%         Parameters; % Structure containing the parameters
 %         Variables; % Structure containing the variables
 %         Constants; % Structure containing the constants
 %         Dependencies; % Structure containing the dependencies as strings
-       Fitlims; % Limits for fitting the coefficients in a structure containing fields [low start high]
+       Fitlims; % Limits for fitting the parameters in a structure containing fields [low start high]
     end
     
     %% Public methods
     methods
-        function obj = func(funcHandle,Workspace,varargin)
+        function obj = func(funcHandle,Workspace,Fitlims)
             % FUNC Constructor method for the object
             %   Inputs:
             %       funcHandle -- The structure-based function handle.
@@ -98,13 +99,13 @@ classdef func < handle
             if func.isWorkspace(Workspace)
                 obj.Workspace = Workspace;
             else
-                error("Workspace structure of object func should contain exclusively fields 'Coefficients', 'Variables' or 'Constants'.")
+                error("Workspace structure of object func should contain exclusively fields 'Parameters', 'Variables', 'Constants' or 'Dependencies'.")
             end
             
             obj.Fitlims = struct();
-            if ~isempty(varargin)&&isstruct(varargin{1}) % Fit limits provided
-                obj.setFitlims(varargin{1});
-            end            
+            if exist("Fitlims","var")==1&&~isempty(Fitlims)&&isstruct(Fitlims) % Fit limits provided
+                obj.setFitlims(Fitlims);
+            end    
             
             obj.refreshWorkspace;
         end
@@ -117,8 +118,8 @@ classdef func < handle
         end
         
         
-        function setParams(obj,SetStruct)
-            % SETPARAMS  Sets new parameters in the Workspace structure.
+        function setInWorkspace(obj,SetStruct)
+            % SETINWORKSPACE  Sets new values in the Workspace structure.
             %  Parameters should be provided as a Workspace-compatible 
             %  structure. The method prioritizes given values over the
             %  existing ones in case of conflict.
@@ -130,30 +131,30 @@ classdef func < handle
                 
                 obj.refreshWorkspace(OldWorkspace);
             else
-                error('Parameters to be set have to be given as a single Workspace structure')
+                error('Values to be set have to be given as a single Workspace structure')
             end
             
         end
         
         
-        function replaceParams(obj,varargin)
-            % REPLACEPARAMS  Replaces parameters in the Workspace structure.
-            %  Parameters should be provided as name-value pairs or as a
+        function replaceInWorkspace(obj,varargin)
+            % REPLACEINWORKSPACE  Replaces values in the Workspace structure.
+            %  Values should be provided as name-value pairs or as a
             %  structure (either Workspace compatible or not). Replaces
             %  values only for existing fields with the same name as given.
             %  The method acts recursively inside Workspace.
             %  
             %  Note: If a dependency is defined for a parameter to be
             %  replaced, the dependency is erased, unless option 'rebuild'
-            %  is used. Rebuild option is used when REPLACEPARAMS is used
-            %  to input fit results when introducing parameters to a copied
-            %  func object. The benefits of the option are in situations
-            %  when there are dependencies defined that do not directly
-            %  alter the parameter they are related to, but execute some
-            %  other code, like a warning. If 'rebuild' is used when there
-            %  are dependencies affecting a parameter that is supposed to be
-            %  changed manually, the dependency overwrites any changes
-            %  made.
+            %  is used. Rebuild option is used when REPLACEINWORKSPACE
+            %  is used to input fit results when introducing values to a
+            %  copied func object. The benefits of the option are in
+            %  situations when there are dependencies defined that do not
+            %  directly alter the parameter they are related to, but
+            %  execute some other code, like a warning. If 'rebuild' is
+            %  used when there are dependencies affecting a parameter that
+            %  is supposed to be changed manually, the dependency
+            %  overwrites any changes made.
             %
             % See also ADDVALUESTOSTRUCT
             
@@ -168,18 +169,18 @@ classdef func < handle
                     fields = fieldnames(Struct);
                     for i = 1:length(fields)
                         if any(rebuildCall)
-                            replaceParams(obj,Struct.(fields{i}),'rebuild')
+                            replaceInWorkspace(obj,Struct.(fields{i}),'rebuild')
                         else
-                            replaceParams(obj,Struct.(fields{i}))
+                            replaceInWorkspace(obj,Struct.(fields{i}))
                         end
                     end
                     return;
                 else % Non-workspace structure input
-                    paramsToReplace = Struct;
+                    valuesToReplace = Struct;
                 end
             elseif ~mod(length(varargin),2) % Input as name-value pairs
                 for i = 1:2:length(varargin)
-                    paramsToReplace.(varargin{i}) = varargin{i+1};
+                    valuesToReplace.(varargin{i}) = varargin{i+1};
                 end
             else
                 error('Parameters to be replaced have to be either set as a single structure or as name-value pairs')
@@ -187,7 +188,7 @@ classdef func < handle
             
             % Means of avoiding overwriting existing dependencies
             if ismember('Dependencies',fieldnames(obj.Workspace))
-                paramNames = fieldnames(paramsToReplace);
+                paramNames = fieldnames(valuesToReplace);
                 dependentParamNames = paramNames(isfield(obj.Workspace.Dependencies,paramNames));
                 tempDependencies = obj.Workspace.Dependencies; % Store the 
                     % dependencies from the old Workspace to be manually
@@ -203,7 +204,7 @@ classdef func < handle
             end
             
             OldWorkspace = obj.Workspace;
-            obj.Workspace = addValuesToStruct(obj.Workspace,paramsToReplace);
+            obj.Workspace = addValuesToStruct(obj.Workspace,valuesToReplace);
             if ~isempty(tempDependencies)
                 obj.Workspace.Dependencies = tempDependencies;
             end
@@ -211,8 +212,8 @@ classdef func < handle
             obj.refreshWorkspace(OldWorkspace);
         end
         
-        function removeParams(obj,varargin)
-            % REMOVEPARAMS  Removes parameters from the Workspace structure.
+        function removeFromWorkspace(obj,varargin)
+            % REMOVEFROMWORKSPACE  Removes parameters from the Workspace structure.
             %  Input has to be provided either as a list of
             %  strings/character vectors or as a cell array of
             %  strings/character vectors containing the names of the
@@ -220,25 +221,25 @@ classdef func < handle
             %  the Workspace.
             
             if length(varargin) == 1 && iscell(varargin{1})
-                paramsToRemove = varargin{1};
+                valuesToRemove = varargin{1};
             else
-                paramsToRemove = varargin;
+                valuesToRemove = varargin;
             end
             
             OldWorkspace = obj.Workspace;
             
-            for i = 1:length(paramsToRemove)
-                if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Constants))
-                    obj.Workspace.Constants = rmfield(obj.Workspace.Constants,paramsToRemove{i});
+            for i = 1:length(valuesToRemove)
+                if ismember(valuesToRemove{i},fieldnames(obj.Workspace.Constants))
+                    obj.Workspace.Constants = rmfield(obj.Workspace.Constants,valuesToRemove{i});
                 end
-                if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Coefficients))
-                    obj.Workspace.Coefficients = rmfield(obj.Workspace.Coefficients,paramsToRemove{i});
+                if ismember(valuesToRemove{i},fieldnames(obj.Workspace.Parameters))
+                    obj.Workspace.Parameters = rmfield(obj.Workspace.Parameters,valuesToRemove{i});
                 end
-                if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Variables))
-                    obj.Workspace.Variables = rmfield(obj.Workspace.Variables,paramsToRemove{i});
+                if ismember(valuesToRemove{i},fieldnames(obj.Workspace.Variables))
+                    obj.Workspace.Variables = rmfield(obj.Workspace.Variables,valuesToRemove{i});
                 end
-                if ismember(paramsToRemove{i},fieldnames(obj.Workspace.Dependencies))
-                    obj.Workspace.Dependencies = rmfield(obj.Workspace.Dependencies,paramsToRemove{i});
+                if ismember(valuesToRemove{i},fieldnames(obj.Workspace.Dependencies))
+                    obj.Workspace.Dependencies = rmfield(obj.Workspace.Dependencies,valuesToRemove{i});
                 end
             end
             
@@ -247,14 +248,14 @@ classdef func < handle
         
         function setFitlims(obj,varargin)
             % SETFITLIMS Sets the property fitLims.
-            %   Set fitting limit values for the model coefficients.
-            %   Fitlims structure contains one field for each coefficient,
-            %   named identical to the coefficient. Each field contains a
+            %   Set fitting limit values for the model parameters.
+            %   Fitlims structure contains one field for each parameter,
+            %   named identical to the parameter. Each field contains a
             %   1x3 cell array with values {low,start,high} for lower
             %   limit, starting point and higher limit, respectively.
             %
             %   Recognized input is a Structure with the right format or
-            %   name value pairs with the coefficient name followed by the
+            %   name value pairs with the parameter name followed by the
             %   limit matrix.
             %
             %   Limits can be either as:
@@ -288,6 +289,7 @@ classdef func < handle
             end
             obj.Fitlims = mergeStructs(obj.Fitlims,Struct,'warn_duplicates',false);
         end
+
         
         
         function result = calculate(obj,varargin)
@@ -402,7 +404,7 @@ classdef func < handle
         
         
         function [destructurizedFuncHandle,...
-                coefficientsNamesForFit,...
+                parametersNamesForFit,...
                 problemVariableNames,...
                 problemVariables] = destructurize(obj,...
                                                   independentVariableName)
@@ -410,7 +412,7 @@ classdef func < handle
             %   Modifies the structure-based function handle to a function
             %   handle with all the constants and scalar variables
             %   calculated in, and the vector variables (problem variables)
-            %   and all the fit coefficients used as separate input
+            %   and all the fit parameters used as separate input
             %   parameters.
             %   Destructurizing enables usage of original Matlab functions
             %   like fit and particleswarm.
@@ -427,8 +429,8 @@ classdef func < handle
             %   Outputs:
             %       destructurizedFuncHandle -- The destructurized function
             %                                   handle.
-            %       coefficientNamesForFit -- Lists of the undefined 
-            %                                   coefficient names as a cell 
+            %       parameterNamesForFit -- Lists of the undefined 
+            %                                   parameter names as a cell 
             %                                   array.
             %       problemVariableNames -- List of the names of variables
             %                               with vector data as a cell 
@@ -442,31 +444,31 @@ classdef func < handle
                 error('Missing constant values. Not able to destructurize function handle for fitting.')
             end
             %
-            % Coefficients
-            coefficientsNamesForFit = {};
-            constantCoefficientNames = {};
-            constantCoefficients = [];
-            if ~isempty(obj.Workspace.Coefficients)
-                allCoefficientNames = fieldnames(obj.Workspace.Coefficients);
-                for i = 1:length(allCoefficientNames)
-                    coefficient = obj.Workspace.Coefficients.(allCoefficientNames{i});
-                    if contains(obj.getEquationBody,['Workspace.Coefficients.' allCoefficientNames{i}])
-                        % If the coefficient is used in the equation
-                        coefficientsNamesForFit = [coefficientsNamesForFit;...
-                                                   allCoefficientNames{i}];
-                    else % If the coefficient is not used in the equation
-                        if ~isempty(coefficient)
-                            constantCoefficientNames = [constantCoefficientNames;...
-                                                        allCoefficientNames{i}];
-                            constantCoefficients = [constantCoefficients;...
-                                                    coefficient];
+            % Parameters
+            parametersNamesForFit = {};
+            constantParameterNames = {};
+            constantParameters = [];
+            if ~isempty(obj.Workspace.Parameters)
+                allParameterNames = fieldnames(obj.Workspace.Parameters);
+                for i = 1:length(allParameterNames)
+                    parameter = obj.Workspace.Parameters.(allParameterNames{i});
+                    if contains(obj.getEquationBody,['Workspace.Parameters.' allParameterNames{i}])
+                        % If the parameter is used in the equation
+                        parametersNamesForFit = [parametersNamesForFit;...
+                                                   allParameterNames{i}];
+                    else % If the parameter is not used in the equation
+                        if ~isempty(parameter)
+                            constantParameterNames = [constantParameterNames;...
+                                                        allParameterNames{i}];
+                            constantParameters = [constantParameters;...
+                                                    parameter];
                         else
-                            warning("There is a coefficient whose name is not found from the equation but no value has been assigned to it.")
+                            warning("There is a parameter whose name is not found from the equation but no value has been assigned to it.")
                         end
                     end
                 end
             else
-                warning("No coefficients defined for the function.")
+                warning("No parameters defined for the function.")
             end
 
             % Variables
@@ -505,14 +507,14 @@ classdef func < handle
             % Constants
             Constants = obj.Workspace.Constants;
 
-            % Coefficients
-            Coefficients = struct();
-            for i = 1:length(coefficientsNamesForFit)
-                Coefficients.(coefficientsNamesForFit{i}) = sym(coefficientsNamesForFit{i});
+            % Parameters
+            Parameters = struct();
+            for i = 1:length(parametersNamesForFit)
+                Parameters.(parametersNamesForFit{i}) = sym(parametersNamesForFit{i});
             end
             %
-            for i = 1:length(constantCoefficientNames)
-                Coefficients.(constantCoefficientNames{i}) = constantCoefficients(i);
+            for i = 1:length(constantParameterNames)
+                Parameters.(constantParameterNames{i}) = constantParameters(i);
             end
            
             % Variables
@@ -529,10 +531,10 @@ classdef func < handle
             % Build new function handle in symbolic form
             symbolicFunction = obj.funcHandle(struct('Constants',Constants,...
                                                      'Variables',Variables,...
-                                                     'Coefficients',Coefficients));
+                                                     'Parameters',Parameters));
             
             % Modify back to function handle
-            varsList = [coefficientsNamesForFit;...
+            varsList = [parametersNamesForFit;...
                         problemVariableNames;...
                         independentVariableName];
             destructurizedFuncHandle = matlabFunction(symbolicFunction,...
@@ -543,14 +545,14 @@ classdef func < handle
         
         
         function [vectorifiedFuncHandle,...
-                coefficientsNamesForFit,...
+                parametersNamesForFit,...
                 problemVariableNames,...
                 problemVariables] = vectorify(obj,...
                                               independentVariableName)
             % VECTORIFY returns a function handle with one vector for the
-            %   coefficients transformed from input function handle with separate
-            %   coefficients that are organized in order
-            %   (coefficients, problem variables, independent variable).
+            %   parameters transformed from input function handle with separate
+            %   parameters that are organized in order
+            %   (parameters, problem variables, independent variable).
             %   Inputs:
             %       independentVariableName -- Name of the independent
             %                                   variable that is kept as
@@ -560,10 +562,10 @@ classdef func < handle
             %   Outputs:
             %       vectorifiedFuncHandle -- Function handle modified to
             %                                   take cell array inputs for
-            %                                   coefficients instead of
+            %                                   parameters instead of
             %                                   listing them separately.
-            %       coefficientNamesForFit -- Lists of the undefined 
-            %                                   coefficient names as a cell 
+            %       parameterNamesForFit -- Lists of the undefined 
+            %                                   parameter names as a cell 
             %                                   array.
             %       problemVariableNames -- List of the names of variables
             %                               with vector data as a cell 
@@ -575,16 +577,16 @@ classdef func < handle
             %   See also FUNC.DESTRUCTURIZE
             
             [destructurizedFuncHandle,...
-                coefficientsNamesForFit,...
+                parametersNamesForFit,...
                 problemVariableNames,...
                 problemVariables] = destructurize(obj,...
                                                   independentVariableName);
             
-            nCoeffs = numel(coefficientsNamesForFit);
+            nParams = numel(parametersNamesForFit);
             nProbVars = numel(problemVariableNames);
                                               
             % Creating symbolic variables for the function handle
-            x = num2cell(sym('x', [1 nCoeffs])); % fit parameters
+            x = num2cell(sym('x', [1 nParams])); % fit parameters
             y = num2cell(sym('y', [1 nProbVars])); % problem variables
             syms independentVariable; % Independent variable input
             
@@ -630,10 +632,10 @@ classdef func < handle
             
             fieldNameConst = fieldnames(obj.Workspace.Constants);
             fieldNameVars = fieldnames(obj.Workspace.Variables);
-            fieldNameCoeff = fieldnames(obj.Workspace.Coefficients);
+            fieldNameParam = fieldnames(obj.Workspace.Parameters);
             fields = [strcat(cell(size(fieldNameConst)),'Constants'),fieldNameConst;...
                          strcat(cell(size(fieldNameVars)),'Variables'),fieldNameVars;...
-                         strcat(cell(size(fieldNameCoeff)),'Coefficients'),fieldNameCoeff];
+                         strcat(cell(size(fieldNameParam)),'Parameters'),fieldNameParam];
             fieldName = fields(:,2);
             description = cell(size(fieldName));
             valueMin = nan(size(fieldName));
@@ -739,7 +741,7 @@ classdef func < handle
             emptyFunc = func(@pass,...
                 struct('Constants',struct(),...
                 'Variables',struct(),...
-                'Coefficients',struct(),...
+                'Parameters',struct(),...
                 'Dependencies',struct()));
         end
         
@@ -764,7 +766,7 @@ classdef func < handle
         function b = isWorkspace(Struct)
             % ISWORKSPACE Evaluates Workspace-compatibility of a structure.            
             b = all(ismember(fieldnames(Struct),...
-                             {'Coefficients';...
+                             {'Parameters';...
                              'Variables';...
                              'Constants';...
                              'Dependencies'}));
@@ -782,7 +784,7 @@ classdef func < handle
             %   Erases all occurences of Workspace from the equation body
             %   leaving a string with human-readable equation structure.
             equationStr = erase(obj.getEquationBody,...
-                {'Workspace.Coefficients.',...
+                {'Workspace.Parameters.',...
                 'Workspace.Variables.',...
                 'Workspace.Constants.'});
         end
@@ -795,25 +797,24 @@ classdef func < handle
         
         function refreshWorkspace(obj,varargin)
             % REFRESHWORKSPACE Recalculates dependent Workspace parameters.
-            Workspace = obj.Workspace;
             if ~isempty(varargin)
-                obj.Workspace = func.refresh(Workspace,varargin{1});
+                obj.Workspace = func.refresh(obj.Workspace,varargin{1});
             else
-                obj.Workspace = func.refresh(Workspace);
+                obj.Workspace = func.refresh(obj.Workspace);
             end
             
             
-            % Determine if there are undefined coefficients without fit limits
-            % First find all the coefficients that don't have an value
-            fnCoeffs = fieldnames(obj.Workspace.Coefficients);
-            emptyFields = false(size(fnCoeffs));
-            for fni = 1:numel(fnCoeffs)
-                emptyFields(fni) = isempty(obj.Workspace.Coefficients.(fnCoeffs{fni}));
+            % Determine if there are undefined parameters without fit limits
+            % First find all the parameters that don't have an value
+            fnParams = fieldnames(obj.Workspace.Parameters);
+            emptyFields = false(size(fnParams));
+            for fni = 1:numel(fnParams)
+                emptyFields(fni) = isempty(obj.Workspace.Parameters.(fnParams{fni}));
             end
-            fnEmpty = fnCoeffs(emptyFields); % Field names of empty coefficients
+            fnEmpty = fnParams(emptyFields); % Field names of empty parameters
             
             if any(~ismember(fnEmpty,fieldnames(obj.Fitlims)))
-                warningmsg = "Workspace contains coefficients with no"...
+                warningmsg = "Workspace contains parameters with no"...
                     + " set fit limits. Consider setting the limits with"...
                     + " the setFitlims method before using this func"...
                     + " object for fitting.";
