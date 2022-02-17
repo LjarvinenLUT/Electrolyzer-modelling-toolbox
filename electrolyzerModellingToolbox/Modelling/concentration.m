@@ -4,7 +4,7 @@ function Ucon = concentration(varargin)
 %
 %   Ucon = CONCENTRATION() uses concentration overpotential model with
 %   logarithmic dependency from the fraction between current and its
-%   limiting value, j_lim (model #2).
+%   limiting value, j_lim (model #1).
 %
 %   Ucon = CONCENTRATION('model',n) uses a model defined by number n.  
 %
@@ -59,6 +59,7 @@ function Ucon = concentration(varargin)
     
     switch model
         case 1 % Model with logarithmic dependency from the fraction between current and its limiting value.
+                % Saeed and Warkozek, "Modeling and Analysis of Renewable PEM Fuel Cell System", Energy Procedia 74 (2015) 87--101, 10.1016/j.egypro.2015.07.527 
             modelStr = model + " -- Limiting current model";
             funcHandle = @(Workspace) -((Workspace.Constants.R.*Workspace.Variables.T)./(Workspace.Constants.n_e*Workspace.Constants.F)).*log(1 - Workspace.Variables.current/Workspace.Parameters.j_lim);
             Workspace.Parameters = struct('j_lim',[]);
