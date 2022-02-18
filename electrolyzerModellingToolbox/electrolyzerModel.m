@@ -762,24 +762,25 @@ classdef electrolyzerModel < handle
             %  Output: potentialFunc -- default func object for the given
             %                           potential.
             potentialName = strrep(string(lower(argin)), ' ', '');
-            providedVariables = fieldnames(obj.potentialFunc.Workspace.Variables);
+%             providedVariables = fieldnames(obj.potentialFunc.Workspace.Variables);
             switch string(lower(potentialName))
                 case {"nernst","reversible","rev","opencircuit","ocv"}
-                    if strcmpi(obj.type,'pem')
-                        if all(ismember({'T','pCat','pAn'},providedVariables))
-                            potentialFunc = nernst(obj.type);
-                        else
-                            error("To use Nernst equation with PEM the following variables, T (temperature in kelvin), pCat (cathode pressure in bara) and pAn (anode pressure in bara) have to be included in the electrolyzerModel Variables structure")
-                        end
-                    elseif strcmpi(obj.type,'alkaline')
-                        if all(ismember({'T','ps','m'},providedVariables))
-                            potentialFunc = nernst(obj.type);
-                        else
-                            error("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), ps (system pressure in bara) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure. The variables have to have the exact same naming as shown in the previous sentence.")
-                        end
-                    else
-                        error("Electrolyzer type not recognised")
-                    end
+%                     if strcmpi(obj.type,'pem')
+%                         if all(ismember({'T','pCat','pAn'},providedVariables))
+%                             potentialFunc = nernst(obj.type);
+%                         else
+%                             error("To use Nernst equation with PEM the following variables, T (temperature in kelvin), pCat (cathode pressure in bara) and pAn (anode pressure in bara) have to be included in the electrolyzerModel Variables structure")
+%                         end
+%                     elseif strcmpi(obj.type,'alkaline')
+%                         if all(ismember({'T','ps','m'},providedVariables))
+%                             potentialFunc = nernst(obj.type);
+%                         else
+%                             error("To use Nernst equation with alkaline the following variables, T (temperature in kelvin), ps (system pressure in bara) and m (electrolyte molality) have to be included in the electrolyzerModel Variables structure. The variables have to have the exact same naming as shown in the previous sentence.")
+%                         end
+%                     else
+%                         error("Electrolyzer type not recognised")
+%                     end
+                    potentialFunc = nernst(obj.type);
                 case {"activation","act"}
                     potentialFunc = activation();
                 case {"ohmic","ohm","resistive","res"}
