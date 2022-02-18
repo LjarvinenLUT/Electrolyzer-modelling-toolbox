@@ -466,32 +466,49 @@ classdef electrolyzerModel < handle
             weightsMethod = lower(string(parser.Results.weights));
             usePlotting = parser.Results.plot;
 
-            % Apply shunt current if enabled
-            obj.shuntCurrent;
-            
-            if isnan(I) % Current not provided as an input
-                if any(ismember('current',fieldnames(obj.potentialFunc.Workspace.Variables)))
-                    I = obj.potentialFunc.Variables.current;
-                else
-                    error("Current not defined. Defined it either in the Variables structure of the electrolyzerModel object. Alternatively, if voltage has been provided as the second parameter for fitUI, current can be provided as the third parameter.")
-                end
-                if isnan(U) % Voltage not provided as an input
-                    if any(ismember('voltage',fieldnames(obj.potentialFunc.Workspace.Variables)))
-                        U = obj.potentialFunc.Variables.voltage;
+            % Check that if multiple models are provided they are in a 1xn
+            % vector
+            if min(size(obj)) > 1
+                error("Model objects should be provided as an 1xn vector")
+            end
+
+            nModels = numel(obj); % Number of models to be fit
+            fitParams = cell(size(obj));
+            gof = cell(size(obj));
+
+            for i = 1:nModels
+                % Apply shunt current if enabled
+                obj(i).shuntCurrent;
+
+                if isnan(I) % Current not provided as an input
+                    if any(ismember('current',fieldnames(obj(i).potentialFunc.Workspace.Variables)))
+                        I = obj(i).potentialFunc.Variables.current;
                     else
-                        error("Voltage not defined. Defined it either in the Variables structure of the electrolyzerModel object. Alternatively, if voltage has been provided as the second parameter for fitUI, current can be provided as the third parameter.")
+                        error("Current not defined. Defined it either in the Variables structure of the electrolyzerModel object. Alternatively, if voltage has been provided as the second parameter for fitUI, current can be provided as the third parameter.")
+                    end
+                    if isnan(U) % Voltage not provided as an input
+                        if any(ismember('voltage',fieldnames(obj(i).potentialFunc.Workspace.Variables)))
+                            U = obj(i).potentialFunc.Variables.voltage;
+                        else
+                            error("Voltage not defined. Defined it either in the Variables structure of the electrolyzerModel object. Alternatively, if voltage has been provided as the second parameter for fitUI, current can be provided as the third parameter.")
+                        end
                     end
                 end
+
+                [fitParams{i},gof{i}] = fitUI(obj(i).potentialFunc,U,I,'method',method,'weights',weightsMethod);
+
+                obj(i).PlottingCurves = struct('currentMeasured',I,'voltageMeasured',U,'method',method);
+
+                obj(i).synchronizeFuncStorage;
+
+                if usePlotting
+                    obj(i).showUI;
+                end
             end
-            
-            [fitParams,gof] = fitUI(obj.potentialFunc,U,I,'method',method,'weights',weightsMethod);
-            
-            obj.PlottingCurves = struct('currentMeasured',I,'voltageMeasured',U,'method',method);
-            
-            obj.synchronizeFuncStorage;
-            
-            if usePlotting
-                obj.showUI;
+
+            if nModels == 1
+                fitParams = fitParams{1};
+                gof = gof{1};
             end
             
         end
@@ -506,11 +523,25 @@ classdef electrolyzerModel < handle
             %   of the potentialFunc object.
             %
             %   See also FUNC.CALCULATE
-            tempResult = obj.potentialFunc.calculate(varargin{:});
-            if any(~isreal(tempResult))
-                warning("Complex voltage values detected. This may indicate that the values of the given current vector exceed the fit limitting current density 'j_lim'. Imaginary parts ignored.")
+            
+            if min(size(obj)) > 1
+                error("Model objects should be provided as a vector array")
             end
-            result = real(tempResult);
+
+            nModels = numel(obj); % Number of models to be calculated
+            result = cell(size(obj));
+            for i = 1:nModels
+                tempResult = obj(i).potentialFunc.calculate(varargin{:});
+                if any(~isreal(tempResult))
+                    warning("Complex voltage values detected. This may indicate that the values of the given current vector exceed the fit limitting current density 'j_lim'. Imaginary parts ignored.")
+                end
+                result{i} = real(tempResult);
+            end
+            
+            if nModels == 1
+                result = result{1};
+            end
+
         end
         
         
