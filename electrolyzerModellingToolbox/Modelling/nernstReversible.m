@@ -48,6 +48,7 @@ Workspace.Variables = struct('T',[]);
     end
     
     Workspace.Parameters = struct();
+    Workspace.Dependencies = struct();
     
     Urev = func(funcHandle,Workspace);
 

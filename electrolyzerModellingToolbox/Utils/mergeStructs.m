@@ -49,7 +49,7 @@ for i = 1:length(f_b)
             MergedStruct.(f_b{i}) = StructA.(f_b{i});
             continue;
         elseif isstruct(StructB.(f_b{i})) && isstruct(StructA.(f_b{i}))
-            MergedStruct.(f_b{i}) = mergeStructs(StructA.(f_b{i}),StructB.(f_b{i}));
+            MergedStruct.(f_b{i}) = mergeStructs(StructA.(f_b{i}),StructB.(f_b{i}),'warn_duplicates',warnDuplicates);
         else
             if ~isequaln(StructB.(f_b{i}),StructA.(f_b{i}))
                 overwrittenFields = true;

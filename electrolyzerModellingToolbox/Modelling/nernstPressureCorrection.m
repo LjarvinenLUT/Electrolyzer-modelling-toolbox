@@ -22,7 +22,7 @@ function Ucor = nernstPressureCorrection(type)
 %           psv -- Saturated water vapor pressure (for PEM only; dependency
 %               on temperature)
 %           ps -- System pressure (for alkaline only)
-%           m -- Electrolyte molality (for alkaline only)
+%           molality -- Electrolyte molality (for alkaline only)
 %           aH2OEl -- Water activity in electrolyte solution (for alkaline
 %               only; dependency on temperature, molality and the
 %               electrolyte)
@@ -73,13 +73,13 @@ function Ucor = nernstPressureCorrection(type)
             
             Workspace.Variables.ps = []; % bara, System pressure
             
-            Workspace.Variables.m = []; % mol/kg of solvent, Electrolyte molality
+            Workspace.Variables.molality = []; % mol/kg of solvent, Electrolyte molality
 
             Workspace.Variables.electrolyte = []; % 1 = KOH, 2 = NaOH, helper variable for determining the electrolyte related parameters
             
             % Electrolyte parameters
-            Workspace.Dependencies.psvEl = 'Workspace.Variables.psvEl = electrolyteWaterVaporPressure(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte);'; % Dependency format
-            Workspace.Dependencies.aH2OEl = 'Workspace.Variables.aH2OEl = electrolyteWaterActivity(Workspace.Variables.T,Workspace.Variables.m,Workspace.Variables.electrolyte);'; % Dependency format
+            Workspace.Dependencies.psvEl = 'Workspace.Variables.psvEl = electrolyteWaterVaporPressure(Workspace.Variables.T,Workspace.Variables.molality,Workspace.Variables.electrolyte);'; % Dependency format
+            Workspace.Dependencies.aH2OEl = 'Workspace.Variables.aH2OEl = electrolyteWaterActivity(Workspace.Variables.T,Workspace.Variables.molality,Workspace.Variables.electrolyte);'; % Dependency format
 %             eval(Workspace.Dependencies.electrolyteParameters);
             
 %             if any(Workspace.Variables.ps < Workspace.Variables.psvEl)

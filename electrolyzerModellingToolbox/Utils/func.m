@@ -127,7 +127,7 @@ classdef func < handle
             %  See also FUNC.ISWORKSPACE, MERGESTRUCTS
             if func.isWorkspace(SetStruct)
                 OldWorkspace = obj.Workspace;
-                obj.Workspace = mergeStructs(obj.Workspace,SetStruct);
+                obj.Workspace = mergeStructs(obj.Workspace,SetStruct,'warn_duplicates',false);
                 
                 obj.refreshWorkspace(OldWorkspace);
             else
@@ -160,6 +160,10 @@ classdef func < handle
             
             rebuildCall = strcmpi(varargin,'rebuild');
             varargin(rebuildCall) = [];
+
+            OldWorkspace = obj.Workspace;
+            unalteredWorkspaceFields = fieldnames(obj.Workspace);
+            replacementDone = false;
             
             if isempty(varargin{1})
                 return;
@@ -168,13 +172,18 @@ classdef func < handle
                 if func.isWorkspace(Struct) % Workspace structure input
                     fields = fieldnames(Struct);
                     for i = 1:length(fields)
-                        if any(rebuildCall)
-                            replaceInWorkspace(obj,Struct.(fields{i}),'rebuild')
-                        else
-                            replaceInWorkspace(obj,Struct.(fields{i}))
-                        end
+                        valuesToReplace = Struct.(fields{i});
+                        obj.Workspace.(fields{i}) = addValuesToStruct(obj.Workspace.(fields{i}),valuesToReplace);
+                        idx = strcmp(unalteredWorkspaceFields,fields{i});
+                        unalteredWorkspaceFields(idx) = [];
+                        %if any(rebuildCall)
+                            %obj.replaceInWorkspace(Struct.(fields{i}),'rebuild')
+                        %else
+                            %obj.replaceInWorkspace(Struct.(fields{i}))
+                        %end
                     end
-                    return;
+                    replacementDone = true; % Replacement already performed
+%                     return;
                 else % Non-workspace structure input
                     valuesToReplace = Struct;
                 end
@@ -183,11 +192,11 @@ classdef func < handle
                     valuesToReplace.(varargin{i}) = varargin{i+1};
                 end
             else
-                error('Parameters to be replaced have to be either set as a single structure or as name-value pairs')
+                error('Values to be replaced have to be either set as a single structure or as name-value pairs')
             end
             
             % Means of avoiding overwriting existing dependencies
-            if ismember('Dependencies',fieldnames(obj.Workspace))
+            if ismember('Dependencies',unalteredWorkspaceFields)
                 paramNames = fieldnames(valuesToReplace);
                 dependentParamNames = paramNames(isfield(obj.Workspace.Dependencies,paramNames));
                 tempDependencies = obj.Workspace.Dependencies; % Store the 
@@ -203,8 +212,10 @@ classdef func < handle
                 tempDependencies = [];
             end
             
-            OldWorkspace = obj.Workspace;
-            obj.Workspace = addValuesToStruct(obj.Workspace,valuesToReplace);
+            if ~replacementDone
+                obj.Workspace = addValuesToStruct(obj.Workspace,valuesToReplace);
+            end
+
             if ~isempty(tempDependencies)
                 obj.Workspace.Dependencies = tempDependencies;
             end
@@ -491,14 +502,14 @@ classdef func < handle
                     continue
                 elseif isempty(variable)
                     error('One or more variables missing. Not able to destructurize function handle for fitting.')
-                elseif length(variable) == 1
-                    nonProblemVariableNames = [nonProblemVariableNames;...
-                                               variableName];
-                    nonProblemVariables = [nonProblemVariables;variable];
-                else
+                elseif contains(obj.getEquationBody,['Workspace.Variables.' variableName])
                     problemVariableNames = [problemVariableNames;...
                                             variableName];
                     problemVariables = [problemVariables;variable];
+                else % if length(variable) == 1 OR variable not used
+                    nonProblemVariableNames = [nonProblemVariableNames;...
+                                               variableName];
+                    nonProblemVariables = [nonProblemVariables;variable];
                 end                    
             end
 
@@ -920,6 +931,7 @@ classdef func < handle
         function changed = detectChanges(NewWorkspace,OldWorkspace)
             % DETECTCHANGES Detects differences between two Workspaces
             if func.isWorkspace(NewWorkspace) && func.isWorkspace(OldWorkspace) 
+                OldWorkspace.Dependencies = NewWorkspace.Dependencies;
                 [common, dNew, ~] = comp_struct(NewWorkspace,OldWorkspace);
                 compResults = {common,dNew};
                 changed = struct();

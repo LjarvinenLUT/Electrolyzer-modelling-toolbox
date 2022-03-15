@@ -80,6 +80,7 @@ function Ucon = concentration(varargin)
             error("Concentration overpotential model #" + num2str(model) + " not defined.")
     end
     fprintf('Model: %s\n', modelStr)
+    Workspace.Dependencies = struct();
     
     Ucon = func(funcHandle,Workspace,Fitlims);
     
