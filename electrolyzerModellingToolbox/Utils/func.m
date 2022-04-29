@@ -493,6 +493,7 @@ classdef func < handle
             problemVariables = {};
             nonProblemVariableNames = {};
             nonProblemVariables = [];
+            variableMissing = false;
             for i = 1:length(allVariableNames)
                 variableName = allVariableNames{i};
                 variable = obj.Workspace.Variables.(variableName);
@@ -501,7 +502,8 @@ classdef func < handle
                 elseif strcmp(allVariableNames{i},independentVariableName)
                     continue
                 elseif isempty(variable)
-                    error('One or more variables missing. Not able to destructurize function handle for fitting.')
+                    variableMissing = true;
+                    fprintf(2, "Missing variable: " + variableName + "\n")
                 elseif contains(obj.getEquationBody,['Workspace.Variables.' variableName])
                     problemVariableNames = [problemVariableNames;...
                                             variableName];
@@ -511,6 +513,10 @@ classdef func < handle
                                                variableName];
                     nonProblemVariables = [nonProblemVariables;variable];
                 end                    
+            end
+            
+            if variableMissing
+                error('One or more variables missing. Not able to destructurize function handle for fitting.')
             end
 
             % Create destructurized function handle
