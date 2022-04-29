@@ -286,3 +286,8 @@ end
 
 %% Test warning message from changing the temperature after fit
 eModel.replaceInWorkspace('T',273.15)
+
+%% Test overpotential plotting
+j = 0:.01:2;
+eModel.showOverpotentials(j)
+eModel2.showOverpotentials()

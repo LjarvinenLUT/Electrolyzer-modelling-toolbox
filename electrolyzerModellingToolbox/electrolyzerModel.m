@@ -58,7 +58,7 @@ classdef electrolyzerModel < handle
     %       shuntCurrent -- Enable or disable shunt current in the model.
     %       viewWorkspace -- Outputs the workspace of potentialFunc in a
     %                           human-readable table.
-    %       wtfrac2mol -- Convert concentration from weight fractions to
+    %       wtfrac2molal -- Convert concentration from weight fractions to
     %                       molality.
     %
     %   See also FUNC
@@ -662,6 +662,39 @@ classdef electrolyzerModel < handle
                 uit.RowName = paramTable.Properties.RowNames;
                 uit.ColumnFormat = {'shortG','shortG'}; % Format to scientific notation if better
             end
+        end
+        
+        % TODO: should be made more robust. Checking missing variables for
+        % the calculation should be automatic.
+        function out =  showOverpotentials(obj, varargin)
+            % SHOWOVERPOTENTIALS plots individual overpotentials
+            %  obj.SHOWOVERPOTENTIALS() plots the overpotentials for
+            %  current range of the measurements
+            %  obj.SHOWOVERPOTENTIALS(current) plots the overpotentials for
+            %  current range specified by the array
+            if nargin() == 1
+                current = obj.PlottingCurves.currentMeasured;
+            else
+                current = cell2mat(varargin(1));
+            end
+            out = {};
+            funcCount = length(obj.funcStorage.func);
+            figure()
+            hold on;
+            for i = 1:funcCount
+                % Dont plot OCV
+                if obj.funcStorage.name(i) ~= "nernst" && obj.funcStorage.name(i) ~= "ocv"
+                    plot(current, obj.funcStorage.func(i).calculate('current', current));
+                    out(end + 1) = {obj.funcStorage.func(i).calculate('current', current)};
+                end
+            end
+            hold off;
+            % Exclude names ocv and nernst from the legend text
+            filteredNames = obj.funcStorage.name(find(obj.funcStorage.name ~= "nernst" & ...
+                obj.funcStorage.name ~= "ocv"));
+            legend(filteredNames)
+            xlabel("Current density (A/cm$^2$)")
+            ylabel("Overpotential (V)")
         end
         
         function coeffTable = getParams(obj)
