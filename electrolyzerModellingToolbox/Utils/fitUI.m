@@ -115,31 +115,11 @@ end
 
 
 %% Weighting
-switch weightsMethod
-    case {"hl","lh"}
-        % Weigh beginning and end of the measured current spectrum.
-        % y = current normalized to the interval [-pi/4 pi/4]
-        x = current-(max(current)+min(current))/2;
-    case "h"
-        % Weigh the beginning of the measured current spectrum
-        % y = current normalized to the interval [0 pi/4]
-        x = current-min(current);
-    case "l"
-        % Weigh the end of the measured current spectrum
-        % y = current normalized to the interval [-pi/4 0]
-        x = current-max(current);
-    case "none"
-        % Don't apply weights
-        x = ones(size(current));
-    otherwise
-        error("Nonvalid weight method! Set the method as one of the following: 'l' (low), 'h' (high), 'hl'/'lh' (high and low) or 'none'")
-end
-
-y = x/max(abs(x))*pi/4;
-addedWeights = tan(y).^2 + 0.1;
+addedWeights = addWeight(current,weightsMethod);
 
 % Additinal weights due to measurement accuracy
 weights = addedWeights.*errorWeights;
+
 
 %% Perform fit according to the chosen method
 switch method
@@ -504,5 +484,33 @@ while k < n
     yNew(k+1) = mean(y(index)+randn(25,1)*yStd(index));
     k = k+1;
 end
+
+end
+
+%%
+function addedWeights = addWeight(current,weightsMethod)
+% ADDWEIGHT calculates the weighting curve used in the fitting
+switch weightsMethod
+    case {"hl","lh"}
+        % Weigh beginning and end of the measured current spectrum.
+        % y = current normalized to the interval [-pi/4 pi/4]
+        x = (current-(max(current)+min(current))/2).^2;
+    case "h"
+        % Weigh the beginning of the measured current spectrum
+        % y = current normalized to the interval [0 pi/4]
+        x = (current-min(current)).^4;
+    case "l"
+        % Weigh the end of the measured current spectrum
+        % y = current normalized to the interval [-pi/4 0]
+        x = (current-max(current)).^4;
+    case "none"
+        % Don't apply weights
+        x = ones(size(current));
+    otherwise
+        error("Nonvalid weight method! Set the method as one of the following: 'l' (low), 'h' (high), 'hl'/'lh' (high and low) or 'none'")
+end
+
+y = x/max(abs(x))*pi/4;
+addedWeights = tan(y).^2 + 0.1;
 
 end

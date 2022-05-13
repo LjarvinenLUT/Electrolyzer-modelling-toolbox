@@ -33,18 +33,18 @@ e.viewWorkspace;
 
 %% Defining potential function with defaults
 
-e.addPotentials('nernst','activation','ohmic','concentration')
+e.addFuncs('nernst','activation','ohmic','concentration')
 
 disp(e.funcStorage)
 
 %% Copying the electrolyzer model
 
 e2 = e.copy
-e2.clearPotentials
+e2.clearFuncs
 
 %% Adding potential with 'names'
 
-e2.addPotentials('nernst','act',func.createEmpty,'names',{'ocv','Cat'})
+e2.addFuncs('nernst','act',func.createEmpty,'names',{'ocv','Cat'})
 
 disp(e2.funcStorage)
 

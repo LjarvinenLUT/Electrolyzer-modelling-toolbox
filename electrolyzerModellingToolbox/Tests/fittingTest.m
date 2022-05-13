@@ -108,8 +108,8 @@ switch i
 %         eModel.setInWorkspace(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
 %         Emodelfull = Emodel.copy; % Electrolyzer model containing the full dataset for temperature.
 %         Emodelfull.replaceInWorkspace('T',T);
-        eModel.addPotentials('ocv','act','ohm','con');
-%         Emodelfull.addPotentials('ocv','act','ohm','con');
+        eModel.addFuncs('ocv','act','ohm','con');
+%         Emodelfull.addFuncs('ocv','act','ohm','con');
         eModel2 = eModel.copy;
 %         EmodelfullPS = Emodelfull.copy;
         
@@ -215,7 +215,7 @@ switch i
         %% Create electrolyzer model objects
         eModel = electrolyzerModel('type','PEM');
         eModel.setInWorkspace(struct('Variables',struct('T',T,'pCat',pH2,'pAn',pO2)));
-        eModel.addPotentials('ocv','act','ohm');
+        eModel.addFuncs('ocv','act','ohm');
         
         for j = 1:3
             

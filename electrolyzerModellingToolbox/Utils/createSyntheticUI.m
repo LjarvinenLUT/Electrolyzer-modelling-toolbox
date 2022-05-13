@@ -126,7 +126,7 @@ try
     if any(modelCall) 
         eModel = copy(varargin{indexOfCharEntries(modelCall)+1});
         
-        if isempty(fieldnames(eModel.potentialFunc.Workspace.Variables)) % Are variables defined with the model?
+        if isempty(fieldnames(eModel.modelFunc.Workspace.Variables)) % Are variables defined with the model?
             fprintf("\nNo variables provided with the model.\nDefault values used.\n")
             if strcmpi(eModel.type,'pem')
                 Workspace = struct('Variables',struct('T',273.15+50,'pAn',2,'pCat',30));
@@ -136,16 +136,16 @@ try
             eModel.setParams(Workspace);
         end
         
-        if isempty(fieldnames(eModel.potentialFunc.Workspace.Parameters)) % Are coefficients defined with the model?
+        if isempty(fieldnames(eModel.modelFunc.Workspace.Parameters)) % Are coefficients defined with the model?
             fprintf("\nNo fit coefficients provided with the model. \nDefault values used.\n")
             Workspace = struct('Parameters',struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5));
             eModel.setParams(Workspace);
         end
         
-        if func.isEmpty(eModel.potentialFunc) % Are potential terms defined with the model?
+        if func.isEmpty(eModel.modelFunc) % Are potential terms defined with the model?
             funcGiven = false;
             fprintf("\nModel provided but it did not have potential \nfunction defined. Default potentials used.\n")
-            eModel.addPotentials('ocv','ohm','con');
+            eModel.addFuncs('ocv','ohm','con');
         else
             funcGiven = true;
         end
@@ -158,7 +158,7 @@ try
         Parameters = struct('alpha',0.5,'j0',1e-5,'r',0.1,'j_lim',1.5);
         Workspace = struct('Variables',Variables,'Parameters',Parameters);
         eModel.setParams(Workspace);
-        eModel.addPotentials('ocv','ohm','con');
+        eModel.addFuncs('ocv','ohm','con');
     end
 catch ME
     if strcmp(ME.identifier,'MATLAB:badsubscript')
@@ -179,8 +179,8 @@ end
 
 % If concentration overpotential is used, do not let current vector exceed
 %   the limiting current value (j_lim)
-if ismember('j_lim',fieldnames(eModel.potentialFunc.Workspace.Parameters))
-    jLims(2) = min(jLims(2),eModel.potentialFunc.Workspace.Parameters.j_lim);
+if ismember('j_lim',fieldnames(eModel.modelFunc.Workspace.Parameters))
+    jLims(2) = min(jLims(2),eModel.modelFunc.Workspace.Parameters.j_lim);
 end
 
 if funcGiven
@@ -191,8 +191,8 @@ else
     fprintf('Activation voltage model: Buttler-Volmer equation\n')
     
     % Check that all the variables are scalars
-    T = eModel.potentialFunc.Workspace.Variables.T;
-    variableValues = struct2cell(eModel.potentialFunc.Workspace.Variables);
+    T = eModel.modelFunc.Workspace.Variables.T;
+    variableValues = struct2cell(eModel.modelFunc.Workspace.Variables);
     for i = 1:length(variableValues)
         if numel(variableValues{i})>1
             error("Synthetic data with Buttler-Volmer equation can be created only with scalar variables.")
@@ -205,7 +205,7 @@ else
     U1 = ((0:0.001:100)*(f*T))'; % Uact/(f*T) = 0...50, Activation overpotential sweep limits
     
     
-    jmeastemp = eModel.potentialFunc.Workspace.Parameters.j0*(exp(eModel.potentialFunc.Workspace.Parameters.alpha/(f*T)*U1)-exp((eModel.potentialFunc.Workspace.Parameters.alpha-1)/(f*T)*U1)); % "Measured" current based on Buttler-Volmer equation
+    jmeastemp = eModel.modelFunc.Workspace.Parameters.j0*(exp(eModel.modelFunc.Workspace.Parameters.alpha/(f*T)*U1)-exp((eModel.modelFunc.Workspace.Parameters.alpha-1)/(f*T)*U1)); % "Measured" current based on Buttler-Volmer equation
     jmeas = jmeastemp(jmeastemp > jLims(1) & jmeastemp < jLims(2)); % Apply limits to current
     U1 = U1(jmeastemp > jLims(1) & jmeastemp < jLims(2)); % Apply limits to activation overpotential
     U2 = eModel.calculate('current',jmeas); % Other potentials
@@ -238,7 +238,7 @@ end
 SynData = struct('voltage',Umeassamper,'current',jmeassamper);
 FullData = struct('voltage',Umeas,'current',jmeas);
 
-Workspace = eModel.potentialFunc.Workspace;
+Workspace = eModel.modelFunc.Workspace;
 
 fprintf("\nSynthetic UI data creation finished.\n"...
     + "------------------------------------------------------------\n")
