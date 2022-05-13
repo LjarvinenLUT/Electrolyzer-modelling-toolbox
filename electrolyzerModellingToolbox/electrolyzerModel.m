@@ -25,12 +25,8 @@ classdef electrolyzerModel < model
     %               longer linked to the parent.
     %       fitUI -- Performs a fit for the UI curve extracting values for
     %                   its parameters.
-    %       mol2wtfrac -- Convert concentration from molality to weight
-    %                       fractions.
     %       showUI -- Plots the UI curve for the model.
     %       shuntCurrent -- Enable or disable shunt current in the model.
-    %       wtfrac2mol -- Convert concentration from weight fractions to
-    %                       molality.
     %
     %   See also MODEL, FUNC 
     
@@ -532,7 +528,40 @@ classdef electrolyzerModel < model
             end
         end
 
-
+        
+        % TODO: should be made more robust. Checking missing variables for
+        % the calculation should be automatic.
+        function out =  showOverpotentials(obj, varargin)
+            % SHOWOVERPOTENTIALS plots individual overpotentials
+            %  obj.SHOWOVERPOTENTIALS() plots the overpotentials for
+            %  current range of the measurements
+            %  obj.SHOWOVERPOTENTIALS(current) plots the overpotentials for
+            %  current range specified by the array
+            if nargin() == 1
+                current = obj.PlottingCurves.currentMeasured;
+            else
+                current = cell2mat(varargin(1));
+            end
+            out = {};
+            funcCount = length(obj.funcStorage.func);
+            figure()
+            hold on;
+            for i = 1:funcCount
+                % Dont plot OCV
+                if obj.funcStorage.name(i) ~= "nernst" && obj.funcStorage.name(i) ~= "ocv"
+                    plot(current, obj.funcStorage.func(i).calculate('current', current));
+                    out(end + 1) = {obj.funcStorage.func(i).calculate('current', current)};
+                end
+            end
+            hold off;
+            % Exclude names ocv and nernst from the legend text
+            filteredNames = obj.funcStorage.name(find(obj.funcStorage.name ~= "nernst" & ...
+                obj.funcStorage.name ~= "ocv"));
+            legend(filteredNames)
+            xlabel("Current density (A/cm$^2$)")
+            ylabel("Overpotential (V)")
+        end
+        
         
         function report(obj)
             % REPORT Displays a report of all the properties of the object
@@ -557,26 +586,6 @@ classdef electrolyzerModel < model
             end
             childObj.setInWorkspace(obj.modelFunc.Workspace);
             childObj.shuntCurrent(obj.shuntCurrentEnabled,false);
-        end
-        
-        function molality = wtfrac2molal(obj,wtfrac)
-            % WTFRAC2MOLAL Convert concentration value in
-            %   weight fraction (mass of solute/mass of solution) to
-            %   molality (moles of solute/mass of solvent in kg) using the
-            %   molar mass value contained in the instance.
-            %
-            %   See also WTFRAC2MOL
-            molality = wtfrac2molal(wtfrac,obj.molarMassOfElectrolyte);
-        end
-        
-        function wtfrac = molal2wtfrac(obj,molality)
-            % MOLAL2WTFRAC Convert concentration value in
-            %   molality (moles of solute/mass of solvent in kg) to
-            %   weight fraction (mass of solute/mass of solution) using the
-            %   molar mass value contained in the instance.
-            %
-            %   See also MOL2WTFRAC
-            wtfrac = molal2wtfrac(molality,obj.molarMassOfElectrolyte);
         end
         
     end
