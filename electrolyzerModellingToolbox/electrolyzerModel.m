@@ -51,15 +51,21 @@ classdef electrolyzerModel < model
             %              Default: KOH (alkaline)
             %              Polymer membrane (PEM)
             %   nCells  -- Number of cells in series
+            %              Default: 1
+            %   cellArea -- The active surface area of the cell
+            %              Default: 1
+
             
             defaultType = "pem";
             defaultElectrolyte = "KOH";
             defaultNCells = 1;
+            defaultArea = 1;
             
             parser = inputParser;
             addParameter(parser,'type',defaultType,@(x) ischar(x)||isstring(x));
             addParameter(parser,'electrolyte',defaultElectrolyte,@(x) ischar(x)||isstring(x))
             addParameter(parser,'nCells',defaultNCells,@(x) isnumeric(x)&&isscalar(x))
+            addParameter(parser,'cellArea',defaultArea,@(x) isnumeric(x))
             
             parse(parser,varargin{:});
             
@@ -71,7 +77,9 @@ classdef electrolyzerModel < model
             % Add number of cells in workspace
             obj.setInWorkspace(struct('Variables',...
                                       struct('nCells',...
-                                             parser.Results.nCells)));
+                                             parser.Results.nCells,...
+                                             'cellArea',...
+                                             parser.Results.cellArea)));
             
             setType(obj, parser.Results.type);
             setElectrolyte(obj, string(parser.Results.electrolyte));
@@ -140,7 +148,7 @@ classdef electrolyzerModel < model
             
             % If only one input was given check if it is a cell or an array
             % and use its content if true.
-            if length(inputs) == 1 && (iscell(inputs{1}) || (~iscell(inputs{1}) && length(inputs{1}) > 1))
+            if length(inputs) == 1 && (iscell(inputs{1}) || (~ischar(inputs{1}) && length(inputs{1}) > 1))
                 potentials = inputs{1};
             else
                 potentials = inputs;
