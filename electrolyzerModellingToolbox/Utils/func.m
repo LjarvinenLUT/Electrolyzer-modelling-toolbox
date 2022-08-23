@@ -813,7 +813,16 @@ classdef func < handle
         end
         
         function refreshWorkspace(obj,varargin)
-            % REFRESHWORKSPACE Recalculates dependent Workspace parameters.
+            % REFRESHWORKSPACE Recalculates dependent Workspace parameters
+            %  and create missing substructures
+
+            requiredFields = ["Variables","Parameters","Constants","Dependencies"];
+            for i = 1:numel(requiredFields)
+                if ~isfield(obj.Workspace,requiredFields(i))
+                    obj.Workspace.(requiredFields(i)) = struct([]);
+                end
+            end
+
             if ~isempty(varargin)
                 obj.Workspace = func.refresh(obj.Workspace,varargin{1});
             else
@@ -902,7 +911,7 @@ classdef func < handle
                 changed = func.detectChanges(Workspace,Workspace);
             end
             
-            if ismember('Dependencies',fieldnames(Workspace))
+            if isfield(Workspace,'Dependencies')
                 fn = fieldnames(Workspace.Dependencies);
                 for i = 1:numel(fn)
                     try
@@ -937,7 +946,9 @@ classdef func < handle
         function changed = detectChanges(NewWorkspace,OldWorkspace)
             % DETECTCHANGES Detects differences between two Workspaces
             if func.isWorkspace(NewWorkspace) && func.isWorkspace(OldWorkspace) 
-                OldWorkspace.Dependencies = NewWorkspace.Dependencies;
+                if isfield(NewWorkspace,"Dependencies")
+                    OldWorkspace.Dependencies = NewWorkspace.Dependencies;
+                end
                 [common, dNew, ~] = comp_struct(NewWorkspace,OldWorkspace);
                 compResults = {common,dNew};
                 changed = struct();
