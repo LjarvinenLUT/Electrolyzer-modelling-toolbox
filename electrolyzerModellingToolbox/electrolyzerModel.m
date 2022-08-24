@@ -285,7 +285,9 @@ classdef electrolyzerModel < model
             %  obj.FITUI(_,'weights',w) performs UI curve fit using the
             %   weighting method defined as input w.
             %   Options:
-            %    'default' -- Weighs beginning and end of the curve
+            %    'hl' -- Weighs beginning and end of the curve
+            %    'h' -- Weighs the end of the curve
+            %    'l' -- Weighs the beginning of the curve
             %    'none' -- Doesn't add weights on the curve
             %               
             %  obj.FITUI(_,'plot',true) performs UI curve fit and plots the
@@ -302,7 +304,7 @@ classdef electrolyzerModel < model
             % See also FITUI
             
             defaultMethod = 'PS';
-            defaultWeights = 'default';
+            defaultWeights = 'hl';
             defaultPlot = false;
             defaultU = nan;
             defaultI = nan;
