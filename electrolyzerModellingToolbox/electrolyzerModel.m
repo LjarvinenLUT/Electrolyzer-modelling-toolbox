@@ -323,9 +323,6 @@ classdef electrolyzerModel < model
             I = parser.Results.I;
             method = upper(string(parser.Results.method));
             weightsMethod = lower(string(parser.Results.weights));
-            if weightsMethod ~= "hl" && weightsMethod ~= "none"
-                weightsMethod = "hl";
-            end
             usePlotting = parser.Results.plot;
 
             % Check that if multiple models are provided they are in a 1xn
