@@ -6,7 +6,7 @@ close all; clearvars; clc;
 T = 273.15+(0:80);
 
 for i = 1:6
-    Urev = reversible(T,i)
+    Urev = nernstReversible(1)
 end
 
 %% Nernst equation pressure correction
@@ -15,7 +15,7 @@ p1 = 2;
 p2 = 30;
 m = 7.5;
 % %% PEM
-% Urev = nernstPressureCorrection(T,p1,p2,'type','pem')
+Ucor = nernstPressureCorrection("PEM")
 % %% Alkali
 % Urev = nernstPressureCorrection(T,p1,m,'type','alkaline')
 % 
@@ -24,7 +24,7 @@ m = 7.5;
 %% Nernst equation
 
 %% PEM
-Uocv = nernst(T,p1,p2,'type','pem')
+Uocv = nernst("PEM")
 
 % %% Alkali
 % Uocv = nernst(T,p1,m,'type','alkali')

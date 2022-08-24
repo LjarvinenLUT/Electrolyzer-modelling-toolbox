@@ -15,7 +15,7 @@ function Ucor = nernstPressureCorrection(type)
 %           R -- Universal gas constant
 %           n_e -- Number of electrons transferred in a single
 %                   electrochemical water splitting reaction
-%       Varaibles:
+%       Variables:
 %           T -- Temperature in kelvins
 %           pO2 -- Oxygen partial pressure (for PEM only)
 %           pH2 -- Hydrogen partial pressure (for PEM only)
