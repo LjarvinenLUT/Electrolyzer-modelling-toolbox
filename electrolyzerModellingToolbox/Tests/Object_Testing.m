@@ -2,7 +2,7 @@
 clear; clc; close all;
 
 %% Global parameters
-[F,R,n_e] = get_constants();
+[F,R,n_e] = getConstants();
 
 f = R/(n_e*F);
 
@@ -18,7 +18,8 @@ r = 0.1; % Ohm, total resistance
 j_lim = 1.5; % A/cm^2, limiting current density
 Uerr = 0; % V, constant voltage error
 
-Uocv = nernst(T,pH2,pO2,'type',type);
+Uocv = nernst(type);
+Ucor = nernstPressureCorrection(type);
 Uact = activation(T,'model',2);
 Uohm = ohmic();
 Ucon = concentration(T);

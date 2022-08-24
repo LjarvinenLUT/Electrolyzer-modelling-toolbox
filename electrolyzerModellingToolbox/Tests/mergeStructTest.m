@@ -1,3 +1,4 @@
+clear; clc; close all
 %% mergeStruct Test
 
 StructA = struct('A',struct('a',1,'b',2,'c',3),'B',struct('c',5,'d',6));
