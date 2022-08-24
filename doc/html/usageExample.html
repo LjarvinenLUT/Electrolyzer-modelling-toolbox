@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>Electrolyzer modelling tool: Step-by-step usage example of the UI curve fitting functionality</title><meta name="generator" content="MATLAB 9.11"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2022-02-11"><meta name="DC.source" content="usageExample.m"><style type="text/css">
+      --><title>Electrolyzer modelling tool: Step-by-step usage example of the UI curve fitting functionality</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2022-08-24"><meta name="DC.source" content="usageExample.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -96,7 +96,7 @@ Electrolyzer model properties:
 
  molarMassOfElectrolyte: 39.9971 kg/mol
 
- potentialFunc:
+ Modelling function:
 
    equation: pass
 
@@ -104,8 +104,14 @@ Electrolyzer model properties:
                                                   description                         valueMean    valueMin    valueMax    standardDeviation
                               ____________________________________________________    _________    ________    ________    _________________
 
+    nCells                    {["Variable: scalar without confidence bounds"    ]}          1        NaN         NaN              NaN       
+    cellArea                  {["Variable: scalar without confidence bounds"    ]}          1        NaN         NaN              NaN       
     electrolyte               {["Variable: numeric helper variable for alkaline"]}          2        NaN         NaN              NaN       
     molarMassOfElectrolyte    {["Variable: scalar without confidence bounds"    ]}     39.997        NaN         NaN              NaN       
+    molality                  {["Variable: dependent, no value assigned"        ]}        NaN        NaN         NaN              NaN       
+    Molarity                  {["Variable: dependent, no value assigned"        ]}        NaN        NaN         NaN              NaN       
+    wtfrac                    {["Variable: dependent, no value assigned"        ]}        NaN        NaN         NaN              NaN       
+    T                         {["Variable: no values assigned"                  ]}        NaN        NaN         NaN              NaN       
 
 
  funcStorage:
@@ -113,16 +119,10 @@ Electrolyzer model properties:
 
  PlottingCurves: No curves available. Perform model fit to get plotting curves.
 
-</pre><h2 id="4">Defining system variables</h2><p>After model construction the simplest way to proceed is to define some system variables, like temperature and pressure, which are needed for calculating the Nernst potential for the system. For alkaline electrolysis the required variables are:</p><div><ul><li>Temperature, T (in kelvin)</li><li>System pressure, ps (in bara)</li><li>Electrolyte molality, m (in mol of solute/kg of solvent).</li></ul></div><p>For PEM, on the other hand, the required variables would be:</p><div><ul><li>Temperature, T (in kelvin)</li><li>Anode pressure, pAn (in bara)</li><li>Cathode pressure, pCat (in bara).</li></ul></div><pre class="codeinput">T = 273.15 + 80; <span class="comment">% Temperature in kelvin</span>
+</pre><h2 id="4">Defining system variables</h2><p>After model construction the simplest way to proceed is to define some system variables, like temperature and pressure, which are needed for calculating the Nernst potential for the system. For alkaline electrolysis the required variables are:</p><div><ul><li>Temperature, T (in kelvin)</li><li>System pressure, ps (in bara)</li><li>Electrolyte concentration, either:   * molality (in mol of solute/kg of solvent),   * Molarity (in mol of solute/L of solution)   * wtfrac (in mass of solute/mass of solution)</li></ul></div><p>For PEM, on the other hand, the required variables would be:</p><div><ul><li>Temperature, T (in kelvin)</li><li>Anode pressure, pAn (in bara)</li><li>Cathode pressure, pCat (in bara).</li></ul></div><pre class="codeinput">T = 273.15 + 70; <span class="comment">% Temperature in kelvin</span>
 ps = 3; <span class="comment">% System pressure in bara</span>
-</pre><p>The alkaline models require concentration as molality, but often weight fractions are more commonly known. Therefore the <tt>electrolyzerModel</tt> class contains methods for conversion between molality and weight fractions. These conversions use the known molar mass of the given electrolyte salt. Weight fraction can be given both as percents (assumed when input &gt; 1) or directly as a fraction (input &lt; 1).</p><pre class="codeinput">wtfrac = 30; <span class="comment">% concentration as weight percentage</span>
-m = eModel.wtfrac2mol(wtfrac)
-</pre><pre class="codeoutput">
-m =
-
-     0.010715
-
-</pre><p>Variables have to be provided to the model as a Workspace structure (see the documentation of <tt>func</tt> for more information). A Workspace structure contains substructures for Variables, Parameters and Constants. For our purpose we have to provide the previously defined variables:</p><pre class="codeinput">Workspace = struct(<span class="string">'Variables'</span>,struct(<span class="string">'T'</span>,T,<span class="string">'ps'</span>,ps,<span class="string">'m'</span>,m))
+</pre><p>The alkaline models require concentration as molality, but often weight fractions are more commonly known. Therefore the <tt>electrolyzerModel</tt> class contains methods for automatic conversion between molality and weight fractions. These conversions use the known molar mass of the given electrolyte salt. Weight fraction can be given both as percents (assumed when input &gt; 1) or directly as a fraction (input &lt; 1).</p><pre class="codeinput">wtfrac = 30; <span class="comment">% concentration as weight percentage</span>
+</pre><p>Variables have to be provided to the model as a Workspace structure (see the documentation of <tt>func</tt> for more information). A Workspace structure contains substructures for Variables, Parameters and Constants. For our purpose we have to provide the previously defined variables:</p><pre class="codeinput">Workspace = struct(<span class="string">'Variables'</span>,struct(<span class="string">'T'</span>,T,<span class="string">'ps'</span>,ps,<span class="string">'wtfrac'</span>,wtfrac))
 </pre><pre class="codeoutput">
 Workspace = 
 
@@ -138,18 +138,22 @@ ans =
 
    1
 
-</pre><p>The workspace-compatible structure can now be set for the electrolyzer model:</p><pre class="codeinput">eModel.setWorkspaceValues(Workspace)
+</pre><p>The workspace-compatible structure can now be set for the electrolyzer model:</p><pre class="codeinput">eModel.setInWorkspace(Workspace)
 eModel.viewWorkspace;
 </pre><pre class="codeoutput">                                                  description                         valueMean    valueMin    valueMax    standardDeviation
                               ____________________________________________________    _________    ________    ________    _________________
 
-    electrolyte               {["Variable: numeric helper variable for alkaline"]}           2       NaN         NaN              NaN       
-    molarMassOfElectrolyte    {["Variable: scalar without confidence bounds"    ]}      39.997       NaN         NaN              NaN       
-    T                         {["Variable: scalar without confidence bounds"    ]}      353.15       NaN         NaN              NaN       
-    ps                        {["Variable: scalar without confidence bounds"    ]}           3       NaN         NaN              NaN       
-    m                         {["Variable: scalar without confidence bounds"    ]}    0.010715       NaN         NaN              NaN       
+    nCells                    {["Variable: scalar without confidence bounds"    ]}          1        NaN         NaN              NaN       
+    cellArea                  {["Variable: scalar without confidence bounds"    ]}          1        NaN         NaN              NaN       
+    electrolyte               {["Variable: numeric helper variable for alkaline"]}          2        NaN         NaN              NaN       
+    molarMassOfElectrolyte    {["Variable: scalar without confidence bounds"    ]}     39.997        NaN         NaN              NaN       
+    molality                  {["Variable: dependent scalar"                    ]}     10.715        NaN         NaN              NaN       
+    Molarity                  {["Variable: dependent scalar"                    ]}     9.7071        NaN         NaN              NaN       
+    wtfrac                    {["Variable: dependent scalar"                    ]}        0.3        NaN         NaN              NaN       
+    T                         {["Variable: scalar without confidence bounds"    ]}     343.15        NaN         NaN              NaN       
+    ps                        {["Variable: scalar without confidence bounds"    ]}          3        NaN         NaN              NaN       
 
-</pre><h2 id="9">Defining the modelling function</h2><p>Once the modeling object has been created and variables set, it is possible to use helper method <tt>addPotentials</tt> to construct the full overpotential function.</p><pre class="codeinput">eModel.addPotentials(<span class="string">'nernst'</span>,<span class="string">'ohmic'</span>,<span class="string">'activation'</span>)
+</pre><h2 id="9">Defining the modelling function</h2><p>Once the modeling object has been created and variables set, it is possible to use helper method <tt>addPotentials</tt> to construct the full overpotential function.</p><pre class="codeinput">eModel.addFuncs(<span class="string">'nernst'</span>,<span class="string">'ohmic'</span>,<span class="string">'activation'</span>)
 </pre><pre class="codeoutput">
 Single cell open circuit voltage modelling properties:
 Reversible voltage model: 1
@@ -170,7 +174,7 @@ Electrolyzer model properties:
 
  molarMassOfElectrolyte: 39.9971 kg/mol
 
- potentialFunc:
+ Modelling function:
 
    equation: 1/(n_e*F)*(-159.6.*T+2.8472e5)+(R.*T)/(n_e*F).*log((ps-psvEl).^(3/2)./aH2OEl)+r.*current+1/alpha.*((R.*T)./(n_e*F)).*asinh(current./(2*j0))
 
@@ -181,13 +185,17 @@ Electrolyzer model properties:
     F                         {["Constant: scalar without confidence bounds"    ]}       96485       NaN         NaN              NaN       
     n_e                       {["Constant: scalar without confidence bounds"    ]}           2       NaN         NaN              NaN       
     R                         {["Constant: scalar without confidence bounds"    ]}      8.3145       NaN         NaN              NaN       
+    nCells                    {["Variable: scalar without confidence bounds"    ]}           1       NaN         NaN              NaN       
+    cellArea                  {["Variable: scalar without confidence bounds"    ]}           1       NaN         NaN              NaN       
     electrolyte               {["Variable: numeric helper variable for alkaline"]}           2       NaN         NaN              NaN       
     molarMassOfElectrolyte    {["Variable: scalar without confidence bounds"    ]}      39.997       NaN         NaN              NaN       
-    T                         {["Variable: scalar without confidence bounds"    ]}      353.15       NaN         NaN              NaN       
+    molality                  {["Variable: dependent scalar"                    ]}      10.715       NaN         NaN              NaN       
+    Molarity                  {["Variable: dependent scalar"                    ]}      9.7071       NaN         NaN              NaN       
+    wtfrac                    {["Variable: dependent scalar"                    ]}         0.3       NaN         NaN              NaN       
+    T                         {["Variable: scalar without confidence bounds"    ]}      343.15       NaN         NaN              NaN       
     ps                        {["Variable: scalar without confidence bounds"    ]}           3       NaN         NaN              NaN       
-    m                         {["Variable: scalar without confidence bounds"    ]}    0.010715       NaN         NaN              NaN       
-    psvEl                     {["Variable: dependent scalar"                    ]}     0.47332       NaN         NaN              NaN       
-    aH2OEl                    {["Variable: dependent scalar"                    ]}     0.99978       NaN         NaN              NaN       
+    psvEl                     {["Variable: dependent scalar"                    ]}     0.16045       NaN         NaN              NaN       
+    aH2OEl                    {["Variable: dependent scalar"                    ]}     0.51641       NaN         NaN              NaN       
     current                   {["Variable: no values assigned"                  ]}         NaN       NaN         NaN              NaN       
     r                         {["Parameter: no values assigned"                 ]}         NaN       NaN         NaN              NaN       
     alpha                     {["Parameter: no values assigned"                 ]}         NaN       NaN         NaN              NaN       
@@ -217,36 +225,36 @@ voltageData = AlkaliUI.U;
 currentData = AlkaliUI.j;
 temperatureData = AlkaliUI.T(:,1);
 pressureData = AlkaliUI.P(:,1);
-</pre><p>Alternatively one can create synthetic UI curve for testing purpose using special function <tt>createSyntheticUI</tt>, which enables user to set the amount of data points, defaulted at 20. The user can also induce normally distributed measurement error by defining the number of measurements for each data point and the measurement error as a fraction of the reading. For more detailed explanation of the function, see its <a href="matlab:doc('createSyntheticUI')">documentation</a>.</p><p>Let's replace the preset temperature from the electrolyzer model with the measured temperature vector</p><pre class="codeinput">eModel.replaceWorkspaceValues(<span class="string">'T'</span>,temperatureData,<span class="string">'ps'</span>,pressureData);
+</pre><p>Alternatively one can create synthetic UI curve for testing purpose using special function <tt>createSyntheticUI</tt>, which enables user to set the amount of data points, defaulted at 20. The user can also induce normally distributed measurement error by defining the number of measurements for each data point and the measurement error as a fraction of the reading. For more detailed explanation of the function, see its <a href="matlab:doc('createSyntheticUI')">documentation</a>.</p><p>Let's replace the preset temperature from the electrolyzer model with the measured temperature vector</p><pre class="codeinput">eModel.replaceInWorkspace(<span class="string">'T'</span>,temperatureData,<span class="string">'ps'</span>,pressureData);
 </pre><p>Let's choose particle swarm as our fitting method.</p><pre class="codeinput">method = <span class="string">"PS"</span>;
 </pre><p>Alternatively one could use the Non-Linear Least Squares Error regression by calling for <tt>"NLLSE"</tt>.</p><p>Weighting of the low current values is enabled with the following option:</p><pre class="codeinput">weights = <span class="string">"l"</span>;
 </pre><p>The weights are added to improve parametrization of the activation overpotential, whose effect is post prominent in the lower current densities. Now that mass transfer effects are not present in the data to be fitted, we do not weigh the higher current densities, which could be done by adding letter "h" to the weights call. More in-detail description of the options can be found from the <a href="matlab:doc('fitUI')">documentation of the function <tt>fitUI</tt></a>.</p><pre class="codeinput">[fitParams,gof] = eModel.fitUI(voltageData,currentData,<span class="string">'method'</span>,method,<span class="string">'weights'</span>,weights);
 </pre><pre class="codeoutput">
 Data fit performed using Particle Swarm Optimisation approach
-R^2: 0.997606
+R^2: 0.997820
 </pre><p><b>NOTE:</b> The fitting tool doesn't consider the units of the measured data but the user has to keep in mind the used units. Some fitting parameters are sensitive to units, for example resistance <tt>r</tt> and exchange current density <tt>j0</tt>.</p><h2 id="19">Viewing the results</h2><p>To see the results, one can use the <tt>showUI</tt> method to perform a quick automated plot.</p><pre class="codeinput">eModel.showUI
 </pre><img vspace="5" hspace="5" src="usageExample_01.png" alt=""> <p>The parameter values and their uncertainty (standard deviation) can be seen from the output of <tt>fitUI</tt></p><pre class="codeinput">disp(fitParams)
 </pre><pre class="codeoutput">       r        alpha          j0    
     _______    ________    __________
 
-      0.507    0.091049     0.0013725
-    0.15873     0.01924    0.00082563
+    0.54692    0.093959     0.0013344
+    0.15854    0.018839    0.00083706
 
-</pre><p>or by calling <tt>electrolyzerModel.getWorkspaceValues</tt> method.</p><pre class="codeinput">disp(eModel.getParameters)
+</pre><p>or by calling <tt>electrolyzerModel.getParams</tt> method.</p><pre class="codeinput">disp(eModel.getParams)
 </pre><pre class="codeoutput">               Value         Std    
              _________    __________
 
-    r            0.507       0.15873
-    alpha     0.091049       0.01924
-    j0       0.0013725    0.00082563
+    r          0.54692       0.15854
+    alpha     0.093959      0.018839
+    j0       0.0013344    0.00083706
 
 </pre><p>Some goodness of fit values are stored in <tt>fitUI</tt> output <tt>gof</tt>:</p><div><ul><li>ssr: Square Sum Residuals</li><li>rmse: Root Mean Square Error</li><li>rsquare: the R^2 value of the fit</li></ul></div><pre class="codeinput">disp(gof)
-</pre><pre class="codeoutput">        ssr: 0.00052672
-       rmse: 0.0069198
-    rsquare: 0.99761
+</pre><pre class="codeoutput">        ssr: 0.00047964
+       rmse: 0.0066033
+    rsquare: 0.99782
 
 </pre><h2 id="23">Using fit parameters</h2><p>To calculate the voltage values based on the just fitted UI curve, one can use the <tt>calculate</tt> method of <tt>electrolyzerModel</tt>.</p><pre class="codeinput">Ufit = eModel.calculate(<span class="string">'current'</span>,currentData);
-</pre><p>The variables still missing from the Workspace have to be provided as name value pairs. The variables given as input to the <tt>calculate</tt> method are preferred over the values with the same name already contained in the Workspace. This way the model can be used to calculate cell voltage based on the UI curve in different conditions than where the curve used for parametrization was measured.</p><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021b</a><br></p></div><!--
+</pre><p>The variables still missing from the Workspace have to be provided as name value pairs. The variables given as input to the <tt>calculate</tt> method are preferred over the values with the same name already contained in the Workspace. This way the model can be used to calculate cell voltage based on the UI curve in different conditions than where the curve used for parametrization was measured.</p><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% Electrolyzer modelling tool: Step-by-step usage example of the UI curve fitting functionality
 % Usage of the water electrolysis modelling library is mainly based on the
@@ -310,7 +318,10 @@ eModel.report
 %
 % * Temperature, T (in kelvin)
 % * System pressure, ps (in bara)
-% * Electrolyte molality, m (in mol of solute/kg of solvent).
+% * Electrolyte concentration, either:
+%   * molality (in mol of solute/kg of solvent),
+%   * Molarity (in mol of solute/L of solution)
+%   * wtfrac (in mass of solute/mass of solution)
 %
 % For PEM, on the other hand, the required variables would be:
 %
@@ -318,25 +329,24 @@ eModel.report
 % * Anode pressure, pAn (in bara)
 % * Cathode pressure, pCat (in bara).
 %
-T = 273.15 + 80; % Temperature in kelvin
+T = 273.15 + 70; % Temperature in kelvin
 ps = 3; % System pressure in bara
 
 %%
 % The alkaline models require concentration as molality, but often weight
 % fractions are more commonly known. Therefore the |electrolyzerModel|
-% class contains methods for conversion between molality and weight
-% fractions. These conversions use the known molar mass of the given
+% class contains methods for automatic conversion between molality and 
+% weight fractions. These conversions use the known molar mass of the given
 % electrolyte salt. Weight fraction can be given both as percents (assumed
 % when input > 1) or directly as a fraction (input < 1).
 wtfrac = 30; % concentration as weight percentage
-m = eModel.wtfrac2mol(wtfrac)
 
 %%
 % Variables have to be provided to the model as a Workspace structure (see
 % the documentation of |func| for more information). A Workspace structure
 % contains substructures for Variables, Parameters and Constants. For our
 % purpose we have to provide the previously defined variables:
-Workspace = struct('Variables',struct('T',T,'ps',ps,'m',m))
+Workspace = struct('Variables',struct('T',T,'ps',ps,'wtfrac',wtfrac))
 
 %%
 % To check compatibility with the Workspace requirements, one can use the
@@ -346,14 +356,14 @@ func.isWorkspace(Workspace)
 %%
 % The workspace-compatible structure can now be set for the electrolyzer
 % model:
-eModel.setWorkspaceValues(Workspace)
+eModel.setInWorkspace(Workspace)
 eModel.viewWorkspace;
 
 %% Defining the modelling function
 % Once the modeling object has been created and variables set, it is
 % possible to use helper method |addPotentials| to construct the full
 % overpotential function.
-eModel.addPotentials('nernst','ohmic','activation')
+eModel.addFuncs('nernst','ohmic','activation')
 
 %%
 % The input above provides the default versions of each potential term
@@ -416,7 +426,7 @@ pressureData = AlkaliUI.P(:,1);
 %%
 % Let's replace the preset temperature from the electrolyzer model with the
 % measured temperature vector
-eModel.replaceWorkspaceValues('T',temperatureData,'ps',pressureData);
+eModel.replaceInWorkspace('T',temperatureData,'ps',pressureData);
 
 %%
 % Let's choose particle swarm as our fitting method.
@@ -454,8 +464,8 @@ eModel.showUI
 % seen from the output of |fitUI|
 disp(fitParams)
 %%
-% or by calling |electrolyzerModel.getWorkspaceValues| method.
-disp(eModel.getParameters)
+% or by calling |electrolyzerModel.getParams| method.
+disp(eModel.getParams)
 
 
 %%
