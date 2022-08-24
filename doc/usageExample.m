@@ -60,10 +60,10 @@ eModel.report
 %
 % * Temperature, T (in kelvin)
 % * System pressure, ps (in bara)
-% * Electrolyte concentration, either:
-%   * molality (in mol of solute/kg of solvent),
-%   * Molarity (in mol of solute/L of solution)
-%   * wtfrac (in mass of solute/mass of solution)
+% * Electrolyte concentration, either as
+%   molality (in mol of solute/kg of solvent),
+%   Molarity (in mol of solute/L of solution) or
+%   wtfrac (in mass of solute/mass of solution)
 %
 % For PEM, on the other hand, the required variables would be:
 %
