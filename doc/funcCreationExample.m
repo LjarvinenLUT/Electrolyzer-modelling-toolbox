@@ -90,7 +90,7 @@ disp(theFunc.Fitlims)
 %%
 % To add missing parameters to the object, the method |func.replaceWorkspaceValues|
 % has to be used.
-theFunc.replaceWorkspaceValues('x',(0:0.01:1)');
+theFunc.replaceInWorkspace('x',(0:0.01:1)');
 disp(theFunc.viewWorkspace)
 
 %%
@@ -104,7 +104,7 @@ disp(theFunc.viewWorkspace)
 % the fit has been performed and the result has been:
 b = 3.25;
 c = 0.75;
-theFunc.replaceWorkspaceValues('b',b,'c',c);
+theFunc.replaceInWorkspace('b',b,'c',c);
 disp(theFunc.viewWorkspace)
 
 %%

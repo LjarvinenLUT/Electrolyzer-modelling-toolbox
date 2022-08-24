@@ -60,7 +60,10 @@ eModel.report
 %
 % * Temperature, T (in kelvin)
 % * System pressure, ps (in bara)
-% * Electrolyte molality, m (in mol of solute/kg of solvent).
+% * Electrolyte concentration, either:
+%   * molality (in mol of solute/kg of solvent),
+%   * Molarity (in mol of solute/L of solution)
+%   * wtfrac (in mass of solute/mass of solution)
 %
 % For PEM, on the other hand, the required variables would be:
 %
@@ -68,25 +71,24 @@ eModel.report
 % * Anode pressure, pAn (in bara)
 % * Cathode pressure, pCat (in bara).
 %
-T = 273.15 + 80; % Temperature in kelvin
+T = 273.15 + 70; % Temperature in kelvin
 ps = 3; % System pressure in bara
 
 %%
 % The alkaline models require concentration as molality, but often weight
 % fractions are more commonly known. Therefore the |electrolyzerModel|
-% class contains methods for conversion between molality and weight
-% fractions. These conversions use the known molar mass of the given
+% class contains methods for automatic conversion between molality and 
+% weight fractions. These conversions use the known molar mass of the given
 % electrolyte salt. Weight fraction can be given both as percents (assumed
 % when input > 1) or directly as a fraction (input < 1).
 wtfrac = 30; % concentration as weight percentage
-m = eModel.wtfrac2mol(wtfrac)
 
 %%
 % Variables have to be provided to the model as a Workspace structure (see
 % the documentation of |func| for more information). A Workspace structure
 % contains substructures for Variables, Parameters and Constants. For our
 % purpose we have to provide the previously defined variables:
-Workspace = struct('Variables',struct('T',T,'ps',ps,'m',m))
+Workspace = struct('Variables',struct('T',T,'ps',ps,'wtfrac',wtfrac))
 
 %%
 % To check compatibility with the Workspace requirements, one can use the
@@ -103,7 +105,7 @@ eModel.viewWorkspace;
 % Once the modeling object has been created and variables set, it is
 % possible to use helper method |addPotentials| to construct the full
 % overpotential function.
-eModel.addPotentials('nernst','ohmic','activation')
+eModel.addFuncs('nernst','ohmic','activation')
 
 %%
 % The input above provides the default versions of each potential term
