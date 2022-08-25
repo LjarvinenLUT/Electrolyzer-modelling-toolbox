@@ -5,9 +5,9 @@
     <param.email>Pietari.Puranen@lut.fi, Lauri.Jarvinen@lut.fi</param.email>
     <param.company>LUT University</param.company>
     <param.summary>Water electrolysis modelling toolbox for UI curve parametrization</param.summary>
-    <param.description>Beta version of the toolbox</param.description>
+    <param.description>Release version of the toolbox</param.description>
     <param.screenshot />
-    <param.version>0.7.2.0</param.version>
+    <param.version>1.0.0.0</param.version>
     <param.output>${PROJECT_ROOT}\Electrolyzer Modelling Toolbox.mltbx</param.output>
     <param.products.name />
     <param.products.id />
@@ -45,7 +45,8 @@ TestData/JulichData.mat
 startup.m
 startupEModel.m
 installEModel.m
-setFigProp.*</param.exclude.filters>
+setFigProp.*
+StackedOverpotentials.pdf</param.exclude.filters>
     <param.exclude.pcodedmfiles>true</param.exclude.pcodedmfiles>
     <param.examples>&lt;?xml version="1.0" encoding="utf-8"?&gt;
 &lt;examples&gt;
@@ -157,6 +158,7 @@ setFigProp.*</param.exclude.filters>
       <file>${PROJECT_ROOT}\doc</file>
       <file>${PROJECT_ROOT}\electrolyzerModellingToolbox</file>
       <file>${PROJECT_ROOT}\info.xml</file>
+      <file>${PROJECT_ROOT}\LICENSE.txt</file>
       <file>${PROJECT_ROOT}\README.md</file>
     </fileset.rootfiles>
     <fileset.depfun.included />
@@ -167,7 +169,7 @@ setFigProp.*</param.exclude.filters>
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>C:\Program Files\MATLAB\R2021a</root>
+      <root>C:\Program Files\MATLAB\R2022a</root>
       <toolboxes>
         <toolbox name="matlabcoder" />
         <toolbox name="embeddedcoder" />
