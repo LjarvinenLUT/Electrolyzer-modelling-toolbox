@@ -1,5 +1,6 @@
 clear; close all; clc
 
+%% OCV
 fprintf("\n______________OCV 1______________")
 Uocv1 = nernst('PEM');
 Uocv_val1 = Uocv1.calculate();
