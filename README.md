@@ -42,5 +42,5 @@ particleswarm optimization method. The licensing for the tools can be found
 under ./Utils/mcmcstat/LICENSE.txt
 
 The Academy of Finland is acknowledged for the main financial support of
-the Research of Power Quality Effect on Water Electrolyzer Operation (POQELYZER)
-project. The project partners are also thanked for their financial contributions.
+the Research of Power Quality Effect on Water Electrolyzer Operation   
+(POQELYZER) project.
