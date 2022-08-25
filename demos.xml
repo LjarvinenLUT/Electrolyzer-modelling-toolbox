@@ -4,7 +4,7 @@
    <type>toolbox</type>
    <icon>HelpIcon.DEMOS</icon>
    <website/>
-   <description>Beta version of the toolbox</description>
+   <description>Release version of the toolbox</description>
    <demosection>
       <label>doc</label>
       <demoitem>

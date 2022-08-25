@@ -2,9 +2,9 @@
 <productinfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:noNamespaceSchemaLocation="optional">
     <?xml-stylesheet type="text/xsl"href="optional"?>
-    <!-- info.xml file for the mytoolbox toolbox -->
-    <!-- Version beta 0.5 -->
-    <!-- Copyright 2021, Pietari Puranen and Lauri Järvinen.-->
+    <!-- info.xml file for the electrolyzerModelling toolbox -->
+    <!-- Version 1.0.0.0 -->
+    <!-- Copyright 2022, Pietari Puranen and Lauri Järvinen.-->
     
     <!-- Supply the following six elements in the order specified -->
     <!-- (Required) Release of MATLAB. Not currently used but required -->
