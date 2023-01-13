@@ -442,7 +442,7 @@ classdef electrolyzerModel < model
                 
                 % Calculate dense data vectors for the fitted UI curve
                 fullFitCurrent = min(current):0.001:max(current);
-                fullFitVoltage = mean(obj.calculate('current',fullFitCurrent),1);
+                fullFitVoltage = mean(obj.calculate('current',fullFitCurrent'),1);
                 
                 % Take samples from the dense data vectors
                 N = 100; % Number of evenly taken voltage samples
