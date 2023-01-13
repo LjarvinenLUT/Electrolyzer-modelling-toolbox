@@ -872,22 +872,22 @@ classdef func < handle
             
             TempWorkspace = Struct;
             
+            % Check field by field what to do 
             for i = 1:length(fn)
                 if strcmp(fn{i},'Dependencies')
+                    % Let 'Dependencies' go through unchanged
                     TempWorkspace.(fn{i}) = Struct.(fn{i});
                 elseif isstruct(Struct.(fn{i}))
+                    % Create TempWorkspace recursively for substructures
                     TempWorkspace.(fn{i}) = func.createTempWorkspace(Struct.(fn{i}),replacingArguments);
-                elseif isempty(Struct.(fn{i}))
+                else
+                    % Replace field values if prompted
                     replIndex = ismember(replArgNames,fn{i});
                     if any(replIndex)
                         TempWorkspace.(fn{i}) = replArgs{replIndex};
-                    else
-                        continue;
                     end
-                elseif length(Struct.(fn{i})(1,:)) == 1
-                    TempWorkspace.(fn{i}) = Struct.(fn{i});
-                else
-                    fieldSize = size(Struct.(fn{i}));
+
+                    fieldSize = size(TempWorkspace.(fn{i}));
                     if fieldSize(2)>2
                         warningMsg = strcat("It seems that the Workspace variable "...
                             ,string(fn{i})," has more than two columns (",...
@@ -897,7 +897,7 @@ classdef func < handle
                             "The method func.calculation takes into acount only the first column of the vector and regards that as the given dataset.");
                         warning(warningMsg)
                     end
-                    TempWorkspace.(fn{i}) = Struct.(fn{i})(:,1);
+                    TempWorkspace.(fn{i}) = TempWorkspace.(fn{i})(:,1);
                 end
             end
         end
