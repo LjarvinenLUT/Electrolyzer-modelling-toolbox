@@ -373,16 +373,16 @@ classdef func < handle
                 % Create temporary Workspace based only on the given
                 % Workspace
                 index = [false workspaceCall(1:end-1)]; % index after the call
-                TempWorkspace = func.createTempWorkspace(varargin{index});
+                [TempWorkspace,compChanges] = func.createTempWorkspace(varargin{index});
             else
                 % Create a temporary workspace that includes the user input
                 % variables in addition to the ones found from the func 
                 % Workspace.                
-                TempWorkspace = func.createTempWorkspace(obj.Workspace,varargin);
+                [TempWorkspace,compChanges] = func.createTempWorkspace(obj.Workspace,varargin);
             end
             
             % Refresh dependencies
-            if detectChanges
+            if detectChanges && ~compChanges
                 % Refresh dependencies that relate to change state of some
                 % Workspace parameters (mostly warnings)
                 TempWorkspaceRefreshed = func.refresh(TempWorkspace,obj.Workspace);
@@ -855,7 +855,7 @@ classdef func < handle
     %% Private static methods
     
     methods (Access = private, Static)
-        function TempWorkspace = createTempWorkspace(Struct,replacingArguments)
+        function [TempWorkspace,compressionChanges] = createTempWorkspace(Struct,replacingArguments)
             % CREATETEMPWORKSPACE Creates a copy of the Workspace structure
             %   but without values for standard deviation. Replaces the
             %   values for given fields (replacingArguments, cell array of
@@ -869,8 +869,22 @@ classdef func < handle
                 replArgNames = replacingArguments(1:2:end);
                 replArgs = replacingArguments(2:2:end);
             end
+
+            % Calculate lengths of values to be replaced
+            l = nan(size(replArgs));
+            for i = 1:length(replArgs)
+                l(i) = length(replArgs{i});
+            end
+            % Longest vector for replacement
+            maxL = max(l);
+            if any(l~=1&l~=maxL)
+                error("The lengths of the vectors to be replaced are inconcise")
+            end
             
             TempWorkspace = Struct;
+            compressionChanges = false; % Boolean revealing if some values were compressed.
+            % Is used to avoid warnings if changing their values causes
+            % some.
             
             % Check field by field what to do 
             for i = 1:length(fn)
@@ -879,12 +893,20 @@ classdef func < handle
                     TempWorkspace.(fn{i}) = Struct.(fn{i});
                 elseif isstruct(Struct.(fn{i}))
                     % Create TempWorkspace recursively for substructures
-                    TempWorkspace.(fn{i}) = func.createTempWorkspace(Struct.(fn{i}),replacingArguments);
+                    [TempWorkspace.(fn{i}),c] = func.createTempWorkspace(Struct.(fn{i}),replacingArguments);
+                    compressionChanges = compressionChanges || c;
                 else
                     % Replace field values if prompted
                     replIndex = ismember(replArgNames,fn{i});
                     if any(replIndex)
                         TempWorkspace.(fn{i}) = replArgs{replIndex};
+                    elseif length(TempWorkspace.(fn{i})(:,1))~=maxL&&length(TempWorkspace.(fn{i})(:,1))~=1
+                        % If there is some non-changed field whose value is
+                        % a longer vector than the longest replacing
+                        % argument, the value of the field is compressed to
+                        % its mean.
+                        TempWorkspace.(fn{i}) = mean(TempWorkspace.(fn{i}));
+                        compressionChanges = true;
                     end
 
                     fieldSize = size(TempWorkspace.(fn{i}));
@@ -898,8 +920,10 @@ classdef func < handle
                         warning(warningMsg)
                     end
                     TempWorkspace.(fn{i}) = TempWorkspace.(fn{i})(:,1);
+
                 end
             end
+
         end
         
         function refreshedWorkspace = refresh(Workspace,varargin)
