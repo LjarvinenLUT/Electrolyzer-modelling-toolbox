@@ -7,7 +7,7 @@
     <param.summary>Water electrolysis modelling toolbox for UI curve parametrization</param.summary>
     <param.description>Release version of the toolbox</param.description>
     <param.screenshot />
-    <param.version>1.0.2.0</param.version>
+    <param.version>1.0.2.1</param.version>
     <param.output>${PROJECT_ROOT}\Electrolyzer Modelling Toolbox.mltbx</param.output>
     <param.products.name />
     <param.products.id />
@@ -90,14 +90,7 @@ StackedOverpotentials.pdf</param.exclude.filters>
     <param.registered.apps />
     <param.docs>${PROJECT_ROOT}\info.xml</param.docs>
     <param.getting.started.guide>${PROJECT_ROOT}\doc\GettingStarted.mlx</param.getting.started.guide>
-    <param.matlabpath.excludes>
-      <item>/doc/doc/html</item>
-      <item>/electrolyzerModellingToolbox/.thrash</item>
-      <item>/electrolyzerModellingToolbox/Figures</item>
-      <item>/electrolyzerModellingToolbox/Tests</item>
-      <item>/electrolyzerModellingToolbox/Utils/legendflex</item>
-      <item>/electrolyzerModellingToolbox/Tests/Vesan Testi</item>
-    </param.matlabpath.excludes>
+    <param.matlabpath.excludes />
     <param.javaclasspath.excludes />
     <param.exported.on.package>false</param.exported.on.package>
     <param.required.addons>
@@ -132,6 +125,7 @@ StackedOverpotentials.pdf</param.exclude.filters>
       <param.demosxml />
       <param.apps />
       <param.registered.apps />
+      <param.matlabpath.excludes />
       <param.javaclasspath.excludes />
       <param.exported.on.package />
       <param.matlab.project.id />
@@ -169,7 +163,7 @@ StackedOverpotentials.pdf</param.exclude.filters>
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>C:\Program Files\MATLAB\R2022a</root>
+      <root>C:\Program Files\MATLAB\R2022b</root>
       <toolboxes>
         <toolbox name="matlabcoder" />
         <toolbox name="embeddedcoder" />
