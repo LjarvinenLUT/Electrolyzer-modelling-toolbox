@@ -871,8 +871,8 @@ classdef func < handle
             end
 
             % Calculate lengths of values to be replaced
-            l = nan(size(replArgs));
-            for i = 1:length(replArgs)
+            l = nan(size(replArgNames));
+            for i = 1:length(l)
                 l(i) = length(replArgs{i});
             end
             % Longest vector for replacement
@@ -900,7 +900,7 @@ classdef func < handle
                     replIndex = ismember(replArgNames,fn{i});
                     if any(replIndex)
                         TempWorkspace.(fn{i}) = replArgs{replIndex};
-                    elseif length(TempWorkspace.(fn{i})(:,1))~=maxL&&length(TempWorkspace.(fn{i})(:,1))~=1
+                    elseif ~isempty(maxL)&&length(TempWorkspace.(fn{i})(:,1))~=maxL&&length(TempWorkspace.(fn{i})(:,1))~=1
                         % If there is some non-changed field whose value is
                         % a longer vector than the longest replacing
                         % argument, the value of the field is compressed to
