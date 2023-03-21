@@ -663,7 +663,9 @@ classdef func < handle
                 value = obj.Workspace.(fields{i,1}).(fields{i,2});
                 if strcmpi(fields(i,2),'electrolyte')
                     descriptionText = ": numeric helper variable for alkaline";
-                    valueMean(i) = value(:,1);
+                    if ~isempty(value)
+                        valueMean(i) = value(:,1);
+                    end
                 elseif ismember('Dependencies',fieldnames(obj.Workspace)) && any(ismember(fieldName(i),fieldnames(obj.Workspace.Dependencies)))
                     descriptionText = ": dependent";
                     if isempty(value)
