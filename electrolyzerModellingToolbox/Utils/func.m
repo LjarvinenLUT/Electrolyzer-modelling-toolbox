@@ -900,6 +900,8 @@ classdef func < handle
                     replIndex = ismember(replArgNames,fn{i});
                     if any(replIndex)
                         TempWorkspace.(fn{i}) = replArgs{replIndex};
+                    elseif isempty(TempWorkspace.(fn{i}))
+                        break;
                     elseif ~isempty(maxL)&&length(TempWorkspace.(fn{i})(:,1))~=maxL&&length(TempWorkspace.(fn{i})(:,1))~=1
                         % If there is some non-changed field whose value is
                         % a longer vector than the longest replacing
