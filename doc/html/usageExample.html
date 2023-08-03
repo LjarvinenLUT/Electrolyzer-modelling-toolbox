@@ -225,7 +225,7 @@ voltageData = AlkaliUI.U;
 currentData = AlkaliUI.j;
 temperatureData = AlkaliUI.T(:,1);
 pressureData = AlkaliUI.P(:,1);
-</pre><p>Alternatively one can create synthetic UI curve for testing purpose using special function <tt>createSyntheticUI</tt>, which enables user to set the amount of data points, defaulted at 20. The user can also induce normally distributed measurement error by defining the number of measurements for each data point and the measurement error as a fraction of the reading. For more detailed explanation of the function, see its <a href="matlab:doc('createSyntheticUI')">documentation</a>.</p><p>Let's replace the preset temperature from the electrolyzer model with the measured temperature vector</p><pre class="codeinput">eModel.replaceInWorkspace(<span class="string">'T'</span>,temperatureData,<span class="string">'ps'</span>,pressureData);
+</pre><p>Alternatively one can create synthetic UI curve for testing purpose using special function <tt>createSyntheticUI</tt>, which enables user to set the amount of data points, defaulted at 20. The user can also induce normally distributed measurement error by defining the number of measurements for each data point and the measurement error as a fraction of the reading. For more detailed explanation of the function, see its <a href="matlab:doc('createSyntheticUI')">documentation</a>.</p><p>Let's replace the preset temperature and pressure from the electrolyzer model with the measured temperature and pressure vectors</p><pre class="codeinput">eModel.replaceInWorkspace(<span class="string">'T'</span>,temperatureData,<span class="string">'ps'</span>,pressureData);
 </pre><p>Let's choose particle swarm as our fitting method.</p><pre class="codeinput">method = <span class="string">"PS"</span>;
 </pre><p>Alternatively one could use the Non-Linear Least Squares Error regression by calling for <tt>"NLLSE"</tt>.</p><p>Weighting of the low current values is enabled with the following option:</p><pre class="codeinput">weights = <span class="string">"l"</span>;
 </pre><p>The weights are added to improve parametrization of the activation overpotential, whose effect is post prominent in the lower current densities. Now that mass transfer effects are not present in the data to be fitted, we do not weigh the higher current densities, which could be done by adding letter "h" to the weights call. More in-detail description of the options can be found from the <a href="matlab:doc('fitUI')">documentation of the function <tt>fitUI</tt></a>.</p><pre class="codeinput">[fitParams,gof] = eModel.fitUI(voltageData,currentData,<span class="string">'method'</span>,method,<span class="string">'weights'</span>,weights);
@@ -424,8 +424,8 @@ pressureData = AlkaliUI.P(:,1);
 % <matlab:doc('createSyntheticUI') documentation>.
 
 %%
-% Let's replace the preset temperature from the electrolyzer model with the
-% measured temperature vector
+% Let's replace the preset temperature and pressure from the electrolyzer
+% model with the measured temperature and pressure vectors
 eModel.replaceInWorkspace('T',temperatureData,'ps',pressureData);
 
 %%
